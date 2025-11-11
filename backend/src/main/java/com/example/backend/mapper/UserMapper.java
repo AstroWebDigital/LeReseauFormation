@@ -9,10 +9,17 @@ public class UserMapper {
 
     public UserDto toDto(User user) {
         if (user == null) return null;
+
         return UserDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .roles(user.getRoles())
+                .firstname(user.getFirstname())
+                .lastname(user.getLastname())
+                .phone(user.getPhone())
+                .profilPhoto(user.getProfilPhoto())
+                .sector(user.getSector())
+                .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .build();
     }
 }
