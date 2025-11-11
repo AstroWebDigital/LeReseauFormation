@@ -3,10 +3,11 @@
 ## 🧩 Description du projet
 
 Ce projet met en place une **architecture Docker complète** composée de :
+- Un **frontend React (Vite + TypeScript)** pour l’interface utilisateur moderne
 - Un **backend Spring Boot** (API REST sécurisée avec JWT)
 - Une **base de données PostgreSQL** gérée par **Flyway**
 
-Il permet de tester l’interconnexion entre un serveur d’API Java et une base PostgreSQL, dans un environnement entièrement conteneurisé.
+L’objectif est de démontrer une intégration fluide entre un frontend React, un backend Java sécurisé et une base de données PostgreSQL dans un environnement conteneurisé.
 
 ---
 
@@ -15,8 +16,14 @@ Il permet de tester l’interconnexion entre un serveur d’API Java et une base
 ```
 Projet/
 │
+├── frontend/       # Application React (Vite + TypeScript)
+│   ├── src/        # Pages, composants, services (API, AuthContext...)
+│   ├── package.json
+│   ├── Dockerfile
+│   └── vite.config.ts
+│
 ├── backend/        # Application Spring Boot
-│   ├── src/        # Code source (Controller, Service, Repository, etc.)
+│   ├── src/        # Code source (Controller, Service, Repository, Security...)
 │   ├── build.gradle
 │   ├── Dockerfile
 │   └── application.yml
@@ -32,14 +39,21 @@ Projet/
 
 ## ⚙️ Fonctionnalités
 
+### Frontend (React + Vite)
+- Interface claire et responsive (Login, Inscription, Dashboard)
+- Gestion de l’état utilisateur avec **AuthContext**
+- Persistance du token JWT dans **localStorage**
+- Communication directe avec l’API Spring Boot via Axios
+
 ### Backend (Spring Boot)
-- Endpoints API :  
+- Endpoints API :
   - `POST /api/auth/register` → Inscription utilisateur  
   - `POST /api/auth/login` → Connexion utilisateur  
   - `GET /api/auth/me` → Profil utilisateur connecté  
 - Authentification **JWT**
 - Documentation interactive via **Swagger UI**
 - Migration de la base automatique avec **Flyway**
+- Sécurité gérée avec **Spring Security + BCrypt**
 
 ### Base PostgreSQL
 - Image : `postgres:17-alpine`
@@ -50,11 +64,15 @@ Projet/
 
 ---
 
-## 🔄 Relation entre backend et base
+## 🔄 Communication Frontend ↔ Backend
 
-Le backend communique avec PostgreSQL via le réseau Docker.
+Le frontend communique avec le backend via les routes exposées sur :
+```
+http://localhost:8080/api/auth
+```
+Les requêtes sont autorisées grâce à la configuration **CORS** dans `SecurityConfig.java`.
 
-Connexion déclarée dans `application-docker.yml` :
+Connexion de la base (dans `application-docker.yml`) :
 ```yaml
 spring:
   datasource:
@@ -62,13 +80,6 @@ spring:
     username: lr_user
     password: lr_password
 ```
-
-Grâce à Docker Compose, le service `backend` accède au conteneur `db` directement par son nom.
-
-Lors du démarrage :
-1. Le conteneur `db` initialise PostgreSQL.  
-2. Le conteneur `backend` démarre, applique les migrations Flyway.  
-3. L’API est prête à être utilisée.
 
 ---
 
@@ -82,8 +93,9 @@ docker compose up
 ```
 
 Services disponibles :
-- **API** : [http://localhost:8080/swagger-ui](http://localhost:8080/swagger-ui)  
-- **PostgreSQL** : `localhost:5432`
+- **Frontend** : [http://localhost:3000](http://localhost:3000)  
+- **API Backend** : [http://localhost:8080/swagger-ui](http://localhost:8080/swagger-ui)  
+- **Base PostgreSQL** : `localhost:5432`
 
 ---
 
@@ -108,7 +120,7 @@ Puis dans psql :
 
 ```sql
 \dt
-SELECT id, email, roles, provider, created_at FROM "user";
+SELECT id, email, roles, created_at FROM "user";
 \q
 ```
 
@@ -116,10 +128,11 @@ SELECT id, email, roles, provider, created_at FROM "user";
 
 ## 🎯 Objectif
 
-Ce projet sert de **base technique** pour :
-- Tester l’intégration Spring Boot / PostgreSQL sous Docker
-- Gérer un flux d’authentification JWT complet
-- Préparer l’ajout futur d’un **SSO** (Keycloak, Azure AD, etc.)
+Ce projet constitue une **base solide pour les applications web modernes** avec :
+- Une **authentification complète** (register/login + JWT)
+- Une **architecture conteneurisée prête pour la production**
+- Un **frontend et backend découplés mais intégrés**
+- Préparation à une future **intégration SSO (Keycloak, Azure AD, etc.)**
 
 ---
 
@@ -127,4 +140,4 @@ Ce projet sert de **base technique** pour :
 
 **Arthur Bouchaud**  
 Développeur & futur expert en cybersécurité  
-Projet de test – AstroWeb Digital
+Projet de démonstration — AstroWeb Digital
