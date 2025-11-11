@@ -1,0 +1,137 @@
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.app-root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-main {
+    flex: 1;
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #020817;
+    border-bottom: 1px solid #111827;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #38bdf8;
+}
+
+.nav-link {
+    margin-left: 1rem;
+    font-size: 0.9rem;
+}
+
+.nav-user {
+    margin-right: 0.75rem;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.btn-primary {
+    padding: 0.5rem 1rem;
+    background: #38bdf8;
+    color: #020817;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid #38bdf8;
+    color: #38bdf8;
+    background: transparent;
+    cursor: pointer;
+}
+
+.btn-ghost {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+}
+
+.btn-primary.full {
+    width: 100%;
+}
+
+.page {
+    margin-top: 2rem;
+}
+
+.page-center {
+    text-align: center;
+}
+
+.auth-page {
+    max-width: 380px;
+    margin: 2rem auto;
+}
+
+.auth-form {
+    margin-top: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-input {
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #1f2937;
+    background: #020817;
+    color: #e5e7eb;
+}
+
+.form-input-error {
+    border-color: #f97316;
+}
+
+.form-error {
+    font-size: 0.75rem;
+    color: #f97316;
+    margin-top: 0.25rem;
+}
+
+.form-error.global {
+    margin-bottom: 0.75rem;
+}
+
+.footer {
+    padding: 1rem 2rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    border-top: 1px solid #111827;
+    text-align: center;
+}

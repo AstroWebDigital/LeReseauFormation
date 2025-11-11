@@ -33,5 +33,13 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    build: ./frontend
+    container_name: lr-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
 volumes:
   db_data:
