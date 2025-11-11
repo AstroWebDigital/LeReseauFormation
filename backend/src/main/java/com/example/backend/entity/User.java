@@ -12,49 +12,93 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "\"user\"") // nom exact: user
+@Table(name = "\"user\"")
 public class User {
 
+    public enum Status {
+        ACTIF,
+        SUSPENDU,
+        SUPPRIME
+    }
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(columnDefinition = "UUID")
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(length = 255)
-    private String password; // BCrypt, peut être null pour SSO
+    // Nullable pour comptes SSO si besoin
+    @Column
+    private String password;
 
-    @Column(nullable = false, length = 50)
-    private String provider; // LOCAL, KEYCLOAK, GOOGLE, etc.
+    // LOCAL / KEYCLOAK / GOOGLE ...
+    @Column(nullable = false)
+    private String provider;
 
-    @Column(name = "provider_id", length = 255)
+    @Column(name = "provider_id")
     private String providerId;
 
-    @Column(nullable = false, length = 255)
-    private String roles; // ex: "ROLE_USER", "ROLE_ADMIN"
+    @Column(nullable = false)
+    private String roles;
 
-    @Column(name = "created_at", nullable = false)
+    // ---- Nouveaux champs ----
+
+    @Column
+    private String firstname;
+
+    @Column
+    private String lastname;
+
+    @Column
+    private String phone;
+
+    @Column(name = "profil_photo")
+    private String profilPhoto;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Status status = Status.ACTIF;
+
+    @Column
+    private String sector;
+
+    // ---- Métadonnées ----
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    // ---- Lifecycle ----
+
     @PrePersist
     public void prePersist() {
         Instant now = Instant.now();
-        createdAt = now;
+        if (createdAt == null) {
+            createdAt = now;
+        }
         updatedAt = now;
+
         if (roles == null) {
             roles = "ROLE_USER";
         }
         if (provider == null) {
             provider = "LOCAL";
         }
+        if (status == null) {
+            status = Status.ACTIF;
+        }
     }
 
     @PreUpdate
     public void preUpdate() {
         updatedAt = Instant.now();
+        if (status == null) {
+            status = Status.ACTIF;
+        }
     }
 }
