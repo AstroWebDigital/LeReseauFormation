@@ -9,6 +9,18 @@ const Dashboard = () => {
     const [error, setError] = useState("");
     const [uploading, setUploading] = useState(false);
 
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    const resolvePhotoUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith("http://") || url.startsWith("https://")) return url;
+        // url commence par /files/...
+        if (url.startsWith("/")) return `${API_BASE_URL}${url}`;
+        // cas dégradé: pas de slash
+        return `${API_BASE_URL}/${url}`;
+    };
+
+
     useEffect(() => {
         let cancelled = false;
         const fetchMe = async () => {
@@ -80,13 +92,18 @@ const Dashboard = () => {
                                 <div className="avatar-wrap">
                                     <div className="avatar-ring">
                                         {me.profilPhoto ? (
-                                            <img className="avatar-img" src={me.profilPhoto} alt="Photo de profil"/>
-
+                                            <img
+                                                className="avatar-img"
+                                                src={resolvePhotoUrl(me.profilPhoto)}
+                                                alt="Photo de profil"
+                                            />
                                         ) : (
                                             <div className="avatar-initials" aria-hidden="true">
                                                 {(me.firstname?.[0] ?? me.email?.[0] ?? "U").toUpperCase()}
                                             </div>
                                         )}
+
+
                                     </div>
 
                                     {/* Overlay d’action */}
