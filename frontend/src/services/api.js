@@ -4,7 +4,6 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 const api = axios.create({
     baseURL: BASE_URL,
-    headers: { "Content-Type": "application/json" },
 });
 
 api.interceptors.request.use((config) => {
@@ -25,9 +24,8 @@ export const AuthAPI = {
     uploadProfilePhoto: (file) => {
         const form = new FormData();
         form.append("file", file);
-        return api.post("/api/profile/photo", form, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
+        // ⬇️ Laisser axios gérer Content-Type + boundary
+        return api.post("/api/profile/photo", form);
     },
 };
 
