@@ -1,5 +1,14 @@
+app:
+  uploads-dir: /data/uploads
+
 spring:
+
   datasource:
+    servlet:
+      multipart:
+        max-file-size: 5MB
+        max-request-size: 5MB
+
     url: jdbc:postgresql://db:5432/lr_db
     username: lr_user
     password: lr_password

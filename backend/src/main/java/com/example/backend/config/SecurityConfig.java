@@ -30,18 +30,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CORS AVANT TOUT
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/health",
+                                "/files/**",
+                                // Swagger / OpenAPI
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api-docs/**",
                                 "/swagger-ui.html",
-                                "/api/health"
+                                "/v3/api-docs/**",
+                                "/api-docs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -55,13 +56,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // Origine du frontend
         config.setAllowedOrigins(List.of("http://localhost:3000"));
-        // Si plus tard tu utilises un domaine, tu l'ajouteras ici.
-
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+
+        // 🔴 Ajoute ceci pour que le navigateur puisse lire le header Authorization
+        config.setExposedHeaders(List.of("Authorization"));
+
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -69,10 +70,9 @@ public class SecurityConfig {
         return source;
     }
 
+
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration
-    ) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 

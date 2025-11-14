@@ -7,15 +7,18 @@ import FormInput from "../components/FormInput";
 const Register = () => {
     const navigate = useNavigate();
     const [form, setForm] = useState({
+        firstname: "",
+        lastname: "",
+        phone: "",
+        sector: "",
         email: "",
         password: "",
         confirmPassword: "",
     });
     const [error, setError] = useState("");
 
-    const handleChange = (e) => {
+    const handleChange = (e) =>
         setForm({ ...form, [e.target.name]: e.target.value });
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,20 +30,24 @@ const Register = () => {
         }
 
         try {
-            // On n'envoie QUE email + password au backend
             await AuthAPI.register({
+                firstname: form.firstname,
+                lastname: form.lastname,
+                phone: form.phone || null,
+                sector: form.sector || null,
                 email: form.email,
                 password: form.password,
             });
-
-            // Deux stratégies possibles :
-            // - soit le backend renvoie déjà un token -> on pourrait auto-login
-            // - soit il renvoie juste 201 / un message -> on redirige vers /login
-            // Ici : redirection vers la page de connexion
-            navigate("/login");
+            navigate("/login"); // le back renvoie 201 + userDto → on redirige vers login
         } catch (err) {
             console.error(err);
-            setError("Erreur lors de l'inscription.");
+            if (err?.response?.status === 409) {
+                setError("Cet email est déjà utilisé.");
+            } else if (err?.response?.status === 400) {
+                setError("Formulaire invalide. Vérifie les champs.");
+            } else {
+                setError("Erreur lors de l'inscription.");
+            }
         }
     };
 
@@ -49,6 +56,39 @@ const Register = () => {
             <h1>Inscription</h1>
 
             <form onSubmit={handleSubmit} className="form">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormInput
+                        label="Prénom"
+                        name="firstname"
+                        value={form.firstname}
+                        onChange={handleChange}
+                        required
+                    />
+                    <FormInput
+                        label="Nom"
+                        name="lastname"
+                        value={form.lastname}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+
+                <FormInput
+                    label="Téléphone"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="Optionnel"
+                />
+
+                <FormInput
+                    label="Secteur"
+                    name="sector"
+                    value={form.sector}
+                    onChange={handleChange}
+                    placeholder="Optionnel"
+                />
+
                 <FormInput
                     label="Email"
                     type="email"
@@ -78,9 +118,7 @@ const Register = () => {
 
                 {error && <p className="form-error">{error}</p>}
 
-                <button type="submit" className="btn-primary">
-                    Créer mon compte
-                </button>
+                <button type="submit" className="btn-primary">Créer mon compte</button>
             </form>
 
             <p className="text-muted">

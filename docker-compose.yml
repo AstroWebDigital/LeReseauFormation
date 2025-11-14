@@ -26,12 +26,18 @@ services:
       db:
         condition: service_healthy
     environment:
+      APP_PUBLIC_BASE_URL: "http://localhost:8080"
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/lr_db
       SPRING_DATASOURCE_USERNAME: lr_user
       SPRING_DATASOURCE_PASSWORD: lr_password
+      SECURITY_JWT_SECRET: "REm6m3s8B7gqf7Gk9gqJ5O1p4HjK0J8JkGVmQ0GJ5a0="   # <-- EXEMPLE Base64 32+ bytes
+      SECURITY_JWT_EXPIRATION_MINUTES: "60"                                  # <-- optionnel
+    volumes:
+      - ./uploads:/data/uploads
     ports:
       - "8080:8080"
+
 
   frontend:
     build: ./frontend
