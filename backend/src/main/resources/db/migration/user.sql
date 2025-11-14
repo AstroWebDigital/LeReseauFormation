@@ -8,3 +8,6 @@ CREATE TABLE IF NOT EXISTS "user" (
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP
     );
+
+
+
