@@ -1,15 +1,13 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.*;
+import com.example.backend.dto.AuthResponse;
+import com.example.backend.dto.LoginRequest;
+import com.example.backend.dto.RegisterRequest;
+import com.example.backend.dto.UserDto;
 import com.example.backend.entity.User;
-import com.example.backend.mapper.UserMapper;
-import com.example.backend.repository.UserRepository;
 import com.example.backend.service.AuthService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,28 +16,28 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<UserDto> register(@RequestBody RegisterRequest request) {
+        User user = authService.register(request);
+        return ResponseEntity.status(201).body(authService.toDto(user));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        AuthResponse resp = authService.login(request);
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDto> me(@AuthenticationPrincipal UserDetails principal) {
-        if (principal == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<UserDto> me() {
+        UserDto dto = authService.currentUserDto();
+        return ResponseEntity.ok(dto);
+    }
 
-        User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        return ResponseEntity.ok(userMapper.toDto(user));
+    // Stateles: pas de vraie déconnexion serveur. Fourni pour compat :
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.noContent().build(); // côté front: remove token
     }
 }

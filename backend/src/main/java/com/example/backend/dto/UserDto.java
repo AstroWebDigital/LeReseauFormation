@@ -3,20 +3,16 @@ package com.example.backend.dto;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.UUID;
-
 @Data
 @Builder
 public class UserDto {
-
-    private UUID id;
+    private String id;          // adapte le type si UUID/Long
     private String email;
-    private String roles;
-
+    private String roles;       // ou List<String> selon ton modèle
     private String firstname;
     private String lastname;
     private String phone;
-    private String profilPhoto;
     private String sector;
-    private String status; // String pour rester simple côté front
+    private String profilPhoto;
+    private String status;      // on met une String (enum->String via toDto)
 }
