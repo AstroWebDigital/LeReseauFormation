@@ -1,7 +1,6 @@
 package com.example.backend.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,5 +10,18 @@ import lombok.Setter;
 @Table(name = "subscription_billing")
 public class SubscriptionBilling {
 
-    //TODO [Reverse Engineering] generate columns from DB
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "plan_name", nullable = false, length = 100)
+  private String planName;
+
+  @Column(name = "price_ht", nullable = false)
+  private Double priceHt;
+
+  @Column(name = "billing_period", nullable = false, length = 20)
+  private String billingPeriod; // MONTHLY, YEARLY...
+
+  // etc.
 }

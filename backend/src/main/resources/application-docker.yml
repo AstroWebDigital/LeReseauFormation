@@ -10,6 +10,12 @@ spring:
     password: lr_password
     driver-class-name: org.postgresql.Driver
 
+  jpa:
+    hibernate:
+      ddl-auto: validate     # ⚠️ surtout pas update en prod
+    show-sql: true
+
   flyway:
     enabled: true
     locations: classpath:db/migration
+    baseline-on-migrate: true
