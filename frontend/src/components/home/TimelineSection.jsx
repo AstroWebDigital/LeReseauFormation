@@ -1,4 +1,6 @@
+// src/components/sections/TimelineSection.jsx
 import React from "react";
+import { Card, CardBody } from "@heroui/react";
 
 const EVENTS = [
     {
@@ -33,78 +35,121 @@ const EVENTS = [
     },
 ];
 
+// Couleurs des pastilles années (proche Figma)
+const YEAR_COLORS = {
+    2018: "bg-[#1e40af]",
+    2019: "bg-[#f59e0b]",
+    2020: "bg-[#22c55e]",
+    2022: "bg-[#f97316]",
+    2024: "bg-[#1e40af]",
+    2025: "bg-[#f59e0b]",
+};
+
 const TimelineSection = () => {
     return (
         <section id="apropos" className="bg-[#f5f7fb] py-20">
-            <div className="mx-auto max-w-5xl px-4">
-                <div className="text-center mb-12">
+            <div className="mx-auto max-w-6xl px-4">
+                {/* Header */}
+                <div className="text-center mb-14">
                     <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-                        Notre parcours d'excellence
+                        Notre parcours d&apos;excellence
                     </h2>
                     <p className="mt-4 text-slate-600 max-w-2xl mx-auto">
-                        7 années d'innovation et de croissance au service de l'entrepreneuriat français.
+                        7 années d&apos;innovation et de croissance au service de
+                        l&apos;entrepreneuriat français.
                     </p>
                 </div>
 
-                <div className="relative">
-                    {/* Ligne verticale */}
-                    <div className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 bg-slate-200" />
+                {/* Timeline */}
+                <div className="relative mt-6">
+                    {/* Ligne verticale centrale */}
+                    <div className="pointer-events-none absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-px bg-[#dbeafe]" />
 
-                    <div className="space-y-10">
+                    <div className="space-y-14 md:space-y-20">
                         {EVENTS.map((evt, index) => {
                             const isLeft = index % 2 === 0;
+                            const yearColor = YEAR_COLORS[evt.year] || "bg-[#1e40af]";
+
                             return (
                                 <div
                                     key={evt.year}
-                                    className="flex items-center justify-between gap-6"
+                                    className="relative flex flex-col md:flex-row md:items-center md:justify-between"
                                 >
-                                    {/* Colonne gauche */}
+                                    {/* Colonne gauche (desktop) */}
                                     <div
-                                        className={`hidden md:flex w-5/12 ${
+                                        className={`hidden md:flex w-[45%] ${
                                             isLeft ? "justify-end" : "justify-start"
                                         }`}
                                     >
                                         {isLeft && (
-                                            <div className="max-w-sm rounded-2xl bg-white p-5 shadow-sm">
-                                                <h3 className="text-sm font-semibold text-slate-900">
-                                                    {evt.title}
-                                                </h3>
-                                                <p className="mt-2 text-xs text-slate-600">{evt.text}</p>
-                                            </div>
+                                            <Card
+                                                shadow="sm"
+                                                radius="lg"
+                                                className="max-w-md rounded-2xl border border-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
+                                            >
+                                                <CardBody className="px-8 py-6">
+                                                    <h3 className="text-sm font-semibold text-slate-900">
+                                                        {evt.title}
+                                                    </h3>
+                                                    <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                                                        {evt.text}
+                                                    </p>
+                                                </CardBody>
+                                            </Card>
                                         )}
                                     </div>
 
-                                    {/* Point + année */}
-                                    <div className="flex w-2/12 flex-col items-center justify-center gap-2">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-lg">
-                                            {evt.year}
+                                    {/* Pastille année au centre */}
+                                    <div className="order-first md:order-none flex justify-center md:w-[10%] mb-4 md:mb-0">
+                                        <div className="flex flex-col items-center">
+                                            <div
+                                                className={`flex h-11 w-11 items-center justify-center rounded-full ${yearColor} text-[11px] font-semibold text-white shadow-[0_12px_30px_rgba(15,23,42,0.25)] ring-4 ring-[#f5f7fb]`}
+                                            >
+                                                {evt.year}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Colonne droite */}
+                                    {/* Colonne droite (desktop) */}
                                     <div
-                                        className={`w-full md:w-5/12 ${
-                                            isLeft ? "md:justify-start" : "md:justify-end"
-                                        } flex`}
+                                        className={`hidden md:flex w-[45%] ${
+                                            isLeft ? "justify-start" : "justify-end"
+                                        }`}
                                     >
                                         {!isLeft && (
-                                            <div className="hidden md:block max-w-sm rounded-2xl bg-white p-5 shadow-sm">
+                                            <Card
+                                                shadow="sm"
+                                                radius="lg"
+                                                className="max-w-md rounded-2xl border border-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
+                                            >
+                                                <CardBody className="px-8 py-6">
+                                                    <h3 className="text-sm font-semibold text-slate-900">
+                                                        {evt.title}
+                                                    </h3>
+                                                    <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                                                        {evt.text}
+                                                    </p>
+                                                </CardBody>
+                                            </Card>
+                                        )}
+                                    </div>
+
+                                    {/* Version mobile : carte pleine largeur sous la pastille */}
+                                    <div className="md:hidden w-full">
+                                        <Card
+                                            shadow="sm"
+                                            radius="lg"
+                                            className="rounded-2xl border border-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
+                                        >
+                                            <CardBody className="px-6 py-5">
                                                 <h3 className="text-sm font-semibold text-slate-900">
                                                     {evt.title}
                                                 </h3>
-                                                <p className="mt-2 text-xs text-slate-600">
+                                                <p className="mt-3 text-xs leading-relaxed text-slate-600">
                                                     {evt.text}
                                                 </p>
-                                            </div>
-                                        )}
-
-                                        {/* Version mobile : carte pleine largeur */}
-                                        <div className="md:hidden max-w-full rounded-2xl bg-white p-5 shadow-sm">
-                                            <h3 className="text-sm font-semibold text-slate-900">
-                                                {evt.title}
-                                            </h3>
-                                            <p className="mt-2 text-xs text-slate-600">{evt.text}</p>
-                                        </div>
+                                            </CardBody>
+                                        </Card>
                                     </div>
                                 </div>
                             );
