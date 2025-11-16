@@ -47,7 +47,7 @@ const FEATURES = [
 
 const ProgramsSection = () => {
     return (
-        <section id="formations" className="bg-[#f5f7fb] py-20">
+        <section id="formations" className="bg-white py-20">
             <div className="mx-auto max-w-6xl px-4">
                 {/* Header */}
                 <div className="text-center max-w-2xl mx-auto">

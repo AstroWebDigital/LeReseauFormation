@@ -47,7 +47,7 @@ const YEAR_COLORS = {
 
 const TimelineSection = () => {
     return (
-        <section id="apropos" className="bg-[#f5f7fb] py-20">
+        <section id="apropos" className="bg-white py-20">
             <div className="mx-auto max-w-6xl px-4">
                 {/* Header */}
                 <div className="text-center mb-14">

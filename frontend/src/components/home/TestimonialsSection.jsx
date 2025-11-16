@@ -32,7 +32,7 @@ const testimonials = [
 
 const TestimonialsSection = () => {
     return (
-        <section className="bg-[#f5f7fb] py-20">
+        <section className="bg-white py-20">
             <div className="mx-auto max-w-6xl px-4">
                 {/* Titre */}
                 <div className="mb-12 text-center">

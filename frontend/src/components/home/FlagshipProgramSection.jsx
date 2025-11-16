@@ -1,5 +1,12 @@
+// src/components/sections/FlagshipProgramSection.jsx
 import React from "react";
 import { Card, CardBody, Button, Chip } from "@heroui/react";
+import { CheckCircleIcon as CheckCircleSolidIcon } from "@heroicons/react/24/solid";
+import {
+    CheckCircleIcon,
+    UserGroupIcon,
+    ChartBarIcon,
+} from "@heroicons/react/24/outline";
 
 const PLANS = [
     {
@@ -13,7 +20,8 @@ const PLANS = [
             "Accès communauté",
         ],
         highlighted: false,
-        buttonColor: "default",
+        buttonClass:
+            "bg-[#020617] hover:bg-[#020617]/90 text-white font-semibold",
     },
     {
         name: "Formation Complète",
@@ -27,7 +35,8 @@ const PLANS = [
             "Réseau partenaires exclusif",
         ],
         highlighted: true,
-        buttonColor: "primary",
+        buttonClass:
+            "bg-[#1e40af] hover:bg-[#1e3a8a] text-white font-semibold",
     },
     {
         name: "Formation VIP",
@@ -41,7 +50,8 @@ const PLANS = [
             "Garantie de réussite",
         ],
         highlighted: false,
-        buttonColor: "warning",
+        buttonClass:
+            "bg-[#f59e0b] hover:bg-[#d97706] text-white font-semibold",
     },
 ];
 
@@ -49,56 +59,58 @@ const FlagshipProgramSection = () => {
     return (
         <section className="bg-white py-20">
             <div className="mx-auto max-w-6xl px-4">
-                {/* Header */}
-                <div className="grid gap-10 md:grid-cols-[1.2fr,1fr] md:items-center mb-14">
-                    <div>
-                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-                            Formation Entrepreneur Location Pro
-                        </h2>
-                        <p className="mt-4 text-slate-600 max-w-xl">
-                            Notre programme phare vous accompagne de l'idée à la rentabilité
-                            avec des méthodes éprouvées et un suivi personnalisé.
-                        </p>
+                {/* Titre centré */}
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
+                        Formation Entrepreneur Location Pro
+                    </h2>
+                    <p className="mt-4 text-slate-600">
+                        Notre programme phare vous accompagne de l&apos;idée à la
+                        rentabilité avec des méthodes éprouvées et un suivi
+                        personnalisé.
+                    </p>
+                </div>
 
-                        <div className="mt-6 space-y-4 text-sm text-slate-700">
-                            <div className="flex gap-3">
-                                <span className="mt-1">📄</span>
-                                <div>
-                                    <p className="font-semibold">Certification DATADOCK</p>
-                                    <p className="text-slate-600">
-                                        Formation certifiée éligible aux financements CPF, OPCO et Pôle Emploi.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex gap-3">
-                                <span className="mt-1">🤝</span>
-                                <div>
-                                    <p className="font-semibold">Accompagnement Personnalisé</p>
-                                    <p className="text-slate-600">
-                                        Mentorat individuel avec un expert pendant 6 mois après la formation.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex gap-3">
-                                <span className="mt-1">✅</span>
-                                <div>
-                                    <p className="font-semibold">Garantie de Résultats</p>
-                                    <p className="text-slate-600">
-                                        94% de nos diplômés créent leur entreprise dans les 12 mois.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                {/* Bénéfices (gauche) + vidéo (droite) */}
+                <div className="grid gap-10 md:grid-cols-2 md:items-center mb-16">
+                    {/* Bénéfices à gauche */}
+                    <div className="space-y-5">
+                        <FeatureItem
+                            bg="bg-[#dbeafe]"
+                            Icon={CheckCircleIcon}
+                            iconColor="text-[#1e40af]"
+                            title="Certification DATADOCK"
+                            text="Formation certifiée éligible aux financements CPF, OPCO et Pôle Emploi."
+                        />
+                        <FeatureItem
+                            bg="bg-[#fef3c7]"
+                            Icon={UserGroupIcon}
+                            iconColor="text-[#f59f0b]"
+                            title="Accompagnement Personnalisé"
+                            text="Mentorat individuel avec un expert pendant 6 mois après la formation."
+                        />
+                        <FeatureItem
+                            bg="bg-[#dcfce7]"
+                            Icon={ChartBarIcon}
+                            iconColor="text-[#16a34a]"
+                            title="Garantie de Résultats"
+                            text="94% de nos diplômés créent leur entreprise dans les 12 mois."
+                        />
                     </div>
 
-                    {/* Visuel vidéo placeholder */}
-                    <Card shadow="lg" className="overflow-hidden border-none">
+                    {/* Visuel vidéo à droite */}
+                    <Card
+                        shadow="lg"
+                        className="relative h-64 md:h-72 overflow-hidden border-none rounded-3xl shadow-[0_30px_80px_rgba(15,23,42,0.22)]"
+                    >
                         <CardBody className="p-0">
-                            <div className="relative h-64 w-full bg-[url('https://images.pexels.com/photos/256559/pexels-photo-256559.jpeg?auto=compress&cs=tinysrgb&w=1200')] bg-cover bg-center">
-                                <div className="absolute inset-0 bg-black/25" />
+                            <div className="relative h-full w-full bg-[url('https://images.pexels.com/photos/256559/pexels-photo-256559.jpeg?auto=compress&cs=tinysrgb&w=1600')] bg-cover bg-center">
+                                <div className="absolute inset-0 bg-black/20" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-xl">
-                                        ▶
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_20px_50px_rgba(15,23,42,0.35)]">
+                                        <div className="ml-1 text-3xl text-[#1e40af] leading-none">
+                                            ▶
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -106,50 +118,60 @@ const FlagshipProgramSection = () => {
                     </Card>
                 </div>
 
-                {/* Pricing cards */}
+                {/* Cartes de pricing */}
                 <div className="grid gap-6 md:grid-cols-3">
                     {PLANS.map((plan) => (
                         <Card
                             key={plan.name}
                             shadow={plan.highlighted ? "lg" : "sm"}
-                            className={`flex flex-col border ${
-                                plan.highlighted ? "border-blue-600" : "border-slate-100"
+                            className={`relative flex flex-col rounded-3xl border bg-white overflow-visible ${
+                                plan.highlighted
+                                    ? "border-[#1e40af] shadow-[0_30px_80px_rgba(15,23,42,0.18)] md:-mt-4"
+                                    : "border-slate-100 shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
                             }`}
                         >
-                            <CardBody className="flex flex-col gap-4">
-                                {plan.highlighted && (
-                                    <div className="flex justify-center -mt-2">
-                                        <Chip
-                                            size="sm"
-                                            radius="full"
-                                            className="bg-blue-600 text-[11px] font-semibold text-white"
-                                        >
-                                            Plus populaire
-                                        </Chip>
-                                    </div>
-                                )}
+                            {plan.highlighted && (
+                                <div className="absolute -top-4 inset-x-0 flex justify-center">
+                                    <Chip
+                                        size="sm"
+                                        radius="full"
+                                        className="bg-[#1e40af] text-[11px] font-semibold text-white px-4 py-1 shadow-md"
+                                    >
+                                        Plus populaire
+                                    </Chip>
+                                </div>
+                            )}
 
+                            <CardBody
+                                className={`flex flex-col gap-4 pb-6 px-8 ${
+                                    plan.highlighted ? "pt-9" : "pt-7"
+                                }`}
+                            >
                                 <div className="mt-1">
                                     <h3 className="text-sm font-semibold text-slate-900">
                                         {plan.name}
                                     </h3>
-                                    <div className="mt-3">
-                                        <p className="text-3xl font-extrabold text-slate-900">
+                                    <div className="mt-4">
+                                        <p className="text-3xl font-extrabold text-[#1e40af]">
                                             {plan.price}
                                         </p>
                                         <p className="mt-1 text-xs text-slate-500">{plan.sub}</p>
                                     </div>
                                 </div>
 
-                                <ul className="mt-2 flex flex-1 list-disc flex-col gap-2 pl-5 text-sm text-slate-700">
+                                <ul className="mt-3 flex flex-1 flex-col gap-2 text-sm text-slate-700">
                                     {plan.features.map((f) => (
-                                        <li key={f}>{f}</li>
+                                        <li key={f} className="flex items-start gap-2">
+                                            <CheckCircleSolidIcon className="mt-[2px] h-4 w-4 text-[#16a34a]" />
+                                            <span>{f}</span>
+                                        </li>
                                     ))}
                                 </ul>
 
                                 <Button
-                                    color={plan.buttonColor}
-                                    className="mt-4 font-semibold"
+                                    fullWidth
+                                    radius="md"
+                                    className={`mt-4 h-11 text-sm ${plan.buttonClass}`}
                                 >
                                     Choisir ce programme
                                 </Button>
@@ -157,9 +179,25 @@ const FlagshipProgramSection = () => {
                         </Card>
                     ))}
                 </div>
+
             </div>
         </section>
     );
 };
+
+/* Composant pour les 3 bénéfices */
+const FeatureItem = ({ bg, Icon, iconColor, title, text }) => (
+    <div className="flex gap-3">
+        <div
+            className={`flex h-11 w-11 items-center justify-center rounded-xl ${bg}`}
+        >
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+        <div>
+            <p className="text-sm font-semibold text-slate-900">{title}</p>
+            <p className="mt-1 text-sm text-slate-600">{text}</p>
+        </div>
+    </div>
+);
 
 export default FlagshipProgramSection;

@@ -3,7 +3,7 @@ import { Button } from "@heroui/react";
 
 const FinalCtaSection = () => {
     return (
-        <section className="bg-[#f5f7fb] py-20">
+        <section className="bg-white py-20">
             <div className="mx-auto max-w-4xl px-4 text-center">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
                     Prêt à transformer votre avenir professionnel ?
