@@ -20,7 +20,7 @@ Projet/
 │   ├── src/        # Pages, composants, services (API, AuthContext...)
 │   ├── package.json
 │   ├── Dockerfile
-│   └── vite.config.ts
+│   └── vite.config.js
 │
 ├── backend/        # Application Spring Boot
 │   ├── src/        # Code source (Controller, Service, Repository, Security...)

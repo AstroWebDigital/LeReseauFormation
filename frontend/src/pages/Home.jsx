@@ -1,41 +1,75 @@
 // frontend/src/pages/Home.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
+import { Button, Card, CardHeader, CardBody, CardFooter } from "@heroui/react";
 import { useAuth } from "../context/AuthContext";
 
 const Home = () => {
     const { user } = useAuth();
 
     return (
-        <div className="home-page">
-            <header className="hero">
-                <h1>PROJET TEST ARTHUR</h1>
-                <p>Frontend React connecté au backend Spring Boot (JWT) et PostgreSQL.</p>
-            </header>
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+            <Card className="max-w-xl w-full">
+                <CardHeader className="flex flex-col items-start gap-2">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        Le Réseau Formation
+                    </h1>
+                    <p className="text-sm text-default-500">
+                        Frontend React connecté à un backend Spring Boot (JWT) et une base
+                        PostgreSQL.
+                    </p>
+                </CardHeader>
 
-            <section className="home-actions">
-                {!user && (
-                    <>
-                        <Link to="/register" className="btn btn-primary">
-                            Créer un compte
-                        </Link>
-                        <Link to="/login" className="btn btn-secondary">
-                            Se connecter
-                        </Link>
-                    </>
-                )}
+                <CardBody className="space-y-4">
+                    {!user && (
+                        <>
+                            <p className="text-sm text-default-600">
+                                Crée un compte ou connecte-toi pour accéder à ton tableau de
+                                bord.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Button
+                                    as={RouterLink}
+                                    to="/register"
+                                    color="primary"
+                                    fullWidth
+                                >
+                                    Créer un compte
+                                </Button>
+                                <Button
+                                    as={RouterLink}
+                                    to="/login"
+                                    variant="bordered"
+                                    fullWidth
+                                >
+                                    Se connecter
+                                </Button>
+                            </div>
+                        </>
+                    )}
 
-                {user && (
-                    <>
-                        <p>
-                            Connecté en tant que <strong>{user.email}</strong>
-                        </p>
-                        <Link to="/dashboard" className="btn btn-primary">
-                            Accéder au dashboard
-                        </Link>
-                    </>
-                )}
-            </section>
+                    {user && (
+                        <>
+                            <p className="text-sm text-default-600">
+                                Connecté en tant que{" "}
+                                <span className="font-semibold">{user.email}</span>.
+                            </p>
+                            <Button
+                                as={RouterLink}
+                                to="/dashboard"
+                                color="primary"
+                                fullWidth
+                            >
+                                Accéder au dashboard
+                            </Button>
+                        </>
+                    )}
+                </CardBody>
+
+                <CardFooter className="text-[11px] text-default-400">
+                    PROJET TEST ARTHUR — AstroWeb Digital
+                </CardFooter>
+            </Card>
         </div>
     );
 };
