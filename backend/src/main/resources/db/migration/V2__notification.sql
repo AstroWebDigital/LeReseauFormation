@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS notification (
 
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type VARCHAR(50) NOT NULL CHECK (type IN ('REVISION', 'DOCUMENT', 'PAIEMENT', 'MESSAGE', 'RESERVATION', 'BLOCAGE')),
     contenu TEXT NOT NULL,
     canaux VARCHAR(50) NOT NULL CHECK (canaux IN ('EMAIL', 'PUSH')),
@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS notification (
                              CONSTRAINT fk_notification_user
                              FOREIGN KEY (user_id)
     REFERENCES "user" (id)
-);
+    );

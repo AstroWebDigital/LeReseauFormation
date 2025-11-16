@@ -1,4 +1,14 @@
 import React, { useEffect, useState } from "react";
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    Button,
+    Avatar,
+    Spinner,
+    Skeleton,
+    Chip,
+} from "@heroui/react";
 import { AuthAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,17 +19,15 @@ const Dashboard = () => {
     const [error, setError] = useState("");
     const [uploading, setUploading] = useState(false);
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+    const API_BASE_URL =
+        import.meta.env.VITE_API_URL || "http://localhost:8080";
 
     const resolvePhotoUrl = (url) => {
         if (!url) return null;
         if (url.startsWith("http://") || url.startsWith("https://")) return url;
-        // url commence par /files/...
         if (url.startsWith("/")) return `${API_BASE_URL}${url}`;
-        // cas dégradé: pas de slash
         return `${API_BASE_URL}/${url}`;
     };
-
 
     useEffect(() => {
         let cancelled = false;
@@ -38,7 +46,9 @@ const Dashboard = () => {
             }
         };
         if (!ctxUser && token) fetchMe();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [token, ctxUser, setUser]);
 
     const onUpload = async (e) => {
@@ -61,92 +71,127 @@ const Dashboard = () => {
 
     if (!token) {
         return (
-            <div className="page-wrapper">
-                <h1>Tableau de bord</h1>
-                <p>Vous n’êtes pas connecté.</p>
+            <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+                <Card className="max-w-md w-full">
+                    <CardHeader>
+                        <h1 className="text-xl font-semibold">Tableau de bord</h1>
+                    </CardHeader>
+                    <CardBody>
+                        <p className="text-sm text-default-600">
+                            Vous n’êtes pas connecté.
+                        </p>
+                    </CardBody>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="page-wrapper">
-            <div className="card">
-                <div className="card-header">
-                    <h1>Mon compte</h1>
-                </div>
+        <div className="min-h-[calc(100vh-4rem)] flex justify-center px-4 py-10">
+            <Card className="max-w-3xl w-full">
+                <CardHeader className="flex items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-xl font-semibold">Mon compte</h1>
+                        <p className="text-xs text-default-500">
+                            Gère tes informations personnelles et ta photo de profil.
+                        </p>
+                    </div>
 
-                <div className="card-body">
+                    <Button
+                        size="sm"
+                        variant="bordered"
+                        color="danger"
+                        onPress={logout}
+                    >
+                        Se déconnecter
+                    </Button>
+                </CardHeader>
+
+                <CardBody className="space-y-6">
                     {loading ? (
-                        <div className="profile-skeleton">
-                            <div className="avatar-skel" />
-                            <div className="lines">
-                                <div className="line" />
-                                <div className="line short" />
+                        <div className="flex gap-4 items-center">
+                            <Skeleton className="rounded-full w-16 h-16" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-1/3 rounded-md" />
+                                <Skeleton className="h-3 w-1/2 rounded-md" />
                             </div>
                         </div>
                     ) : error ? (
-                        <p className="form-error">{error}</p>
+                        <p className="text-sm text-danger-500">{error}</p>
                     ) : me ? (
-                        <div className="profile profile-grid">
-                            <div className="profile-left">
-                                <div className="avatar-wrap">
-                                    <div className="avatar-ring">
-                                        {me.profilPhoto ? (
-                                            <img
-                                                className="avatar-img"
-                                                src={resolvePhotoUrl(me.profilPhoto)}
-                                                alt="Photo de profil"
-                                            />
-                                        ) : (
-                                            <div className="avatar-initials" aria-hidden="true">
-                                                {(me.firstname?.[0] ?? me.email?.[0] ?? "U").toUpperCase()}
-                                            </div>
-                                        )}
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                            {/* Colonne gauche : avatar + upload */}
+                            <div className="flex flex-col items-center gap-3 w-full md:w-auto">
+                                <Avatar
+                                    src={resolvePhotoUrl(me.profilPhoto)}
+                                    name={
+                                        [me.firstname, me.lastname].filter(Boolean).join(" ") ||
+                                        me.email ||
+                                        "Utilisateur"
+                                    }
+                                    color="primary"
+                                    size="lg"
+                                    className="text-lg"
+                                />
 
-
-                                    </div>
-
-                                    {/* Overlay d’action */}
-                                    <label className="avatar-edit" title="Changer la photo" aria-label="Changer la photo">
-                                        <input type="file" accept="image/*" onChange={onUpload} hidden />
-                                        {uploading ? (
-                                            <span className="avatar-edit-text">Téléversement…</span>
-                                        ) : (
-                                            <span className="avatar-edit-text">Changer</span>
-                                        )}
-                                    </label>
-                                </div>
-
-                                <button onClick={logout} className="btn-secondary mt-2">Se déconnecter</button>
+                                <Button
+                                    as="label"
+                                    variant="flat"
+                                    size="sm"
+                                    className="cursor-pointer"
+                                    isDisabled={uploading}
+                                >
+                                    {uploading ? "Téléversement…" : "Changer la photo"}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        hidden
+                                        onChange={onUpload}
+                                    />
+                                </Button>
                             </div>
 
-                            <div className="profile-right">
-                                <h2 className="username">
-                                    {[me.firstname, me.lastname].filter(Boolean).join(" ") || "Utilisateur"}
+                            {/* Colonne droite : infos */}
+                            <div className="flex-1 space-y-2">
+                                <h2 className="text-lg font-semibold">
+                                    {[me.firstname, me.lastname].filter(Boolean).join(" ") ||
+                                        "Utilisateur"}
                                 </h2>
-                                <p className="muted">{me.email}</p>
+                                <p className="text-sm text-default-500">{me.email}</p>
 
-                                <div className="kv">
+                                <div className="flex flex-wrap gap-2 mt-3 text-xs">
                                     {me.phone && (
-                                        <div><span>📞</span><b>Téléphone</b><i>{me.phone}</i></div>
+                                        <Chip size="sm" variant="flat">
+                                            📞 {me.phone}
+                                        </Chip>
                                     )}
                                     {me.sector && (
-                                        <div><span>🏷️</span><b>Secteur</b><i>{me.sector}</i></div>
+                                        <Chip size="sm" variant="flat" color="primary">
+                                            🏷️ {me.sector}
+                                        </Chip>
                                     )}
                                     {me.status && (
-                                        <div><span>✅</span><b>Statut</b><i>{me.status}</i></div>
+                                        <Chip size="sm" variant="flat" color="success">
+                                            ✅ {me.status}
+                                        </Chip>
                                     )}
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <p>Profil introuvable.</p>
+                        <p className="text-sm text-default-600">Profil introuvable.</p>
                     )}
-                </div>
-            </div>
+
+                    {uploading && (
+                        <div className="flex items-center gap-2 text-xs text-default-500">
+                            <Spinner size="sm" />
+                            <span>Upload de la photo en cours…</span>
+                        </div>
+                    )}
+                </CardBody>
+            </Card>
         </div>
     );
-
 };
 
 export default Dashboard;
