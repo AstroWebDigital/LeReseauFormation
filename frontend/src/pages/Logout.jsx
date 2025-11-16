@@ -10,7 +10,8 @@ export default function Logout() {
     useEffect(() => {
         logout();
         navigate("/login");
-    }, []); // eslint-disable-line
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">

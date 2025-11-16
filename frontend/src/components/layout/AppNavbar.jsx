@@ -14,62 +14,111 @@ import {
 } from "@heroui/react";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { Moon, Sun, LogOut } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import LogoReseau from "@/assets/Logo-Reseau-Formation.png";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
+
+const scrollToId = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+};
 
 const AppNavbar = () => {
     const { user, logout } = useAuth();
-    const { theme, toggle } = useTheme();
-    const isDark = theme === "dark";
+    const { isDark, toggle } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
 
+    const isHome = location.pathname === "/";
+
     const handleLogout = () => {
         logout();
-        navigate("/");
+        navigate("/login");
     };
 
-    const isActive = (path) => location.pathname === path;
+    const navLinks = [
+        { label: "Accueil", id: "top" },
+        { label: "Formations", id: "formations" },
+        { label: "Communauté", id: "communaute" },
+        { label: "Experts", id: "experts" }, // à remplir plus tard si tu veux
+        { label: "Outils", id: "outils" },   // idem
+        { label: "À propos", id: "apropos" },
+    ];
 
     return (
-        <Navbar maxWidth="xl" isBordered>
-            {/* Marque / Logo */}
-            <NavbarBrand>
-                <RouterLink to="/" className="flex items-center gap-2">
-          <span className="font-bold text-lg tracking-tight">
-            PROJET TEST ARTHUR
-          </span>
-                </RouterLink>
+        <Navbar
+            maxWidth="xl"
+            isBordered
+            className="bg-background/80 backdrop-blur border-b border-default-100"
+        >
+            {/* Logo + nom */}
+            <NavbarBrand className="gap-2 cursor-pointer">
+                {isHome ? (
+                    <button
+                        type="button"
+                        onClick={() => scrollToId("top")}
+                        className="flex items-center gap-2"
+                    >
+                        <img
+                            src={LogoReseau}
+                            alt="Le Réseau Formation"
+                            className="h-8 w-auto"
+                        />
+                        <span className="hidden sm:inline text-sm font-semibold tracking-[0.25em] uppercase">
+            </span>
+                    </button>
+                ) : (
+                    <RouterLink to="/" className="flex items-center gap-2">
+                        <img
+                            src={LogoReseau}
+                            alt="Le Réseau Formation"
+                            className="h-8 w-auto"
+                        />
+                        <span className="hidden sm:inline text-sm font-semibold tracking-[0.25em] uppercase">
+              Le Réseau
+            </span>
+                    </RouterLink>
+                )}
             </NavbarBrand>
 
             {/* Liens centraux */}
-            <NavbarContent justify="center" className="hidden sm:flex gap-4">
-                <NavbarItem isActive={isActive("/")}>
-                    <RouterLink to="/" className="text-sm">
-                        Accueil
-                    </RouterLink>
-                </NavbarItem>
-
-                {user && (
-                    <NavbarItem isActive={location.pathname.startsWith("/dashboard")}>
-                        <RouterLink to="/dashboard" className="text-sm">
-                            Dashboard
-                        </RouterLink>
+            <NavbarContent justify="center" className="hidden md:flex gap-4">
+                {navLinks.map((link) => (
+                    <NavbarItem key={link.id}>
+                        {isHome ? (
+                            <button
+                                type="button"
+                                onClick={() => scrollToId(link.id)}
+                                className="text-sm text-default-600 hover:text-foreground transition-colors"
+                            >
+                                {link.label}
+                            </button>
+                        ) : (
+                            <RouterLink
+                                to="/"
+                                className="text-sm text-default-600 hover:text-foreground transition-colors"
+                            >
+                                {link.label}
+                            </RouterLink>
+                        )}
                     </NavbarItem>
-                )}
+                ))}
             </NavbarContent>
 
-            {/* Actions à droite */}
+            {/* Droite : Switch + CTA + User */}
             <NavbarContent justify="end" className="items-center gap-3">
                 {/* Toggle thème */}
                 <NavbarItem>
-                    <div className="flex items-center gap-2">
-                        <Sun className="w-3 h-3 text-yellow-500" />
+                    <div className="flex items-center gap-2 text-xs text-default-500">
+                        <Sun className="w-3 h-3" />
                         <Switch
                             size="sm"
                             isSelected={isDark}
                             onValueChange={toggle}
                             aria-label="Basculer le thème"
+                            classNames={{
+                                wrapper: "group-data-[selected=true]:bg-default-800",
+                            }}
                             thumbIcon={({ isSelected }) =>
                                 isSelected ? (
                                     <Moon className="w-3 h-3" />
@@ -78,11 +127,10 @@ const AppNavbar = () => {
                                 )
                             }
                         />
-                        <Moon className="w-3 h-3 text-indigo-400" />
+                        <Moon className="w-3 h-3" />
                     </div>
                 </NavbarItem>
 
-                {/* Utilisateur non connecté */}
                 {!user && (
                     <>
                         <NavbarItem className="hidden sm:flex">
@@ -97,18 +145,21 @@ const AppNavbar = () => {
                         </NavbarItem>
                         <NavbarItem>
                             <Button
-                                as={RouterLink}
-                                to="/register"
-                                color="primary"
+                                color="warning"
                                 size="sm"
+                                className="font-medium"
+                                onPress={() =>
+                                    isHome
+                                        ? scrollToId("cta-consultation")
+                                        : navigate("/register")
+                                }
                             >
-                                Inscription
+                                Consultation Gratuite
                             </Button>
                         </NavbarItem>
                     </>
                 )}
 
-                {/* Utilisateur connecté */}
                 {user && (
                     <NavbarItem>
                         <Dropdown placement="bottom-end">
@@ -118,13 +169,14 @@ const AppNavbar = () => {
                                     size="sm"
                                     className="cursor-pointer"
                                     name={user.email}
-                                    // si plus tard tu as une photo: src={...}
                                 />
                             </DropdownTrigger>
                             <DropdownMenu aria-label="Menu utilisateur" variant="flat">
                                 <DropdownItem key="profile" className="h-14 gap-2">
                                     <p className="text-xs text-default-500">Connecté en tant que :</p>
-                                    <p className="text-sm font-semibold truncate">{user.email}</p>
+                                    <p className="text-sm font-semibold truncate">
+                                        {user.email}
+                                    </p>
                                 </DropdownItem>
                                 <DropdownItem
                                     key="dashboard"

@@ -1,7 +1,13 @@
 // src/pages/Register.jsx
 import React, { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardBody, CardFooter, Button } from "@heroui/react";
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardFooter,
+    Button,
+} from "@heroui/react";
 import { AuthAPI } from "../services/api";
 import FormInput from "../components/FormInput";
 
@@ -40,7 +46,7 @@ const Register = () => {
                 password: form.password,
             });
 
-            navigate("/login"); // le back renvoie 201 + userDto → on redirige vers login
+            navigate("/login");
         } catch (err) {
             console.error(err);
             if (err?.response?.status === 409) {

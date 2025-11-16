@@ -1,7 +1,13 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardBody, CardFooter, Button } from "@heroui/react";
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardFooter,
+    Button,
+} from "@heroui/react";
 import { AuthAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import FormInput from "../components/FormInput";
@@ -23,11 +29,12 @@ const Login = () => {
                 email: form.email,
                 password: form.password,
             });
-            // backend renvoie { token, tokenType, user }
+
             if (!data?.token) {
                 setError("Identifiants invalides");
                 return;
             }
+
             login(data.token, data.user || null);
             navigate("/dashboard");
         } catch (err) {
