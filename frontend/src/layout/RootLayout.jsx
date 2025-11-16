@@ -1,23 +1,20 @@
 // src/layout/RootLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import AppNavbar from "@/components/Navbar";          // HeroUI navbar
+import AppNavbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ThemeProvider } from "@/theme/ThemeProvider";
 
 const RootLayout = () => {
     return (
-        <ThemeProvider>
-            <div className="min-h-screen flex flex-col bg-background text-foreground">
-                <AppNavbar />
+        <div className="min-h-screen flex flex-col bg-[#f5f7fb] text-slate-900">
+            <AppNavbar />
 
-                <main className="flex-1">
-                    <Outlet />
-                </main>
+            <main className="flex-1">
+                <Outlet />
+            </main>
 
-                <Footer />
-            </div>
-        </ThemeProvider>
+            <Footer />
+        </div>
     );
 };
 

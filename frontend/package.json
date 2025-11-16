@@ -9,6 +9,7 @@
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings=0"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.8.5",
     "axios": "^1.7.7",
     "framer-motion": "^11.9.0",
