@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     @Value("${app.public-base-url}")
-    private String publicBaseUrl; // ex: http://localhost:8080
+    private String publicBaseUrl;
 
     public UserDto toDto(User u) {
         if (u == null) return null;
@@ -26,6 +26,10 @@ public class UserMapper {
                 .sector(u.getSector())
                 .profilPhoto(toAbsolute(u.getProfilPhoto()))
                 .status(u.getStatus() != null ? u.getStatus().name() : null)
+                .provider(u.getProvider())
+                .providerId(u.getProviderId())
+                .createdAt(u.getCreatedAt() != null ? u.getCreatedAt().toString() : null)
+                .updatedAt(u.getUpdatedAt() != null ? u.getUpdatedAt().toString() : null)
                 .build();
     }
 
@@ -34,6 +38,7 @@ public class UserMapper {
         if (path.startsWith("http://") || path.startsWith("https://")) return path;
         String base = publicBaseUrl != null ? publicBaseUrl.replaceAll("/+$", "") : "";
         String rel  = path.startsWith("/") ? path : ("/" + path);
+
         return base + rel;
     }
 }

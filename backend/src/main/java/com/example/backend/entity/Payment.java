@@ -27,7 +27,7 @@ public class Payment {
 
     @Size(max = 3)
     @NotNull
-    @Column(name = "currency", nullable = false, length = 3)
+    @Column(name = "currency", length = 3, columnDefinition = "char(3)")
     private String currency;
 
     @Size(max = 50)
