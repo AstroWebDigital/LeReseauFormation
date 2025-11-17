@@ -1,4 +1,4 @@
-package com.example.backend;
+package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -7,33 +7,43 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "stripe_refund")
-public class StripeRefund {
+@Table(name = "compliance_block")
+public class ComplianceBlock {
     @Id
     @ColumnDefault("gen_random_uuid()")
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    @Size(max = 50)
     @NotNull
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal amount;
+    @Column(name = "reason", nullable = false, length = 50)
+    private String reason;
 
     @Size(max = 50)
     @NotNull
-    @Column(name = "status", nullable = false, length = 50)
-    private String status;
+    @Column(name = "origin", nullable = false, length = 50)
+    private String origin;
+
+    @NotNull
+    @Column(name = "start_date", nullable = false)
+    private OffsetDateTime startDate;
+
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
+
+    @Column(name = "comment", length = Integer.MAX_VALUE)
+    private String comment;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "stripe_payment_intent_id", nullable = false)
-    private StripePaymentIntent stripePaymentIntent;
+    @JoinColumn(name = "vehicle_id", nullable = false)
+    private Vehicle vehicle;
 
     @NotNull
     @ColumnDefault("now()")

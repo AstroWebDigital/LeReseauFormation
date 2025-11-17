@@ -1,4 +1,4 @@
-package com.example.backend;
+package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -7,32 +7,43 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "contract")
-public class Contract {
+@Table(name = "payment")
+public class Payment {
     @Id
     @ColumnDefault("gen_random_uuid()")
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Size(max = 255)
     @NotNull
-    @Column(name = "pdf_url", nullable = false)
-    private String pdfUrl;
+    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
 
-    @Column(name = "client_signed_at")
-    private OffsetDateTime clientSignedAt;
+    @Size(max = 3)
+    @NotNull
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency;
 
-    @Column(name = "alp_signed_at")
-    private OffsetDateTime alpSignedAt;
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "provider", nullable = false, length = 50)
+    private String provider;
 
-    @Column(name = "signature_date")
-    private OffsetDateTime signatureDate;
+    @NotNull
+    @ColumnDefault("now()")
+    @Column(name = "created_at", nullable = false)
+    private OffsetDateTime createdAt;
+
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "flow_type", nullable = false, length = 50)
+    private String flowType;
 
     @Size(max = 50)
     @NotNull
@@ -43,11 +54,6 @@ public class Contract {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "reservation_id", nullable = false)
     private Reservation reservation;
-
-    @NotNull
-    @ColumnDefault("now()")
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;

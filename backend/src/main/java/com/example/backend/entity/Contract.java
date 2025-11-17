@@ -1,4 +1,4 @@
-package com.example.backend;
+package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -7,38 +7,37 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "stripe_charge")
-public class StripeCharge {
+@Table(name = "contract")
+public class Contract {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @ColumnDefault("gen_random_uuid()")
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    @Size(max = 255)
+    @NotNull
+    @Column(name = "pdf_url", nullable = false)
+    private String pdfUrl;
+
+    @Column(name = "client_signed_at")
+    private OffsetDateTime clientSignedAt;
+
+    @Column(name = "alp_signed_at")
+    private OffsetDateTime alpSignedAt;
+
+    @Column(name = "signature_date")
+    private OffsetDateTime signatureDate;
+
     @Size(max = 50)
     @NotNull
-    @Column(name = "capture_status", nullable = false, length = 50)
-    private String captureStatus;
-
-    @Column(name = "amount_authorized", precision = 10, scale = 2)
-    private BigDecimal amountAuthorized;
-
-    @Column(name = "amount_captured", precision = 10, scale = 2)
-    private BigDecimal amountCaptured;
-
-    @Column(name = "amount_refunded", precision = 10, scale = 2)
-    private BigDecimal amountRefunded;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "is_security", nullable = false)
-    private Boolean isSecurity = false;
+    @Column(name = "status", nullable = false, length = 50)
+    private String status;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

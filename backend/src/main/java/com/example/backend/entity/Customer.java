@@ -1,27 +1,25 @@
-package com.example.backend;
+package com.example.backend.entity;
 
-import com.example.backend.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "alp")
-public class Alp {
+@Table(name = "customer")
+public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "assignment_date")
-    private LocalDate assignmentDate;
+    @Column(name = "number_document")
+    private Integer numberDocument;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
