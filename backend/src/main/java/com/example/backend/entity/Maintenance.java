@@ -1,4 +1,4 @@
-package com.example.backend;
+package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -7,31 +7,38 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "unavailability")
-public class Unavailability {
+@Table(name = "maintenance")
+public class Maintenance {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @ColumnDefault("gen_random_uuid()")
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @NotNull
-    @Column(name = "start_date", nullable = false)
-    private OffsetDateTime startDate;
-
-    @NotNull
-    @Column(name = "end_date", nullable = false)
-    private OffsetDateTime endDate;
-
     @Size(max = 50)
     @NotNull
-    @Column(name = "reason", nullable = false, length = 50)
-    private String reason;
+    @Column(name = "type", nullable = false, length = 50)
+    private String type;
+
+    @NotNull
+    @Column(name = "maintenance_date", nullable = false)
+    private LocalDate maintenanceDate;
+
+    @Column(name = "next_due_date")
+    private LocalDate nextDueDate;
+
+    @Column(name = "validation_date")
+    private OffsetDateTime validationDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "validated_by_arc")
+    private User validatedByArc;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -1,6 +1,5 @@
-package com.example.backend;
+package com.example.backend.entity;
 
-import com.example.backend.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -12,19 +11,21 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "customer")
-public class Customer {
+@Table(name = "arc")
+public class Arc {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "number_document")
-    private Integer numberDocument;
+    @NotNull
+    @Column(name = "number_alp", nullable = false)
+    private Integer numberAlp;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "alp_id", nullable = false)
+    private Alp alp;
 
     @NotNull
     @Column(name = "created_at", nullable = false)

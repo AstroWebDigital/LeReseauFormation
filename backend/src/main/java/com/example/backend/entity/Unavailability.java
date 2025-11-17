@@ -1,4 +1,4 @@
-package com.example.backend;
+package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -13,32 +13,25 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "compliance_block")
-public class ComplianceBlock {
+@Table(name = "unavailability")
+public class Unavailability {
     @Id
-    @ColumnDefault("gen_random_uuid()")
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
-
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "reason", nullable = false, length = 50)
-    private String reason;
-
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "origin", nullable = false, length = 50)
-    private String origin;
 
     @NotNull
     @Column(name = "start_date", nullable = false)
     private OffsetDateTime startDate;
 
-    @Column(name = "end_date")
+    @NotNull
+    @Column(name = "end_date", nullable = false)
     private OffsetDateTime endDate;
 
-    @Column(name = "comment", length = Integer.MAX_VALUE)
-    private String comment;
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "reason", nullable = false, length = 50)
+    private String reason;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
