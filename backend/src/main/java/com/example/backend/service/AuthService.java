@@ -32,8 +32,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
-    private final PasswordResetTokenRepository tokenRepository; // ⬅️ NOUVELLE INJECTION
-    // private final EmailService emailService;
+    private final EmailService emailService;
+    private final PasswordResetTokenRepository tokenRepository;
 
     private static final long EXPIRATION_TIME_MINUTES = 15; // 15 minutes
 
@@ -81,10 +81,8 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         if (user != null) {
-            // 1. Supprimer les anciens jetons pour cet utilisateur (prévention des doublons)
             tokenRepository.deleteAllByUser(user);
 
-            // 2. Créer un nouveau jeton
             String tokenValue = UUID.randomUUID().toString();
             Instant expiryDate = Instant.now().plus(EXPIRATION_TIME_MINUTES, ChronoUnit.MINUTES);
 
@@ -93,15 +91,10 @@ public class AuthService {
             resetToken.setExpiryDate(expiryDate);
             resetToken.setUser(user);
 
-            // Le champ 'createdAt' sera géré par la base de données ou un listener JPA
-            // Attention: L'entité que vous avez donnée utilise 'OffsetDateTime' pour 'createdAt' mais 'Instant' pour 'expiryDate'.
-            // Assurez-vous d'utiliser le type correct (Instant dans la plupart des cas modernes) pour éviter les erreurs de mapping.
-
             tokenRepository.save(resetToken);
 
-            // 3. Logique d'envoi d'email à implémenter (emailService.send...)
+            emailService.sendPasswordResetEmail(user.getEmail(), tokenValue);
         }
-        // Retourne sans erreur si l'utilisateur n'est pas trouvé
     }
 
     /**
