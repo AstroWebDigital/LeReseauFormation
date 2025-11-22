@@ -1,7 +1,13 @@
 // src/pages/Register.jsx
 import React, { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardBody, CardFooter, Button } from "@heroui/react";
+import {
+    Card,
+    CardBody,
+    Button,
+    Checkbox,
+    Divider,
+} from "@heroui/react";
 import { AuthAPI } from "../services/api";
 import FormInput from "../components/FormInput";
 
@@ -13,8 +19,10 @@ const Register = () => {
         lastname: "",
         email: "",
         password: "",
+        confirmPassword: "",
     });
 
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState("");
 
     const handleChange = (e) => {
@@ -25,8 +33,23 @@ const Register = () => {
         e.preventDefault();
         setError("");
 
+        if (form.password !== form.confirmPassword) {
+            setError("Les mots de passe ne correspondent pas.");
+            return;
+        }
+
+        if (!acceptedTerms) {
+            setError("Tu dois accepter les conditions d'utilisation.");
+            return;
+        }
+
         try {
-            const { data } = await AuthAPI.register(form);
+            const { data } = await AuthAPI.register({
+                firstname: form.firstname,
+                lastname: form.lastname,
+                email: form.email,
+                password: form.password,
+            });
 
             if (!data?.id) {
                 setError("Erreur lors de l'inscription.");
@@ -41,72 +64,181 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <Card className="max-w-md w-full">
-                <CardHeader className="flex flex-col items-start gap-1">
-                    <h1 className="text-xl font-semibold">Inscription</h1>
-                    <p className="text-xs text-default-500">
-                        Crée ton compte pour commencer.
-                    </p>
-                </CardHeader>
+        <div className="min-h-screen flex items-center justify-center px-4 py-6">
+            <Card className="w-full max-w-5xl">
+                <CardBody className="p-0">
+                    <div className="grid md:grid-cols-2 h-full">
+                        {/* Colonne gauche : formulaire */}
+                        <div className="flex flex-col justify-between p-8 md:p-10">
+                            <div className="mb-10">
+                                <span className="font-semibold">ACME</span>
+                            </div>
 
-                <CardBody>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <FormInput
-                            label="Prénom"
-                            name="firstname"
-                            value={form.firstname}
-                            onChange={handleChange}
-                            required
-                        />
+                            <div className="space-y-8">
+                                <div>
+                                    <h1 className="text-2xl font-semibold mb-1">
+                                        Create Account
+                                    </h1>
+                                    <p className="text-small">
+                                        Sign up for a new account to get started.
+                                    </p>
+                                </div>
 
-                        <FormInput
-                            label="Nom"
-                            name="lastname"
-                            value={form.lastname}
-                            onChange={handleChange}
-                            required
-                        />
+                                {/* Social signup */}
+                                <div className="space-y-3">
+                                    <Button
+                                        fullWidth
+                                        variant="bordered"
+                                        type="button"
+                                    >
+                                        Sign Up with Google
+                                    </Button>
+                                    <Button
+                                        fullWidth
+                                        variant="bordered"
+                                        type="button"
+                                    >
+                                        Sign Up with Github
+                                    </Button>
+                                </div>
 
-                        <FormInput
-                            label="Email"
-                            type="email"
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            required
-                        />
+                                {/* Divider OR */}
+                                <div className="flex items-center gap-4">
+                                    <Divider className="flex-1" />
+                                    <span className="text-tiny uppercase tracking-wide">
+                    OR
+                  </span>
+                                    <Divider className="flex-1" />
+                                </div>
 
-                        <FormInput
-                            label="Mot de passe"
-                            type="password"
-                            name="password"
-                            value={form.password}
-                            onChange={handleChange}
-                            required
-                        />
+                                {/* Formulaire inscription */}
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <FormInput
+                                            label="First name"
+                                            name="firstname"
+                                            value={form.firstname}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="Enter your first name"
+                                        />
+                                        <FormInput
+                                            label="Last name"
+                                            name="lastname"
+                                            value={form.lastname}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="Enter your last name"
+                                        />
+                                    </div>
 
-                        {error && (
-                            <p className="text-xs text-danger-500">{error}</p>
-                        )}
+                                    <FormInput
+                                        label="Email Address"
+                                        type="email"
+                                        name="email"
+                                        value={form.email}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Enter your email"
+                                    />
 
-                        <Button type="submit" color="primary" fullWidth>
-                            Créer un compte
-                        </Button>
-                    </form>
+                                    <FormInput
+                                        label="Password"
+                                        type="password"
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Create a password"
+                                    />
+
+                                    <FormInput
+                                        label="Confirm Password"
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={form.confirmPassword}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Confirm your password"
+                                    />
+
+                                    <Checkbox
+                                        isSelected={acceptedTerms}
+                                        onValueChange={setAcceptedTerms}
+                                        size="sm"
+                                    >
+                                        I agree with the{" "}
+                                        <button
+                                            type="button"
+                                            className="underline underline-offset-2"
+                                        >
+                                            Terms
+                                        </button>{" "}
+                                        and{" "}
+                                        <button
+                                            type="button"
+                                            className="underline underline-offset-2"
+                                        >
+                                            Privacy Policy
+                                        </button>
+                                    </Checkbox>
+
+                                    {error && (
+                                        <p className="text-tiny text-danger">
+                                            {error}
+                                        </p>
+                                    )}
+
+                                    <Button type="submit" color="primary" fullWidth>
+                                        Sign Up
+                                    </Button>
+                                </form>
+                            </div>
+
+                            <div className="mt-8 text-tiny text-center">
+                                Already have an account?{" "}
+                                <RouterLink
+                                    to="/login"
+                                    className="underline underline-offset-2"
+                                >
+                                    Log In
+                                </RouterLink>
+                            </div>
+                        </div>
+
+                        {/* Colonne droite : image + citation */}
+                        <div className="relative hidden md:block">
+                            <img
+                                src="https://nextuipro.nyc3.cdn.digitaloceanspaces.com/components-images/white-building.jpg"
+                                alt="Modern white building"
+                                className="h-full w-full object-cover"
+                            />
+
+                            <div className="absolute inset-x-0 bottom-0 p-8 space-y-4">
+                                <div className="flex items-center gap-3 justify-end">
+                                    <div className="text-right">
+                                        <p className="text-small font-semibold">
+                                            Bruno Reichert
+                                        </p>
+                                        <p className="text-tiny">
+                                            Founder &amp; CEO at ACME
+                                        </p>
+                                    </div>
+                                    <img
+                                        src="https://i.pravatar.cc/150?u=a04258a2462d826712d"
+                                        alt="Bruno Reichert"
+                                        className="h-10 w-10 rounded-full object-cover"
+                                    />
+                                </div>
+
+                                <p className="text-small italic text-right">
+                                    “Lorem ipsum dolor sit amet, consectetur adipiscing
+                                    elit. Nunc eget augue nec massa volutpat aliquet.”
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </CardBody>
-
-                <CardFooter className="text-xs text-default-500">
-                    <span>
-                        Déjà inscrit ?{" "}
-                        <RouterLink
-                            to="/login"
-                            className="text-primary hover:underline"
-                        >
-                            Se connecter
-                        </RouterLink>
-                    </span>
-                </CardFooter>
             </Card>
         </div>
     );

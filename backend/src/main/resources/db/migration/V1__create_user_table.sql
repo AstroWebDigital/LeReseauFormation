@@ -19,3 +19,10 @@ CREATE TABLE "user"
 
 ALTER TABLE "user"
     ADD CONSTRAINT uc_user_email UNIQUE (email);
+
+-- Extension pour gen_random_uuid si pas déjà activée
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+ALTER TABLE "user"
+    ALTER COLUMN id SET DATA TYPE uuid USING gen_random_uuid(),
+ALTER COLUMN id SET DEFAULT gen_random_uuid();

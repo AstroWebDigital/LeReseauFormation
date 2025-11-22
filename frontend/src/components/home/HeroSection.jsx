@@ -1,85 +1,145 @@
 import React from "react";
-import { Button, Card, CardBody } from "@heroui/react";
+import {
+    Button,
+    Card,
+    CardBody,
+    Input,
+    DatePicker,
+} from "@heroui/react";
+import { MapPinIcon, CalendarDaysIcon } from "@heroicons/react/24/outline";
 
 const HeroSection = () => {
     return (
         <section
             id="hero"
-            className="relative overflow-hidden bg-gradient-to-br from-[#161f52] via-[#111842] to-[#060a1f] text-white"
+            className="relative overflow-hidden bg-white"
         >
-            <div className="mx-auto flex max-w-6xl flex-col items-center px-4 py-24 text-center md:py-28">
-                {/* Titre */}
-                <h1 className="max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold leading-tight">
-                    Transformez votre vision entrepreneuriale
-                    <br />
-                    <span className="text-[#ff9c2f]">en réalité profitable</span>
-                </h1>
+            <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-16 md:flex-row md:items-center md:py-24">
+                {/* Colonne gauche : texte + formulaire */}
+                <div className="flex-1">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold leading-tight tracking-tight text-[#241c4f]">
+                        Louez une voiture
+                        <br className="hidden sm:block" />
+                        <span className="block">en quelques clics</span>
+                    </h1>
 
-                {/* Sous-titre */}
-                <p className="mt-6 max-w-3xl text-base md:text-lg text-white/80">
-                    Construisez les bases solides de votre projet avec un accompagnement
-                    sur mesure, des outils modernes et une stratégie adaptée à votre vision.
-                </p>
+                    <p className="mt-4 text-base md:text-lg text-[#241c4f]/80">
+            <span className="font-semibold text-[#f400b4]">
+              Déverrouillez-la 24h/24
+            </span>{" "}
+                        avec l&apos;appli et partez&nbsp;!
+                    </p>
 
-                {/* Stats */}
-                <div className="mt-10 grid w-full max-w-3xl grid-cols-1 gap-6 text-sm sm:grid-cols-3">
-                    <div className="flex flex-col items-center">
-                        <span className="text-3xl font-extrabold text-[#ff9c2f]">25</span>
-                        <span className="mt-1 text-white/80">Entreprises créées</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <span className="text-3xl font-extrabold text-[#ff9c2f]">1M€</span>
-                        <span className="mt-1 text-white/80">€ de CA généré</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <span className="text-3xl font-extrabold text-[#ff9c2f]">94%</span>
-                        <span className="mt-1 text-white/80">% de réussite</span>
+                    {/* Carte formulaire de recherche */}
+                    <Card className="mt-10 border-none shadow-xl shadow-black/5">
+                        <CardBody className="flex flex-col gap-4">
+                            {/* Adresse */}
+                            <Input
+                                radius="full"
+                                placeholder="Adresse précise, gare, métro…"
+                                classNames={{
+                                    inputWrapper: "bg-[#f5f5f7] h-14 px-4 shadow-none",
+                                    input: "text-[15px] text-[#241c4f]",
+                                }}
+                                startContent={
+                                    <MapPinIcon className="h-5 w-5 text-[#a0a0b5]" />
+                                }
+                            />
+
+                            {/* Dates */}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <DatePicker
+                                    label="Début"
+                                    labelPlacement="inside"
+                                    radius="full"
+                                    variant="flat"
+                                    className="w-full"
+                                    classNames={{
+                                        base: "w-full",
+                                        inputWrapper:
+                                            "bg-[#f5f5f7] h-14 px-4 rounded-full shadow-none border-none",
+                                        input: "text-[15px] text-[#241c4f]",
+                                        label: "text-[15px] text-[#a0a0b5]",
+                                    }}
+                                    selectorIcon={
+                                        <CalendarDaysIcon className="h-5 w-5 text-[#a0a0b5]" />
+                                    }
+                                />
+
+                                <DatePicker
+                                    label="Fin"
+                                    labelPlacement="inside"
+                                    radius="full"
+                                    variant="flat"
+                                    className="w-full"
+                                    classNames={{
+                                        base: "w-full",
+                                        inputWrapper:
+                                            "bg-[#f5f5f7] h-14 px-4 rounded-full shadow-none border-none",
+                                        input: "text-[15px] text-[#241c4f]",
+                                        label: "text-[15px] text-[#a0a0b5]",
+                                    }}
+                                    selectorIcon={
+                                        <CalendarDaysIcon className="h-5 w-5 text-[#a0a0b5]" />
+                                    }
+                                />
+                            </div>
+
+                            {/* Bouton Rechercher */}
+                            <Button
+                                radius="full"
+                                className="mt-2 h-14 w-full bg-gradient-to-r from-[#f400b4] to-[#7c3aed] text-base font-semibold text-white shadow-lg shadow-[#f400b4]/40"
+                            >
+                                Rechercher
+                            </Button>
+                        </CardBody>
+                    </Card>
+
+                    {/* Texte AXA + stores */}
+                    <div className="mt-6 space-y-4">
+                        <p className="text-sm text-[#241c4f]/80">
+                            Location de voiture entre particuliers et pros assurée par{" "}
+                            <span className="inline-flex h-6 w-10 items-center justify-center rounded bg-[#001c71] text-[10px] font-extrabold text-white align-middle">
+                AXA
+              </span>
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button
+                                radius="lg"
+                                variant="bordered"
+                                className="h-11 px-4 text-xs font-medium"
+                            >
+                                Télécharger dans l&apos;App Store
+                            </Button>
+                            <Button
+                                radius="lg"
+                                variant="bordered"
+                                className="h-11 px-4 text-xs font-medium"
+                            >
+                                Disponible sur Google Play
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Boutons CTA */}
-                <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                    {/* Primary CTA – orange plein, radius important comme sur Figma */}
-                    <Button
-                        color="warning"
-                        size="lg"
-                        radius="sm"
-                        className="min-w-[260px] text-base font-semibold shadow-lg shadow-orange-500/40"
-                    >
-                        Démarrer ma consultation gratuite
-                    </Button>
+                {/* Colonne droite : visuel téléphone responsive */}
+                <div className="relative hidden w-full flex-1 justify-center md:flex md:justify-end">
+                    {/* Fonds décoratifs */}
+                    <div className="pointer-events-none absolute -right-6 -top-6 hidden sm:block h-40 w-40 rounded-full bg-[#e6ebff]" />
+                    <div className="pointer-events-none absolute -right-24 bottom-0 hidden sm:block h-64 w-64 rotate-6 rounded-[999px] bg-[#eef2ff]" />
 
-                    {/* Secondary CTA – bouton blanc comme sur Figma */}
-                    <Button
-                        variant="solid"
-                        color="default"
-                        size="lg"
-                        radius="sm"
-                        className="
-              min-w-[240px]
-              bg-white
-              text-[#111842]
-              text-base
-              font-semibold
-              border
-              border-white/80
-              shadow-[0_10px_25px_rgba(0,0,0,0.25)]
-              hover:bg-[#f5f7ff]
-              hover:border-white
-            "
-                    >
-                        Découvrir nos formations
-                    </Button>
+                    <div className="relative w-52 xs:w-56 sm:w-64 md:w-72 lg:w-80">
+                        <div className="relative w-full aspect-[9/18] overflow-hidden rounded-[2.5rem] border-[10px] border-black/90 bg-black shadow-[0_18px_50px_rgba(15,23,42,0.65)]">
+                            <img
+                                src="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg?auto=compress&cs=tinysrgb&w=800"
+                                alt="Application de location de voiture sur smartphone"
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+                        <div className="pointer-events-none absolute inset-0 -z-10 rounded-[2.5rem] bg-white/40 blur-2xl" />
+                    </div>
                 </div>
-            </div>
-
-            {/* Bandeau stats en bas (optionnel, très léger) */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-[-120px] flex justify-center opacity-20">
-                <Card className="w-[320px] max-w-full border border-white/10 bg-white/5">
-                    <CardBody className="text-center text-xs text-white/70">
-                        247 entreprises créées – 18,5M€ de CA généré – 94% de réussite
-                    </CardBody>
-                </Card>
             </div>
         </section>
     );

@@ -1,4 +1,4 @@
-# PROJET TEST ARTHUR – Plateforme « Le Réseau Formation »
+#  Le Réseau Formation – Plateforme « Le Réseau Formation »
 
 ## 🧩 Description du projet
 

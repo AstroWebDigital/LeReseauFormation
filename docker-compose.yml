@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  db:
+    build: ./db
+    container_name: lr-db
+    # Utilisation de env_file pour injecter les variables DB
+    env_file:
+      - .env
+    ports:
+      - "15432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      # L'erreur venait de la syntaxe "\$POSTGRES_USER".
+      # Nous utilisons la syntaxe shell simple ($VARIABLE) car les variables sont
+      # définies dans l'environnement du conteneur via env_file.
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: lr-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    # Ajout de env_file pour s'assurer que les secrets (SMTP, JWT) sont disponibles
+    env_file:
+      - .env
+    environment:
+      APP_PUBLIC_BASE_URL: "http://localhost:8080"
+      SPRING_PROFILES_ACTIVE: docker
+      # Utilisation de la substitution Docker Compose ${VARIABLE} pour garantir que les valeurs
+      # sont correctement lues du .env et non interprétées comme échappement.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Variables de Sécurité et SMTP
+      SECURITY_JWT_SECRET: ${SECURITY_JWT_SECRET}
+      SECURITY_JWT_EXPIRATION_MINUTES: ${SECURITY_JWT_EXPIRATION_MINUTES}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+    volumes:
+      - ./uploads:/data/uploads
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: lr-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

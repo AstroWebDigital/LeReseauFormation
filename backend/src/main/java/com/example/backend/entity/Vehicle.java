@@ -1,5 +1,6 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -78,6 +79,7 @@ public class Vehicle {
     @Column(name = "default_parking_location")
     private String defaultParkingLocation;
 
+    @JsonIgnore
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "alp_id", nullable = false)
@@ -90,19 +92,23 @@ public class Vehicle {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
     private Set<ComplianceBlock> complianceBlocks = new LinkedHashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
     private Set<Document> documents = new LinkedHashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
     private Set<Maintenance> maintenances = new LinkedHashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
     private Set<PricingRule> pricingRules = new LinkedHashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
     private Set<Unavailability> unavailabilities = new LinkedHashSet<>();
-
 }

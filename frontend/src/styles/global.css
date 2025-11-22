@@ -9,11 +9,11 @@
 
 /* Thème de base (à ajuster si tu veux) */
 @theme {
-    --color-primary: #eab308;
-    --color-primary-foreground: #111827;
+    /*--color-primary: #eab308;*/
+    /*--color-primary-foreground: #111827;*/
 
-    --color-background: #020617;
-    --color-foreground: #e5e7eb;
+    /*--color-background: #020617;*/
+    /*--color-foreground: #e5e7eb;*/
 
     --radius-lg: 0.75rem;
 }
@@ -28,8 +28,8 @@
 
     body {
         margin: 0;
-        background-color: var(--color-background);
-        color: var(--color-foreground);
+        /*background-color: var(--color-background);*/
+        /*color: var(--color-foreground);*/
         font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 

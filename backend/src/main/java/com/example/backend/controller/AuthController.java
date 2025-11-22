@@ -54,4 +54,17 @@ public class AuthController {
     public ResponseEntity<Void> logout() {
         return ResponseEntity.noContent().build(); // côté front: remove token
     }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verify(@RequestParam("token") String token) {
+        try {
+            authService.verifyEmail(token);
+            return ResponseEntity.ok(
+                    "Votre compte a été vérifié avec succès. Vous pouvez maintenant vous connecter."
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

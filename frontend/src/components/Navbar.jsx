@@ -11,119 +11,108 @@ import {
 } from "@heroui/react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 
-import LogoReseau from "@/assets/Logo-Reseau-Formation.png";
-
 const AppNavbar = () => {
-    const { pathname, hash } = useLocation();
+    const { pathname } = useLocation();
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
-    const menuItems = [
-        { label: "Accueil", path: "/" },
-        { label: "Formations", path: "/#formations" },
-        { label: "Communauté", path: "/#communaute" },
-        { label: "Experts", path: "/#experts" },
-        { label: "Outils", path: "/#outils" },
-        { label: "À propos", path: "/#apropos" },
+    const links = [
+        { label: "Se connecter", to: "/login" },
+        { label: "Offre entreprise", to: "/offre-entreprise" },
+        { label: "Des questions ?", to: "/faq" },
+        { label: "Blog", to: "/blog" },
     ];
 
-    const isActive = (path) => {
-        if (path === "/") return pathname === "/";
-        const targetHash = path.replace("/#", "#");
-        return hash === targetHash;
-    };
+    const isActive = (to) => pathname === to;
 
     return (
         <Navbar
             maxWidth="xl"
             isBordered
+            className="bg-white/90 backdrop-blur-sm"
             onMenuOpenChange={setIsMenuOpen}
-            className="bg-[#f5f7fb]/95"
         >
-            {/* Burger menu (mobile) */}
-            <NavbarContent className="sm:hidden" justify="start">
+            {/* Logo à gauche */}
+            <NavbarContent justify="start">
+                <NavbarBrand>
+                    <RouterLink to="/" className="flex items-center gap-1">
+            <span className="text-2xl font-black tracking-tight leading-none">
+              <span className="text-[#f400b4]">get</span>
+              <span className="text-[#5c1fd4]">around</span>
+            </span>
+                    </RouterLink>
+                </NavbarBrand>
+            </NavbarContent>
+
+            {/* Liens + CTA en desktop */}
+            <NavbarContent
+                justify="end"
+                className="hidden md:flex items-center gap-6 text-sm font-medium"
+            >
+                {links.map((link) => (
+                    <NavbarItem key={link.to} isActive={isActive(link.to)}>
+                        <RouterLink
+                            to={link.to}
+                            className={
+                                "transition-colors " +
+                                (isActive(link.to)
+                                    ? "text-[#241c4f]"
+                                    : "text-[#241c4f]/80 hover:text-[#241c4f]")
+                            }
+                        >
+                            {link.label}
+                        </RouterLink>
+                    </NavbarItem>
+                ))}
+
+                <NavbarItem>
+                    <Button
+                        as={RouterLink}
+                        to="/"
+                        radius="full"
+                        variant="bordered"
+                        className="border-[#f400b4] text-[#f400b4] font-semibold px-6 py-2 text-sm hover:bg-[#f400b4] hover:text-white"
+                    >
+                        Louer ma voiture
+                    </Button>
+                </NavbarItem>
+            </NavbarContent>
+
+            {/* Toggle menu mobile */}
+            <NavbarContent className="md:hidden" justify="end">
                 <NavbarMenuToggle
                     aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
                 />
             </NavbarContent>
 
-            {/* Logo à gauche */}
-            <NavbarContent justify="start" className="w-auto">
-                <NavbarBrand className="mr-4">
-                    <RouterLink to="/" className="flex items-center">
-                        <img
-                            src={LogoReseau}
-                            alt="Le Réseau Formation"
-                            className="h-12 w-auto"
-                        />
-                    </RouterLink>
-                </NavbarBrand>
-            </NavbarContent>
-
-            {/* Liens centraux (desktop) */}
-            <NavbarContent
-                className="hidden sm:flex gap-8"
-                justify="center"
-            >
-                {menuItems.map((item) => (
-                    <NavbarItem key={item.label} isActive={isActive(item.path)}>
+            {/* Menu mobile */}
+            <NavbarMenu className="pt-4">
+                {links.map((link) => (
+                    <NavbarMenuItem key={link.to}>
                         <RouterLink
-                            to={item.path}
+                            to={link.to}
                             className={
-                                isActive(item.path)
-                                    ? "text-[#172260]"
-                                    : "text-[#4b5563] hover:text-[#172260] transition-colors"
-                            }
-                        >
-                            {item.label}
-                        </RouterLink>
-                    </NavbarItem>
-                ))}
-            </NavbarContent>
-
-            {/* Bouton Consultation à droite */}
-            <NavbarContent justify="end">
-                <NavbarItem>
-                    <Button
-                        as={RouterLink}
-                        to="/#consultation"
-                        color="primary"
-                        variant="solid"
-                        radius="lg" // moins arrondi que full
-                        className="bg-[#1f2a68] px-7 py-3 text-sm font-semibold text-white shadow-[0_12px_25px_rgba(7,22,59,0.35)] hover:bg-[#111850]"
-                    >
-                        Consultation Gratuite
-                    </Button>
-                </NavbarItem>
-            </NavbarContent>
-
-            {/* Menu déroulant (mobile) */}
-            <NavbarMenu>
-                {menuItems.map((item) => (
-                    <NavbarMenuItem key={item.label}>
-                        <RouterLink
-                            to={item.path}
-                            className={
-                                isActive(item.path)
-                                    ? "w-full text-[#172260] font-semibold"
-                                    : "w-full text-[#4b5563]"
+                                "block w-full py-2 text-base " +
+                                (isActive(link.to)
+                                    ? "text-[#241c4f] font-semibold"
+                                    : "text-[#241c4f]/80 hover:text-[#241c4f]")
                             }
                             onClick={() => setIsMenuOpen(false)}
                         >
-                            {item.label}
+                            {link.label}
                         </RouterLink>
                     </NavbarMenuItem>
                 ))}
+
                 <NavbarMenuItem>
                     <Button
                         as={RouterLink}
-                        to="/#consultation"
-                        color="primary"
-                        variant="solid"
-                        radius="sm"
-                        className="mt-2 w-full bg-[#1f2a68] text-white"
+                        to="/"
+                        radius="full"
+                        variant="bordered"
+                        className="mt-2 w-full border-[#f400b4] text-[#f400b4] font-semibold text-base hover:bg-[#f400b4] hover:text-white"
                         onClick={() => setIsMenuOpen(false)}
                     >
-                        Consultation Gratuite
+                        Louer ma voiture
                     </Button>
                 </NavbarMenuItem>
             </NavbarMenu>
