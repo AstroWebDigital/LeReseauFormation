@@ -8,9 +8,11 @@ import com.example.backend.dto.ForgotPasswordRequest;
 import com.example.backend.dto.ResetPasswordRequest;
 import com.example.backend.entity.PasswordResetToken; // NOUVEAU IMPORT
 import com.example.backend.entity.User;
+import com.example.backend.entity.VerificationToken;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.repository.PasswordResetTokenRepository; // NOUVEAU IMPORT
 import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +36,8 @@ public class AuthService {
     private final UserMapper userMapper;
     private final EmailService emailService;
     private final PasswordResetTokenRepository tokenRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
+
 
     private static final long EXPIRATION_TIME_MINUTES = 15; // 15 minutes
 
@@ -48,13 +52,32 @@ public class AuthService {
         User u = new User();
         u.setEmail(email);
         u.setPassword(passwordEncoder.encode(rawPassword));
+        u.setStatus(User.Status.valueOf("EN_CREATION"));
         u.setProvider("LOCAL");
         try { u.setFirstname(request.getFirstname()); } catch (Exception ignored) {}
         try { u.setLastname(request.getLastname()); } catch (Exception ignored) {}
         try { u.setPhone(request.getPhone()); } catch (Exception ignored) {}
         try { u.setSector(request.getSector()); } catch (Exception ignored) {}
 
-        return userRepository.save(u);
+        User savedUser = userRepository.save(u);
+
+        // 1. Génération et enregistrement de l'OTP
+        String otpCode = UUID.randomUUID().toString();
+        Instant expiryDate = Instant.now().plus(EXPIRATION_TIME_MINUTES, ChronoUnit.MINUTES);
+
+        VerificationToken token = new VerificationToken();
+        token.setToken(otpCode);
+        token.setExpiryDate(expiryDate);
+        token.setUser(savedUser);
+
+        // Suppression de tout ancien jeton de vérification pour cet utilisateur
+        verificationTokenRepository.deleteByUser(savedUser);
+        verificationTokenRepository.save(token);
+
+        // 2. Envoi de l'email de vérification
+        emailService.sendVerificationEmail(savedUser.getEmail(), otpCode);
+
+        return savedUser;
     }
 
     public AuthResponse login(LoginRequest request) {

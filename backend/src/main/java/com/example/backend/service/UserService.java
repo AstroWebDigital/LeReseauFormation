@@ -31,7 +31,6 @@ public class UserService {
     }
 
     public User save(User user) {
-        if (user.getId() == null) user.setId(UUID.randomUUID());
         return userRepository.save(user);
     }
 }

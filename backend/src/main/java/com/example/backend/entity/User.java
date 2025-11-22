@@ -18,12 +18,12 @@ public class User {
     public enum Status {
         ACTIF,
         SUSPENDU,
-        SUPPRIME
+        SUPPRIME,
+        EN_CREATION
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(columnDefinition = "UUID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Utilise l'auto-incrément de la DB
     private UUID id;
 
     @Column(nullable = false, unique = true)
