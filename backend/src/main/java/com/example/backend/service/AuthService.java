@@ -160,4 +160,27 @@ public class AuthService {
     public UserDto toDto(User u) {
         return userMapper.toDto(u);
     }
+
+    public void verifyEmail(String tokenValue) {
+        // 1. Récupérer le token
+        VerificationToken token = verificationTokenRepository.findByToken(tokenValue)
+                .orElseThrow(() -> new IllegalArgumentException("Token de vérification invalide."));
+
+        // 2. Vérifier l'expiration
+        if (token.getExpiryDate().isBefore(Instant.now())) {
+            verificationTokenRepository.delete(token);
+            throw new IllegalArgumentException("Le lien de vérification a expiré.");
+        }
+
+        // 3. Marquer l'utilisateur comme "validé"
+        User user = token.getUser();
+        // adapte ici selon ton enum réel :
+        // par ex: User.Status.ACTIF, VALIDATED, CONFIRME, etc.
+        user.setStatus(User.Status.ACTIF);
+        userRepository.save(user);
+
+        // 4. Nettoyer le token
+        verificationTokenRepository.delete(token);
+    }
+
 }

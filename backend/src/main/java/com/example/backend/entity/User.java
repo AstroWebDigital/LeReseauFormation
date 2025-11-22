@@ -23,7 +23,8 @@ public class User {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Utilise l'auto-incrément de la DB
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid default gen_random_uuid()")
     private UUID id;
 
     @Column(nullable = false, unique = true)

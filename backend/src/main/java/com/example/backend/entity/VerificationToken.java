@@ -16,8 +16,8 @@ import java.util.UUID;
 public class VerificationToken {
 
     @Id
-    @ColumnDefault("gen_random_uuid()")
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)  // <-- ajout
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
     // Le code OTP de vérification
