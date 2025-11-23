@@ -12,19 +12,21 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    // URL publique de ton frontend (ex: https://app.lereseauformation.fr)
+    // 👉 Backend public (pour /api/auth/verify)
     @Value("${APP_PUBLIC_BASE_URL}")
     private String publicBaseUrl;
+
+    // 👉 Frontend public (pour /reset-password)
+    @Value("${APP_FRONTEND_BASE_URL}")
+    private String frontendBaseUrl;
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
-    /**
-     * Envoie l'email de réinitialisation de mot de passe (version HTML).
-     */
     public void sendPasswordResetEmail(String toEmail, String token) {
-        String resetLink = publicBaseUrl + "/reset-password?token=" + token;
+        // 🔥 Lien vers le FRONT
+        String resetLink = frontendBaseUrl + "/reset-password?token=" + token;
 
         String subject = "Réinitialisation de votre mot de passe - Le Réseau Formation";
 
@@ -125,7 +127,7 @@ public class EmailService {
      * Envoie l'email de vérification du compte (version HTML, avec bouton "Vérifier mon compte").
      */
     public void sendVerificationEmail(String toEmail, String token) {
-        // Tu peux garder le lien backend ou pointer vers une page frontend (ex: /verify-email?token=...)
+        // 🔥 Lien vers le BACKEND pour la page HTML de vérif
         String verificationLink = publicBaseUrl + "/api/auth/verify?token=" + token;
 
         String subject = "Vérification de votre compte - Le Réseau Formation";
@@ -216,7 +218,6 @@ public class EmailService {
                 """.formatted(verificationLink, verificationLink, java.time.Year.now().getValue());
 
         sendHtmlEmail(toEmail, subject, html);
-
         System.out.println("E-mail de vérification envoyé à : " + toEmail);
     }
 

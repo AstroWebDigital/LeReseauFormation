@@ -132,52 +132,50 @@ public class AuthService {
 
     /**
      * Génère un jeton de réinitialisation et l'enregistre dans la table dédiée.
+     * (Actuellement non appelée par le contrôleur, remplacée par PasswordResetService,
+     * mais on la laisse fonctionnelle pour future réutilisation ou tests.)
      */
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         if (user != null) {
-            // Nettoyage des anciens tokens
             tokenRepository.deleteAllByUser(user);
 
             String tokenValue = UUID.randomUUID().toString();
-            Instant expiryDate = Instant.now().plus(EXPIRATION_TIME_MINUTES, ChronoUnit.MINUTES);
+            Instant expiresAt = Instant.now().plus(EXPIRATION_TIME_MINUTES, ChronoUnit.MINUTES);
 
             PasswordResetToken resetToken = new PasswordResetToken();
             resetToken.setToken(tokenValue);
-            resetToken.setExpiryDate(expiryDate);
+            resetToken.setExpiresAt(expiresAt);   // ✅
             resetToken.setUser(user);
 
             tokenRepository.save(resetToken);
 
-            emailService.sendPasswordResetEmail(user.getEmail(), tokenValue);
+            emailService.sendPasswordResetEmail(user.getEmail(), tokenValue); // ✅
         }
     }
 
+
     /**
      * Vérifie le jeton et met à jour le mot de passe de l'utilisateur.
+     * (Idem, doublon logique avec PasswordResetService, mais rendu cohérent.)
      */
     public void resetPassword(ResetPasswordRequest request) {
-
-        // 1. Recherche du jeton dans la table dédiée
         PasswordResetToken resetToken = tokenRepository.findByToken(request.getToken())
                 .orElseThrow(() -> new IllegalArgumentException("Jeton invalide ou non trouvé."));
 
-        // 2. Vérification de l'expiration du jeton
-        if (resetToken.getExpiryDate().isBefore(Instant.now())) {
-            // Nettoyage et erreur
+        if (resetToken.getExpiresAt().isBefore(Instant.now())) { // ✅
             tokenRepository.delete(resetToken);
             throw new IllegalArgumentException("Le jeton a expiré.");
         }
 
-        // 3. Mise à jour du mot de passe de l'utilisateur
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        // 4. Suppression du jeton après utilisation réussie
         tokenRepository.delete(resetToken);
     }
+
 
     /**
      * Retourne le UserDto correspondant à l’utilisateur actuellement authentifié.

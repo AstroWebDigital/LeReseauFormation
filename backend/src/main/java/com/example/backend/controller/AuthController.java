@@ -5,9 +5,11 @@ import com.example.backend.dto.ForgotPasswordRequest;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.RegisterRequest;
 import com.example.backend.dto.ResetPasswordRequest;
+import com.example.backend.service.PasswordResetService;
 import com.example.backend.dto.UserDto;
 import com.example.backend.entity.User;
 import com.example.backend.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     // URL publique du FRONTEND (ex: http://localhost:3000)
     @Value("${APP_FRONTEND_BASE_URL}")
@@ -40,16 +43,26 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        authService.forgotPassword(request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            // ✅ plus besoin de passer frontendBaseUrl
+            passwordResetService.sendResetLink(request);
+            // Réponse neutre (pour ne pas leak l'existence ou non de l'email)
+            return ResponseEntity.ok(
+                    "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé."
+            );
+        } catch (IllegalStateException ex) {
+            // cas : compte non vérifié
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
+        return ResponseEntity.ok("Votre mot de passe a été réinitialisé avec succès.");
     }
+
 
     // 👉 Alias plus "parlant" pour le frontend : /profile
     @GetMapping("/profile")

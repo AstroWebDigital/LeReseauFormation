@@ -1,13 +1,19 @@
-CREATE TABLE password_reset_token (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    token VARCHAR(255) NOT NULL UNIQUE,
-    expiry_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    user_id UUID NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user
-    FOREIGN KEY (user_id)
-    REFERENCES "user" (id)
-    ON DELETE CASCADE
+CREATE TABLE password_reset_token
+(
+    id         UUID DEFAULT gen_random_uuid() NOT NULL,
+    token      VARCHAR(255)                   NOT NULL,
+    user_id    UUID                           NOT NULL,
+    expires_at TIMESTAMP WITHOUT TIME ZONE    NOT NULL,
+    used       BOOLEAN                        NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITHOUT TIME ZONE    NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_password_reset_token PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX idx_reset_token ON password_reset_token (token);
+ALTER TABLE password_reset_token
+    ADD CONSTRAINT uc_password_reset_token_token UNIQUE (token);
+
+ALTER TABLE password_reset_token
+    ADD CONSTRAINT fk_password_reset_token_user
+        FOREIGN KEY (user_id)
+            REFERENCES "user" (id)
+            ON DELETE CASCADE;

@@ -98,6 +98,15 @@ const Login = () => {
                             </div>
 
                             <div>
+                                <div className="flex justify-end">
+                                    <RouterLink
+                                        to="/forgot-password"
+                                        className="text-[0.7rem] text-orange-300 underline underline-offset-2"
+                                    >
+                                        Mot de passe oublié ?
+                                    </RouterLink>
+                                </div>
+
                                 <label className="block text-[0.7rem] font-medium text-slate-200 mb-1.5">
                                     Mot de passe
                                 </label>
