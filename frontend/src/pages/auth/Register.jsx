@@ -8,9 +8,9 @@ import {
     Checkbox,
     Divider,
 } from "@heroui/react";
-import { AuthAPI } from "../services/auth";
+import { AuthAPI } from "../../services/auth";
 
-import FormInput from "../components/FormInput";
+import FormInput from "../../components/FormInput";
 
 const Register = () => {
     const navigate = useNavigate();

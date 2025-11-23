@@ -5,8 +5,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import RootLayout from "@/layout/RootLayout";
 import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
 import Profile from "@/pages/Profile";
 
 import { HeroUIProvider } from "@heroui/react";
