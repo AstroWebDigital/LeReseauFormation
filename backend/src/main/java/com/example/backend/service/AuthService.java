@@ -1,21 +1,22 @@
+// com/example/backend/service/AuthService.java
 package com.example.backend.service;
 
 import com.example.backend.dto.AuthResponse;
+import com.example.backend.dto.ForgotPasswordRequest;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.RegisterRequest;
-import com.example.backend.dto.UserDto;
-import com.example.backend.dto.ForgotPasswordRequest;
 import com.example.backend.dto.ResetPasswordRequest;
-import com.example.backend.entity.PasswordResetToken; // NOUVEAU IMPORT
+import com.example.backend.dto.UserDto;
+import com.example.backend.entity.PasswordResetToken;
 import com.example.backend.entity.User;
 import com.example.backend.entity.VerificationToken;
+import com.example.backend.exception.EmailAlreadyUsedException;
 import com.example.backend.mapper.UserMapper;
-import com.example.backend.repository.PasswordResetTokenRepository; // NOUVEAU IMPORT
+import com.example.backend.repository.PasswordResetTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,21 +33,25 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager; // actuellement non utilisé mais laissé pour évolution
     private final UserMapper userMapper;
     private final EmailService emailService;
     private final PasswordResetTokenRepository tokenRepository;
     private final VerificationTokenRepository verificationTokenRepository;
 
-
     private static final long EXPIRATION_TIME_MINUTES = 15; // 15 minutes
 
+    /**
+     * Inscription avec envoi d’un email de vérification.
+     */
     public User register(RegisterRequest request) {
         String email = request.getEmail();
         String rawPassword = request.getPassword();
 
+        // Vérification de l’unicité de l’email
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Email déjà utilisé");
+            // Utilise l’exception métier pour être interceptée par EmailAlreadyUsedException handler
+            throw new EmailAlreadyUsedException("Email déjà utilisé.");
         }
 
         User u = new User();
@@ -54,6 +59,7 @@ public class AuthService {
         u.setPassword(passwordEncoder.encode(rawPassword));
         u.setStatus(User.Status.valueOf("EN_CREATION"));
         u.setProvider("LOCAL");
+
         try { u.setFirstname(request.getFirstname()); } catch (Exception ignored) {}
         try { u.setLastname(request.getLastname()); } catch (Exception ignored) {}
         try { u.setPhone(request.getPhone()); } catch (Exception ignored) {}
@@ -61,7 +67,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(u);
 
-        // 1. Génération et enregistrement de l'OTP
+        // 1. Génération et enregistrement du token de vérification
         String otpCode = UUID.randomUUID().toString();
         Instant expiryDate = Instant.now().plus(EXPIRATION_TIME_MINUTES, ChronoUnit.MINUTES);
 
@@ -70,7 +76,7 @@ public class AuthService {
         token.setExpiryDate(expiryDate);
         token.setUser(savedUser);
 
-        // Suppression de tout ancien jeton de vérification pour cet utilisateur
+        // Suppression des anciens tokens pour cet utilisateur
         verificationTokenRepository.deleteByUser(savedUser);
         verificationTokenRepository.save(token);
 
@@ -80,22 +86,49 @@ public class AuthService {
         return savedUser;
     }
 
+    /**
+     * Login classique : email + mot de passe + vérification du statut.
+     * En cas de problème :
+     *  - IllegalArgumentException("Email ou mot de passe incorrect.")
+     *  - IllegalStateException("Votre compte n'est pas encore vérifié.")
+     * Ces exceptions sont interceptées par GlobalExceptionHandler.
+     */
     public AuthResponse login(LoginRequest request) {
         String email = request.getEmail();
         String rawPassword = request.getPassword();
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, rawPassword)
-        );
-
+        // 1. On récupère l'utilisateur
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+                .orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect."));
 
+        // 🧪 LOG DEBUG : email + status + provider
+        System.out.println("[LOGIN] Tentative de connexion pour " + email
+                + " | status=" + user.getStatus()
+                + " | provider=" + user.getProvider());
+
+        // 2. On vérifie le mot de passe avec le PasswordEncoder
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            // 🧪 LOG DEBUG
+            System.out.println("[LOGIN] Mot de passe invalide pour " + email);
+            throw new IllegalArgumentException("Email ou mot de passe incorrect.");
+        }
+
+        // 3. On vérifie le statut (vérification e-mail)
+        if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.SUSPENDU) {
+            String msg = "Votre compte est " + user.getStatus() + " et ne peut pas se connecter.";
+            System.out.println("[LOGIN] Refus connexion: " + msg + " pour " + email);
+            throw new IllegalStateException(msg);
+        }
+
+        // 4. Tout est bon → on génère le JWT
         String token = jwtService.generateToken(user.getEmail());
         return AuthResponse.builder()
                 .token(token)
+                .tokenType("Bearer")
+                .user(userMapper.toDto(user))
                 .build();
     }
+
 
     /**
      * Génère un jeton de réinitialisation et l'enregistre dans la table dédiée.
@@ -104,6 +137,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         if (user != null) {
+            // Nettoyage des anciens tokens
             tokenRepository.deleteAllByUser(user);
 
             String tokenValue = UUID.randomUUID().toString();
@@ -145,6 +179,9 @@ public class AuthService {
         tokenRepository.delete(resetToken);
     }
 
+    /**
+     * Retourne le UserDto correspondant à l’utilisateur actuellement authentifié.
+     */
     public UserDto currentUserDto() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) {
@@ -161,6 +198,9 @@ public class AuthService {
         return userMapper.toDto(u);
     }
 
+    /**
+     * Vérifie le token de vérification et active le compte.
+     */
     public void verifyEmail(String tokenValue) {
         // 1. Récupérer le token
         VerificationToken token = verificationTokenRepository.findByToken(tokenValue)
@@ -172,15 +212,40 @@ public class AuthService {
             throw new IllegalArgumentException("Le lien de vérification a expiré.");
         }
 
-        // 3. Marquer l'utilisateur comme "validé"
+        // 3. Marquer l'utilisateur comme "ACTIF"
         User user = token.getUser();
-        // adapte ici selon ton enum réel :
-        // par ex: User.Status.ACTIF, VALIDATED, CONFIRME, etc.
         user.setStatus(User.Status.ACTIF);
         userRepository.save(user);
 
         // 4. Nettoyer le token
         verificationTokenRepository.delete(token);
     }
+
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+
+        // Si déjà actif, on ne renvoie pas
+        if (user.getStatus() == User.Status.ACTIF) {
+            throw new IllegalStateException("Votre compte est déjà vérifié.");
+        }
+
+        // Génération du token (même logique que dans register)
+        String otpCode = UUID.randomUUID().toString();
+        Instant expiryDate = Instant.now().plus(EXPIRATION_TIME_MINUTES, ChronoUnit.MINUTES);
+
+        VerificationToken token = new VerificationToken();
+        token.setToken(otpCode);
+        token.setExpiryDate(expiryDate);
+        token.setUser(user);
+
+        // Nettoyage des anciens tokens
+        verificationTokenRepository.deleteByUser(user);
+        verificationTokenRepository.save(token);
+
+        // Envoi de l'email
+        emailService.sendVerificationEmail(user.getEmail(), otpCode);
+    }
+
 
 }

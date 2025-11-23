@@ -1,62 +1,83 @@
+// frontend/src/auth/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { apiGetProfile, apiLogin, apiLogout, apiRegister } from "../config/api";
+import { AuthAPI, TOKEN_KEY } from "../services/auth";
+
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY));
   const [loading, setLoading] = useState(true);
 
+  // Au chargement : si token présent, on récupère le profil
   useEffect(() => {
-    (async () => {
+    const init = async () => {
+      const existingToken = localStorage.getItem(TOKEN_KEY);
+      if (!existingToken) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const profile = await apiGetProfile();
+        const profile = await AuthAPI.profile();
         setUser(profile);
-      } catch {
+        setToken(existingToken);
+      } catch (err) {
+        // console.error("Erreur de récupération du profil :", err);
+        localStorage.removeItem(TOKEN_KEY);
         setUser(null);
+        setToken(null);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    init();
   }, []);
 
   const login = async (email, password) => {
-    const data = await apiLogin({ email, password });
-    try {
-      const profile = await apiGetProfile();
+    const data = await AuthAPI.login({ email, password });
+
+    if (!data || !data.token) {
+      throw new Error(
+          data?.message || "Identifiants invalides ou réponse inattendue de l'API."
+      );
+    }
+
+    localStorage.setItem(TOKEN_KEY, data.token);
+    setToken(data.token);
+
+    if (data.user) {
+      setUser(data.user);
+    } else {
+      const profile = await AuthAPI.profile();
       setUser(profile);
-    } catch {
-      // fallback: build a minimal user object from login response
-      if (data) {
-        setUser(data.user || { email });
-      }
     }
+
     return data;
   };
 
-  const register = async (payload) => {
-    const data = await apiRegister(payload);
-    return data;
-  };
-
-  const logout = async () => {
-    try {
-      await apiLogout();
-    } finally {
-      setUser(null);
-    }
+  const logout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    setUser(null);
+    setToken(null);
   };
 
   const value = {
     user,
+    token,
     loading,
     login,
-    register,
     logout,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!token,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+      <AuthContext.Provider value={value}>
+        {!loading && children}
+      </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

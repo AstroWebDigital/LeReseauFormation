@@ -16,17 +16,22 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User u = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public UserDetails loadUserByUsername(String email)
+            throws UsernameNotFoundException {
 
-        List<SimpleGrantedAuthority> authorities =
-                List.of(new SimpleGrantedAuthority(u.getRoles()));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
 
-        return new org.springframework.security.core.userdetails.User(
-                u.getEmail(),
-                u.getPassword() != null ? u.getPassword() : "",
-                authorities
-        );
+        boolean enabled = user.getStatus() == User.Status.ACTIF;
+
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail())
+                .password(user.getPassword())
+                .authorities("ROLE_USER") // adapte
+                .disabled(!enabled)
+                .accountExpired(false)
+                .accountLocked(false)
+                .credentialsExpired(false)
+                .build();
     }
 }
