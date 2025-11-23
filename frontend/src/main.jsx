@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import RootLayout from "@/layout/RootLayout";
-import Home from "@/pages/Home";
+import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 import Profile from "@/pages/Profile";
@@ -21,7 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 <AuthProvider>
                     <Routes>
                         <Route element={<RootLayout />}>
-                            <Route path="/" element={<Home />} />
+                            <Route path="/" element={<Dashboard />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/profile" element={<Profile />} />

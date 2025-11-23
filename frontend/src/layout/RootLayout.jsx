@@ -3,17 +3,24 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import AppNavbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Sidebar from "@/components/Sidebar";
 
 const RootLayout = () => {
     return (
-        <div className="min-h-screen flex flex-col bg-[#f5f7fb] text-slate-900">
-            <AppNavbar />
+        <div className="h-screen flex bg-[#05071a] text-slate-100 overflow-hidden">
+            {/* Sidebar fixe à gauche */}
+            <Sidebar />
 
-            <main className="flex-1">
-                <Outlet />
-            </main>
+            {/* Colonne droite : navbar + contenu scrollable + footer */}
+            <div className="flex-1 flex flex-col">
+                <AppNavbar />
 
-            <Footer />
+                {/* Zone scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                    <Outlet />
+                    <Footer />
+                </div>
+            </div>
         </div>
     );
 };
