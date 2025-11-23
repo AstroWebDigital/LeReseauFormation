@@ -1,17 +1,13 @@
+// frontend/src/auth/ProtectedRoute.jsx
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { Spinner } from "@heroui/react";
 
-export function ProtectedRoute({ children }) {
+const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Spinner label="Chargement..." />
-        </div>
-    );
+    return <div>Chargement...</div>;
   }
 
   if (!isAuthenticated) {
@@ -19,4 +15,6 @@ export function ProtectedRoute({ children }) {
   }
 
   return children;
-}
+};
+
+export default ProtectedRoute;

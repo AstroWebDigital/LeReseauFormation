@@ -8,7 +8,8 @@ import {
     Checkbox,
     Divider,
 } from "@heroui/react";
-import { AuthAPI } from "../services/api";
+import { AuthAPI } from "../services/auth";
+
 import FormInput from "../components/FormInput";
 
 const Register = () => {
@@ -44,24 +45,36 @@ const Register = () => {
         }
 
         try {
-            const { data } = await AuthAPI.register({
+            const result = await AuthAPI.register({
                 firstname: form.firstname,
                 lastname: form.lastname,
                 email: form.email,
                 password: form.password,
+                // phone / sector à ajouter plus tard si besoin
             });
 
-            if (!data?.id) {
-                setError("Erreur lors de l'inscription.");
-                return;
-            }
 
+            // console.log("Register success:", result);
+
+            // ✅ Si on arrive ici, c’est que le backend a répondu 2xx → on considère que c’est OK
+            // Tu pourras plus tard rediriger vers une page : "Vérifie tes emails pour activer ton compte"
             navigate("/login");
         } catch (err) {
-            console.error(err);
-            setError("Erreur lors de l'inscription ou email déjà utilisé.");
+            // console.error("Register error:", err);
+
+            const backendData = err?.response?.data;
+
+            const msg =
+                (backendData && backendData.message) ||       // JSON { message: "..." }
+                (typeof backendData === "string" && backendData) || // plain text "Email déjà utilisé"
+                err?.message ||
+                "Erreur lors de l'inscription ou email déjà utilisé.";
+
+            setError(msg);
         }
+
     };
+
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 py-6">
@@ -70,10 +83,6 @@ const Register = () => {
                     <div className="grid md:grid-cols-2 h-full">
                         {/* Colonne gauche : formulaire */}
                         <div className="flex flex-col justify-between p-8 md:p-10">
-                            <div className="mb-10">
-                                <span className="font-semibold">ACME</span>
-                            </div>
-
                             <div className="space-y-8">
                                 <div>
                                     <h1 className="text-2xl font-semibold mb-1">

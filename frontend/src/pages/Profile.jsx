@@ -8,15 +8,24 @@ import {
     Skeleton,
     Chip,
 } from "@heroui/react";
-import { AuthAPI } from "../services/api";
-import { useAuth } from "../context/AuthContext";
+import { AuthAPI } from "../services/auth";
+import { useAuth } from "../auth/AuthContext";
+// 👇 importe la coche Heroicons (solid ou outline selon ton style)
+import { CheckBadgeIcon } from "@heroicons/react/24/solid";
 
 const Profile = () => {
     const { user: ctxUser, token, logout, setUser } = useAuth();
-    const [me, setMe] = useState(ctxUser);
+    const [profile, setProfile] = useState(ctxUser);
+
     const [loading, setLoading] = useState(!ctxUser && !!token);
     const [error, setError] = useState("");
     const [uploading, setUploading] = useState(false);
+
+    const [verifyLoading, setVerifyLoading] = useState(false);
+    const [verifyMessage, setVerifyMessage] = useState("");
+    const [verifyError, setVerifyError] = useState("");
+
+    const [refreshingStatus, setRefreshingStatus] = useState(false);
 
     const API_BASE_URL =
         import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -28,14 +37,53 @@ const Profile = () => {
         return `${API_BASE_URL}/${url}`;
     };
 
+    const isVerified = profile?.status === "ACTIF";
+
+    const onResendVerification = async () => {
+        setVerifyLoading(true);
+        setVerifyMessage("");
+        setVerifyError("");
+
+        try {
+            const msg = await AuthAPI.resendVerificationEmail();
+            setVerifyMessage(msg || "Un email de vérification vous a été envoyé.");
+        } catch (err) {
+            const msg =
+                err?.response?.data ||
+                err?.message ||
+                "Impossible d'envoyer l'email de vérification.";
+            setVerifyError(msg);
+        } finally {
+            setVerifyLoading(false);
+        }
+    };
+
+    const onRefreshStatus = async () => {
+        setRefreshingStatus(true);
+        setVerifyError("");
+        try {
+            const data = await AuthAPI.profile();
+            setProfile(data);
+            setUser?.(data);
+            if (data.status === "ACTIF") {
+                setVerifyMessage("Votre compte est maintenant vérifié 🎉");
+            }
+        } catch {
+            setVerifyError("Impossible de rafraîchir le statut.");
+        } finally {
+            setRefreshingStatus(false);
+        }
+    };
+
     useEffect(() => {
         let cancelled = false;
-        const fetchMe = async () => {
+
+        const fetchProfile = async () => {
             if (!token) return;
             try {
-                const { data } = await AuthAPI.me();
+                const data = await AuthAPI.profile();
                 if (!cancelled) {
-                    setMe(data);
+                    setProfile(data);
                     setUser?.(data);
                 }
             } catch {
@@ -44,7 +92,11 @@ const Profile = () => {
                 if (!cancelled) setLoading(false);
             }
         };
-        if (!ctxUser && token) fetchMe();
+
+        if (!ctxUser && token) {
+            fetchProfile();
+        }
+
         return () => {
             cancelled = true;
         };
@@ -55,10 +107,11 @@ const Profile = () => {
         if (!file) return;
         setUploading(true);
         setError("");
+
         try {
             await AuthAPI.uploadProfilePhoto(file);
-            const { data } = await AuthAPI.me();
-            setMe(data);
+            const data = await AuthAPI.profile();
+            setProfile(data);
             setUser?.(data);
         } catch {
             setError("Upload impossible.");
@@ -98,7 +151,7 @@ const Profile = () => {
                     <CardBody className="p-6">
                         <p className="text-sm text-danger-500">{error}</p>
                     </CardBody>
-                ) : me ? (
+                ) : profile ? (
                     <div className="relative h-full">
                         {/* Bandeau */}
                         <div className="h-24 w-full rounded-t-2xl bg-gradient-to-tr from-primary to-secondary" />
@@ -123,10 +176,12 @@ const Profile = () => {
                             {/* Avatar + upload */}
                             <div className="flex flex-col items-center gap-2">
                                 <Avatar
-                                    src={resolvePhotoUrl(me.profilPhoto)}
+                                    src={resolvePhotoUrl(profile.profilPhoto)}
                                     name={
-                                        [me.firstname, me.lastname].filter(Boolean).join(" ") ||
-                                        me.email ||
+                                        [profile.firstname, profile.lastname]
+                                            .filter(Boolean)
+                                            .join(" ") ||
+                                        profile.email ||
                                         "Utilisateur"
                                     }
                                     color="primary"
@@ -150,27 +205,38 @@ const Profile = () => {
                                 </Button>
                             </div>
 
-                            {/* Nom + handle */}
+                            {/* Nom + handle + coche */}
                             <div className="text-center space-y-1">
-                                <p className="text-base font-semibold">
-                                    {[me.firstname, me.lastname].filter(Boolean).join(" ") ||
-                                        "Utilisateur"}
+                                <p className="text-base font-semibold flex items-center justify-center gap-1">
+                                    {[profile.firstname, profile.lastname]
+                                        .filter(Boolean)
+                                        .join(" ") || "Utilisateur"}
+                                    {isVerified && (
+                                        <CheckBadgeIcon
+                                            className="w-4 h-4 text-success-500"
+                                            aria-hidden="true"
+                                        />
+                                    )}
                                 </p>
                                 <p className="text-tiny text-default-500">
-                                    @{me.username || (me.email ? me.email.split("@")[0] : "user")}
+                                    @
+                                    {profile.username ||
+                                        (profile.email
+                                            ? profile.email.split("@")[0]
+                                            : "user")}
                                 </p>
                             </div>
 
                             {/* Tags */}
                             <div className="flex flex-wrap justify-center gap-2">
-                                {me.sector && (
+                                {profile.sector && (
                                     <Chip size="sm" variant="flat">
-                                        {me.sector}
+                                        {profile.sector}
                                     </Chip>
                                 )}
-                                {me.status && (
+                                {profile.status && (
                                     <Chip size="sm" variant="flat">
-                                        {me.status}
+                                        {profile.status}
                                     </Chip>
                                 )}
                                 <Chip size="sm" variant="flat">
@@ -178,9 +244,60 @@ const Profile = () => {
                                 </Chip>
                             </div>
 
+                            {/* Alerte vérification email */}
+                            {!isVerified && (
+                                <div className="w-full mt-2 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-xs text-warning-800 flex flex-col gap-2">
+                                    <span>
+                                        Votre adresse e-mail n&apos;est pas encore
+                                        vérifiée. Certaines fonctionnalités
+                                        pourront être limitées tant que votre
+                                        compte n&apos;est pas validé.
+                                    </span>
+
+                                    {verifyMessage && (
+                                        <span className="text-[11px] text-success-600">
+                                            {verifyMessage}
+                                        </span>
+                                    )}
+
+                                    {verifyError && (
+                                        <span className="text-[11px] text-danger-500">
+                                            {verifyError}
+                                        </span>
+                                    )}
+
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Button
+                                            size="xs"
+                                            radius="full"
+                                            variant="flat"
+                                            color="warning"
+                                            onPress={onResendVerification}
+                                            isDisabled={verifyLoading}
+                                        >
+                                            {verifyLoading
+                                                ? "Envoi en cours..."
+                                                : "Renvoyer l'e-mail de vérification"}
+                                        </Button>
+
+                                        <Button
+                                            size="xs"
+                                            radius="full"
+                                            variant="bordered"
+                                            onPress={onRefreshStatus}
+                                            isDisabled={refreshingStatus}
+                                        >
+                                            {refreshingStatus
+                                                ? "Mise à jour..."
+                                                : "Actualiser le statut"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Bio */}
                             <p className="text-tiny text-center text-default-500 px-2">
-                                {me.bio ||
+                                {profile.bio ||
                                     "Créateur de projets. Passionné par le digital, les outils modernes et l'entrepreneuriat."}
                             </p>
 
@@ -194,7 +311,9 @@ const Profile = () => {
                     </div>
                 ) : (
                     <CardBody className="p-6">
-                        <p className="text-sm text-default-600">Profil introuvable.</p>
+                        <p className="text-sm text-default-600">
+                            Profil introuvable.
+                        </p>
                     </CardBody>
                 )}
             </Card>

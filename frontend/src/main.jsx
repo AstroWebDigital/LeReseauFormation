@@ -10,7 +10,7 @@ import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
 
 import { HeroUIProvider } from "@heroui/react";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/auth/AuthContext";
 
 import "@/styles/global.css";
 

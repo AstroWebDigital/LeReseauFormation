@@ -1,23 +1,31 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.AuthResponse;
+import com.example.backend.dto.ForgotPasswordRequest;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.RegisterRequest;
+import com.example.backend.dto.ResetPasswordRequest;
 import com.example.backend.dto.UserDto;
 import com.example.backend.entity.User;
 import com.example.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import com.example.backend.dto.ForgotPasswordRequest;
-import com.example.backend.dto.ResetPasswordRequest;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthService authService;
+
+    // URL publique du FRONTEND (ex: http://localhost:3000)
+    @Value("${APP_FRONTEND_BASE_URL}")
+    private String frontendBaseUrl;
 
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@RequestBody RegisterRequest request) {
@@ -43,13 +51,14 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<UserDto> me() {
+    // 👉 Alias plus "parlant" pour le frontend : /profile
+    @GetMapping("/profile")
+    public ResponseEntity<UserDto> profile() {
         UserDto dto = authService.currentUserDto();
         return ResponseEntity.ok(dto);
     }
 
-    // Stateles: pas de vraie déconnexion serveur. Fourni pour compat :
+    // Stateless: pas de vraie déconnexion serveur. Fourni pour compat :
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         return ResponseEntity.noContent().build(); // côté front: remove token
@@ -59,12 +68,152 @@ public class AuthController {
     public ResponseEntity<String> verify(@RequestParam("token") String token) {
         try {
             authService.verifyEmail(token);
-            return ResponseEntity.ok(
-                    "Votre compte a été vérifié avec succès. Vous pouvez maintenant vous connecter."
-            );
+
+            String homeUrl = frontendBaseUrl != null ? frontendBaseUrl : "/";
+            String logoUrl = (frontendBaseUrl != null ? frontendBaseUrl : "") + "/Logo-Reseau-Formation.png";
+
+            String html = """
+                    <html>
+                      <body style="margin:0;padding:0;background-color:#f5f5f7;font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                        <table width="100%%" cellpadding="0" cellspacing="0" role="presentation">
+                          <tr>
+                            <td align="center" style="padding:24px 16px;">
+                              <table width="100%%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+                                <!-- Header avec logo -->
+                                <tr>
+                                  <td align="center" style="padding:24px 24px 16px 24px;background:linear-gradient(135deg,#f400b4,#5c1fd4);">
+                                    <img src="%s" alt="Le Réseau Formation" style="max-width:200px;height:auto;display:block;margin:0 auto 8px auto;" />
+                                  </td>
+                                </tr>
+                                <!-- Icône + titre -->
+                                <tr>
+                                  <td align="center" style="padding:24px 24px 8px 24px;">
+                                    <div style="width:64px;height:64px;border-radius:999px;background-color:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;">
+                                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+                                        <path d="M9.5 12.5L11 14l3.5-4.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                      </svg>
+                                    </div>
+                                    <h1 style="margin:0 0 8px 0;font-size:20px;color:#111827;">
+                                      Votre compte a été vérifié avec succès
+                                    </h1>
+                                    <p style="margin:0;font-size:14px;line-height:1.6;color:#4b5563;max-width:420px;">
+                                      Merci d'avoir confirmé votre adresse e-mail. Vous pouvez maintenant vous connecter
+                                      et profiter pleinement de <strong>Le Réseau Formation</strong>.
+                                    </p>
+                                  </td>
+                                </tr>
+                                <!-- Bouton -->
+                                <tr>
+                                  <td align="center" style="padding:24px;">
+                                    <a href="%s"
+                                       style="display:inline-block;padding:12px 28px;border-radius:999px;background-color:#5c1fd4;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">
+                                      Retourner à l'accueil
+                                    </a>
+                                  </td>
+                                </tr>
+                                <!-- Texte secondaire -->
+                                <tr>
+                                  <td style="padding:0 24px 24px 24px;">
+                                    <p style="margin:0;font-size:12px;line-height:1.6;color:#6b7280;text-align:center;">
+                                      Vous pouvez maintenant fermer cette page et vous connecter depuis l'application.
+                                    </p>
+                                  </td>
+                                </tr>
+                                <!-- Footer -->
+                                <tr>
+                                  <td style="padding:16px 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                                    <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
+                                      Le Réseau Formation • Plateforme de mise en relation et de formation.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </body>
+                    </html>
+                    """.formatted(logoUrl, homeUrl);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+                    .body(html);
+
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // Page d'erreur stylée
+            String homeUrl = frontendBaseUrl != null ? frontendBaseUrl : "/";
+            String logoUrl = (frontendBaseUrl != null ? frontendBaseUrl : "") + "/Logo-Reseau-Formation.png";
+
+            String htmlError = """
+                    <html>
+                      <body style="margin:0;padding:0;background-color:#f5f5f7;font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                        <table width="100%%" cellpadding="0" cellspacing="0" role="presentation">
+                          <tr>
+                            <td align="center" style="padding:24px 16px;">
+                              <table width="100%%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #fecaca;">
+                                <!-- Header avec logo -->
+                                <tr>
+                                  <td align="center" style="padding:24px 24px 16px 24px;background:linear-gradient(135deg,#f97373,#b91c1c);">
+                                    <img src="%s" alt="Le Réseau Formation" style="max-width:200px;height:auto;display:block;margin:0 auto 8px auto;" />
+                                  </td>
+                                </tr>
+                                <!-- Icône + titre -->
+                                <tr>
+                                  <td align="center" style="padding:24px 24px 8px 24px;">
+                                    <div style="width:64px;height:64px;border-radius:999px;background-color:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;">
+                                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="12" cy="12" r="10" fill="#ef4444"/>
+                                        <path d="M9.5 9.5L14.5 14.5M14.5 9.5L9.5 14.5" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
+                                      </svg>
+                                    </div>
+                                    <h1 style="margin:0 0 8px 0;font-size:20px;color:#111827;">
+                                      Impossible de vérifier votre compte
+                                    </h1>
+                                    <p style="margin:0;font-size:14px;line-height:1.6;color:#4b5563;max-width:420px;">
+                                      %s
+                                    </p>
+                                  </td>
+                                </tr>
+                                <!-- Bouton -->
+                                <tr>
+                                  <td align="center" style="padding:24px;">
+                                    <a href="%s"
+                                       style="display:inline-block;padding:12px 28px;border-radius:999px;background-color:#111827;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">
+                                      Retourner à l'accueil
+                                    </a>
+                                  </td>
+                                </tr>
+                                <!-- Footer -->
+                                <tr>
+                                  <td style="padding:16px 24px 24px 24px;border-top:1px solid #fecaca;">
+                                    <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
+                                      Le Réseau Formation • Si le problème persiste, contactez le support.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </body>
+                    </html>
+                    """.formatted(logoUrl, e.getMessage(), homeUrl);
+
+            return ResponseEntity.badRequest()
+                    .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+                    .body(htmlError);
         }
     }
 
+    @PostMapping("/verify/resend")
+    public ResponseEntity<String> resendVerification(Authentication auth) {
+        String email = auth.getName();
+        try {
+            authService.resendVerificationEmail(email);
+            return ResponseEntity.ok("Un email de vérification vous a été renvoyé.");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
