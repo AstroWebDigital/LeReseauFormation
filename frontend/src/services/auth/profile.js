@@ -4,8 +4,6 @@ import api from "./client";
 // Récupérer le profil
 export const getProfile = () => {
     return api.get("/api/profile").then((res) => res.data);
-    // Si ton ancien endpoint était /api/auth/profile, tu peux revenir dessus :
-    // return api.get("/api/auth/profile").then((res) => res.data);
 };
 
 // Upload de la photo de profil
