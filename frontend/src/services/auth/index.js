@@ -2,8 +2,9 @@
 import api, { TOKEN_KEY } from "./client";
 import { register } from "./register";
 import { login } from "./login";
-import { getProfile, uploadProfilePhoto } from "./profile";
+import { getProfile, uploadProfilePhoto, updateProfile } from "./profile";
 import { verifyEmail, resendVerificationEmail } from "./verifyEmail";
+import { changePassword } from "./password";
 
 export { TOKEN_KEY, api };
 
@@ -13,7 +14,9 @@ export const AuthAPI = {
     profile: getProfile,
     uploadProfilePhoto,
     verifyEmail,
-    resendVerificationEmail, // 👈 nouveau
+    resendVerificationEmail,
+    updateProfile,      // 👈 maintenant dispo
+    changePassword,     // 👈 maintenant dispo
 };
 
 export default api;

@@ -1,3 +1,4 @@
+// src/pages/Profile.jsx
 import React, { useEffect, useState } from "react";
 import {
     Card,
@@ -7,14 +8,16 @@ import {
     Spinner,
     Skeleton,
     Chip,
+    Input,
 } from "@heroui/react";
 import { AuthAPI } from "../services/auth";
 import { useAuth } from "../auth/AuthContext";
-// 👇 importe la coche Heroicons (solid ou outline selon ton style)
 import { CheckBadgeIcon } from "@heroicons/react/24/solid";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
     const { user: ctxUser, token, logout, setUser } = useAuth();
+    const navigate = useNavigate();
     const [profile, setProfile] = useState(ctxUser);
 
     const [loading, setLoading] = useState(!ctxUser && !!token);
@@ -27,6 +30,29 @@ const Profile = () => {
 
     const [refreshingStatus, setRefreshingStatus] = useState(false);
 
+    // édition profil
+    const [editMode, setEditMode] = useState(false);
+    const [profileForm, setProfileForm] = useState({
+        firstname: "",
+        lastname: "",
+        phone: "",
+        sector: "",
+    });
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileUpdateMessage, setProfileUpdateMessage] = useState("");
+    const [profileUpdateError, setProfileUpdateError] = useState("");
+
+    // changement mot de passe
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState("");
+
     const API_BASE_URL =
         import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -38,6 +64,20 @@ const Profile = () => {
     };
 
     const isVerified = profile?.status === "ACTIF";
+    const canEdit = isVerified;
+
+    // 🔐 règle affichée et utilisée partout
+    const passwordPolicyText =
+        "Votre mot de passe doit contenir au moins 8 caractères, avec au moins une majuscule, une minuscule et un chiffre.";
+
+    const isPasswordCompliant = (pwd) => {
+        if (!pwd) return false;
+        const hasLength = pwd.length >= 8;
+        const hasUpper = /[A-Z]/.test(pwd);
+        const hasLower = /[a-z]/.test(pwd);
+        const hasDigit = /\d/.test(pwd);
+        return hasLength && hasUpper && hasLower && hasDigit;
+    };
 
     const onResendVerification = async () => {
         setVerifyLoading(true);
@@ -102,6 +142,18 @@ const Profile = () => {
         };
     }, [token, ctxUser, setUser]);
 
+    // Synchroniser le formulaire avec le profil quand il change
+    useEffect(() => {
+        if (profile) {
+            setProfileForm({
+                firstname: profile.firstname || "",
+                lastname: profile.lastname || "",
+                phone: profile.phone || "",
+                sector: profile.sector || "",
+            });
+        }
+    }, [profile]);
+
     const onUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -113,21 +165,143 @@ const Profile = () => {
             const data = await AuthAPI.profile();
             setProfile(data);
             setUser?.(data);
-        } catch {
-            setError("Upload impossible.");
+        } catch (err) {
+            const msg =
+                err?.response?.data ||
+                err?.message ||
+                "Upload impossible.";
+            setError(msg);
         } finally {
             setUploading(false);
             e.target.value = "";
         }
     };
 
+    const handleProfileFieldChange = (field, value) => {
+        setProfileForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveProfile = async () => {
+        if (!canEdit) {
+            setProfileUpdateError(
+                "Votre compte doit être vérifié pour modifier vos informations."
+            );
+            return;
+        }
+
+        setProfileSaving(true);
+        setProfileUpdateError("");
+        setProfileUpdateMessage("");
+
+        try {
+            const updated = await AuthAPI.updateProfile(profileForm);
+            setProfile(updated);
+            setUser?.(updated);
+            setProfileUpdateMessage("Profil mis à jour avec succès.");
+            setEditMode(false);
+        } catch (err) {
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data ||
+                err?.message ||
+                "Impossible de mettre à jour le profil.";
+            setProfileUpdateError(msg);
+        } finally {
+            setProfileSaving(false);
+        }
+    };
+
+    const handlePasswordFieldChange = (field, value) => {
+        setPasswordForm((prev) => ({ ...prev, [field]: value }));
+        // On reset les messages au changement pour éviter de garder des erreurs obsolètes
+        setPasswordError("");
+        setPasswordSuccess("");
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPasswordError("");
+        setPasswordSuccess("");
+
+        if (!canEdit) {
+            setPasswordError(
+                "Votre compte doit être vérifié pour modifier votre mot de passe."
+            );
+            return;
+        }
+
+        if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+            setPasswordError("Merci de remplir tous les champs.");
+            return;
+        }
+
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            setPasswordError("Les nouveaux mots de passe ne correspondent pas.");
+            return;
+        }
+
+        // ✅ Validation côté frontend avant l'appel API
+        if (!isPasswordCompliant(passwordForm.newPassword)) {
+            setPasswordError(passwordPolicyText);
+            return;
+        }
+
+        setPasswordLoading(true);
+
+        try {
+            await AuthAPI.changePassword({
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword,
+            });
+
+            setPasswordSuccess("Mot de passe mis à jour avec succès.");
+            setPasswordForm({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+            });
+            setShowPasswordForm(false);
+        } catch (err) {
+            const status = err?.response?.status;
+            // Si le backend renvoie une erreur de validation (ex: @Size), on force notre message lisible
+            if (status === 400) {
+                setPasswordError(passwordPolicyText);
+            } else {
+                const msg =
+                    err?.response?.data?.message ||
+                    err?.response?.data ||
+                    err?.message ||
+                    "Impossible de modifier le mot de passe.";
+                setPasswordError(msg);
+            }
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        logout();        // vide le contexte + token
+        navigate("/");   // redirection vers la home
+    };
+
+    const inputClassNames = {
+        base: "w-full",
+        inputWrapper:
+            "bg-transparent border border-slate-600 rounded-xl hover:border-slate-400 focus-within:border-orange-400",
+        input: "text-slate-100 text-sm placeholder:text-slate-500",
+    };
+
+    /* ─────────────────  ÉTAT : pas connecté ───────────────── */
+
     if (!token) {
         return (
-            <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
-                <Card className="max-w-md w-full">
-                    <CardBody>
-                        <p className="text-sm text-default-600">
-                            Vous n’êtes pas connecté.
+            <div className="min-h-screen flex items-center justify-center bg-[#050721] px-4">
+                <Card className="max-w-md w-full rounded-[24px] bg-gradient-to-br from-[#171c42] via-[#111632] to-[#090d23] border border-white/10 text-white">
+                    <CardBody className="p-6">
+                        <h1 className="text-lg font-semibold mb-2">Profil inaccessible</h1>
+                        <p className="text-sm text-slate-300">
+                            Vous n’êtes pas connecté. Connectez-vous pour accéder à votre
+                            espace membre.
                         </p>
                     </CardBody>
                 </Card>
@@ -135,185 +309,551 @@ const Profile = () => {
         );
     }
 
+    /* ─────────────────  RENDU PRINCIPAL ───────────────── */
+
     return (
-        <div className="min-h-[calc(100vh-4rem)] flex w-full px-0 md:px-6 py-6">
-            <Card className="w-full flex-1 p-0">
+        <div className="min-h-screen flex items-start justify-center bg-[#050721] px-4 md:px-8 py-8">
+            <Card className="w-full max-w-5xl rounded-[28px] bg-gradient-to-br from-[#171c42] via-[#111632] to-[#090d23] border border-white/10 text-white">
                 {loading ? (
-                    <CardBody className="p-6 space-y-4">
-                        <Skeleton className="h-24 w-full rounded-t-2xl" />
-                        <div className="-mt-10 flex flex-col items-center gap-3">
-                            <Skeleton className="rounded-full w-24 h-24" />
-                            <Skeleton className="h-4 w-2/3 rounded-md" />
-                            <Skeleton className="h-3 w-1/3 rounded-md" />
+                    <CardBody className="p-6 md:p-8 space-y-6">
+                        <Skeleton className="h-8 w-40 rounded-md" />
+                        <div className="grid md:grid-cols-[0.9fr,1.1fr] gap-6">
+                            <div className="space-y-4">
+                                <Skeleton className="w-28 h-28 rounded-full" />
+                                <Skeleton className="h-4 w-32 rounded-md" />
+                                <Skeleton className="h-3 w-24 rounded-md" />
+                            </div>
+                            <div className="space-y-3">
+                                <Skeleton className="h-16 w-full rounded-2xl" />
+                                <Skeleton className="h-16 w-full rounded-2xl" />
+                                <Skeleton className="h-16 w-full rounded-2xl" />
+                            </div>
                         </div>
                     </CardBody>
                 ) : error ? (
-                    <CardBody className="p-6">
-                        <p className="text-sm text-danger-500">{error}</p>
+                    <CardBody className="p-6 md:p-8">
+                        <p className="text-sm text-red-400">{error}</p>
                     </CardBody>
                 ) : profile ? (
-                    <div className="relative h-full">
-                        {/* Bandeau */}
-                        <div className="h-24 w-full rounded-t-2xl bg-gradient-to-tr from-primary to-secondary" />
+                    <CardBody className="p-6 md:p-8 space-y-6">
+                        {/* En-tête */}
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <p className="text-[0.7rem] uppercase tracking-[0.18em] text-orange-400 font-semibold mb-1">
+                                    Espace membre
+                                </p>
+                                <h1 className="text-2xl md:text-3xl font-semibold">
+                                    Profil & compte
+                                </h1>
+                                <p className="text-xs md:text-sm text-slate-300 mt-1">
+                                    Gérez vos informations personnelles, le statut de votre compte
+                                    et vos préférences.
+                                </p>
+                                {!canEdit && (
+                                    <p className="mt-2 text-[0.7rem] text-amber-300">
+                                        La modification du profil et du mot de passe sera disponible
+                                        une fois votre compte vérifié.
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Edit + Logout */}
-                        <div className="absolute top-3 right-3 flex gap-2">
-                            <Button size="sm" variant="flat">
-                                Edit Profile
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="bordered"
-                                color="danger"
-                                onPress={logout}
-                            >
-                                Se déconnecter
-                            </Button>
+                            <div className="flex flex-wrap gap-2 justify-start md:justify-end">
+                                <Button
+                                    size="sm"
+                                    className="rounded-full bg-white/5 border border-white/10 text-xs text-slate-100 hover:bg-white/10"
+                                    isDisabled={!canEdit}
+                                    onPress={() => setEditMode((prev) => !prev)}
+                                >
+                                    {editMode ? "Annuler" : "Modifier mon profil"}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="rounded-full border border-red-500/60 text-xs text-red-300 hover:bg-red-500/10"
+                                    onPress={handleLogout}
+                                >
+                                    Se déconnecter
+                                </Button>
+
+                            </div>
                         </div>
 
-                        {/* Contenu */}
-                        <CardBody className="-mt-10 flex flex-col items-center gap-4">
-                            {/* Avatar + upload */}
-                            <div className="flex flex-col items-center gap-2">
-                                <Avatar
-                                    src={resolvePhotoUrl(profile.profilPhoto)}
-                                    name={
-                                        [profile.firstname, profile.lastname]
-                                            .filter(Boolean)
-                                            .join(" ") ||
-                                        profile.email ||
-                                        "Utilisateur"
-                                    }
-                                    color="primary"
-                                    className="w-24 h-24 border-4 border-background shadow-md"
-                                />
-
-                                <Button
-                                    as="label"
-                                    variant="light"
-                                    size="xs"
-                                    className="cursor-pointer text-tiny"
-                                    isDisabled={uploading}
-                                >
-                                    {uploading ? "Téléversement…" : "Changer la photo"}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        hidden
-                                        onChange={onUpload}
-                                    />
-                                </Button>
-                            </div>
-
-                            {/* Nom + handle + coche */}
-                            <div className="text-center space-y-1">
-                                <p className="text-base font-semibold flex items-center justify-center gap-1">
-                                    {[profile.firstname, profile.lastname]
-                                        .filter(Boolean)
-                                        .join(" ") || "Utilisateur"}
-                                    {isVerified && (
-                                        <CheckBadgeIcon
-                                            className="w-4 h-4 text-success-500"
-                                            aria-hidden="true"
+                        {/* Corps : 2 colonnes */}
+                        <div className="grid md:grid-cols-[0.9fr,1.1fr] gap-6">
+                            {/* Colonne gauche : identité & statut */}
+                            <div className="space-y-4">
+                                {/* Carte identité */}
+                                <div className="rounded-2xl bg-[#191f46]/80 border border-white/5 px-5 py-5 flex flex-col items-center gap-4">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Avatar
+                                            src={resolvePhotoUrl(profile.profilPhoto)}
+                                            name={
+                                                [profile.firstname, profile.lastname]
+                                                    .filter(Boolean)
+                                                    .join(" ") ||
+                                                profile.email ||
+                                                "Utilisateur"
+                                            }
+                                            color="primary"
+                                            className="w-24 h-24 border-4 border-[#050721] shadow-md"
                                         />
-                                    )}
-                                </p>
-                                <p className="text-tiny text-default-500">
-                                    @
-                                    {profile.username ||
-                                        (profile.email
-                                            ? profile.email.split("@")[0]
-                                            : "user")}
-                                </p>
-                            </div>
-
-                            {/* Tags */}
-                            <div className="flex flex-wrap justify-center gap-2">
-                                {profile.sector && (
-                                    <Chip size="sm" variant="flat">
-                                        {profile.sector}
-                                    </Chip>
-                                )}
-                                {profile.status && (
-                                    <Chip size="sm" variant="flat">
-                                        {profile.status}
-                                    </Chip>
-                                )}
-                                <Chip size="sm" variant="flat">
-                                    Membre
-                                </Chip>
-                            </div>
-
-                            {/* Alerte vérification email */}
-                            {!isVerified && (
-                                <div className="w-full mt-2 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-xs text-warning-800 flex flex-col gap-2">
-                                    <span>
-                                        Votre adresse e-mail n&apos;est pas encore
-                                        vérifiée. Certaines fonctionnalités
-                                        pourront être limitées tant que votre
-                                        compte n&apos;est pas validé.
-                                    </span>
-
-                                    {verifyMessage && (
-                                        <span className="text-[11px] text-success-600">
-                                            {verifyMessage}
-                                        </span>
-                                    )}
-
-                                    {verifyError && (
-                                        <span className="text-[11px] text-danger-500">
-                                            {verifyError}
-                                        </span>
-                                    )}
-
-                                    <div className="flex items-center gap-2 flex-wrap">
                                         <Button
-                                            size="xs"
-                                            radius="full"
-                                            variant="flat"
-                                            color="warning"
-                                            onPress={onResendVerification}
-                                            isDisabled={verifyLoading}
+                                            as="label"
+                                            size="sm"
+                                            className="cursor-pointer rounded-full bg-white/5 px-4 text-[0.7rem] text-slate-100 hover:bg-white/10 border border-white/10"
+                                            isDisabled={uploading || !canEdit}
                                         >
-                                            {verifyLoading
-                                                ? "Envoi en cours..."
-                                                : "Renvoyer l'e-mail de vérification"}
-                                        </Button>
-
-                                        <Button
-                                            size="xs"
-                                            radius="full"
-                                            variant="bordered"
-                                            onPress={onRefreshStatus}
-                                            isDisabled={refreshingStatus}
-                                        >
-                                            {refreshingStatus
-                                                ? "Mise à jour..."
-                                                : "Actualiser le statut"}
+                                            {uploading
+                                                ? "Téléversement…"
+                                                : canEdit
+                                                    ? "Changer la photo"
+                                                    : "Compte non vérifié"}
+                                            {canEdit && (
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    hidden
+                                                    onChange={onUpload}
+                                                />
+                                            )}
                                         </Button>
                                     </div>
-                                </div>
-                            )}
 
-                            {/* Bio */}
-                            <p className="text-tiny text-center text-default-500 px-2">
-                                {profile.bio ||
-                                    "Créateur de projets. Passionné par le digital, les outils modernes et l'entrepreneuriat."}
-                            </p>
+                                    <div className="text-center space-y-1">
+                                        <p className="text-base font-semibold flex items-center justify-center gap-1">
+                                            {[profile.firstname, profile.lastname]
+                                                .filter(Boolean)
+                                                .join(" ") || "Utilisateur"}
+                                            {isVerified && (
+                                                <CheckBadgeIcon
+                                                    className="w-4 h-4 text-emerald-400"
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+                                        </p>
+                                        <p className="text-[0.7rem] text-slate-400">
+                                            @
+                                            {profile.username ||
+                                                (profile.email
+                                                    ? profile.email.split("@")[0]
+                                                    : "user")}
+                                        </p>
+                                    </div>
 
-                            {uploading && (
-                                <div className="flex items-center gap-2 text-xs text-default-500 mt-2">
-                                    <Spinner size="sm" />
-                                    <span>Upload de la photo en cours…</span>
+                                    <div className="flex flex-wrap justify-center gap-2 pt-2">
+                                        {profile.sector && (
+                                            <Chip
+                                                size="sm"
+                                                variant="flat"
+                                                className="bg-white/5 border border-white/10 text-[0.7rem]"
+                                            >
+                                                {profile.sector}
+                                            </Chip>
+                                        )}
+                                        {profile.status && (
+                                            <Chip
+                                                size="sm"
+                                                variant="flat"
+                                                className={`text-[0.7rem] ${
+                                                    isVerified
+                                                        ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/40"
+                                                        : "bg-amber-500/10 text-amber-300 border border-amber-500/40"
+                                                }`}
+                                            >
+                                                Statut&nbsp;: {profile.status}
+                                            </Chip>
+                                        )}
+                                        <Chip
+                                            size="sm"
+                                            variant="flat"
+                                            className="bg-white/5 border border-white/10 text-[0.7rem]"
+                                        >
+                                            Membre plateforme
+                                        </Chip>
+                                    </div>
                                 </div>
-                            )}
-                        </CardBody>
-                    </div>
+
+                                {/* Alerte vérification email */}
+                                {!isVerified && (
+                                    <div className="rounded-2xl bg-[#2b1f11] border border-amber-500/40 px-4 py-4 text-xs text-amber-100 space-y-2">
+                                        <p className="font-semibold text-[0.75rem] flex items-center gap-2">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[0.7rem] text-slate-900">
+                        !
+                      </span>
+                                            Vérification e-mail en attente
+                                        </p>
+                                        <p className="text-[0.7rem] text-amber-100/90">
+                                            Votre adresse e-mail n&apos;est pas encore vérifiée.
+                                            Certaines fonctionnalités pourront être limitées tant que
+                                            votre compte n&apos;est pas validé.
+                                        </p>
+
+                                        {verifyMessage && (
+                                            <p className="text-[0.7rem] text-emerald-300">
+                                                {verifyMessage}
+                                            </p>
+                                        )}
+
+                                        {verifyError && (
+                                            <p className="text-[0.7rem] text-red-300">
+                                                {verifyError}
+                                            </p>
+                                        )}
+
+                                        <div className="flex flex-wrap gap-2 pt-1">
+                                            <Button
+                                                size="xs"
+                                                className="rounded-full bg-[#ff922b] text-slate-900 text-[0.7rem] font-semibold hover:bg-[#ffa94d]"
+                                                onPress={onResendVerification}
+                                                isDisabled={verifyLoading}
+                                            >
+                                                {verifyLoading
+                                                    ? "Envoi en cours..."
+                                                    : "Renvoyer l'e-mail de vérification"}
+                                            </Button>
+
+                                            <Button
+                                                size="xs"
+                                                className="rounded-full border border-amber-400/60 bg-transparent text-[0.7rem] text-amber-100 hover:bg-amber-500/10"
+                                                onPress={onRefreshStatus}
+                                                isDisabled={refreshingStatus}
+                                            >
+                                                {refreshingStatus
+                                                    ? "Mise à jour..."
+                                                    : "Actualiser le statut"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Bio (lecture seule) */}
+                                <div className="rounded-2xl bg-[#191f46]/60 border border-white/5 px-4 py-4">
+                                    <p className="text-[0.7rem] text-slate-300 leading-relaxed">
+                                        {profile.bio ||
+                                            "Créateur de projets. Passionné par le digital, les outils modernes et l'entrepreneuriat."}
+                                    </p>
+                                    {uploading && (
+                                        <div className="flex items-center gap-2 text-[0.7rem] text-slate-300 mt-3">
+                                            <Spinner size="sm" />
+                                            <span>Upload de la photo en cours…</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Colonne droite : infos compte + sécurité */}
+                            <div className="space-y-4">
+                                {/* Infos principales / édition profil */}
+                                <section className="rounded-2xl bg-[#191f46]/80 border border-white/5 px-5 py-4 space-y-3">
+                                    <h2 className="text-sm font-semibold mb-1">
+                                        Informations du compte
+                                    </h2>
+
+                                    {!editMode ? (
+                                        <div className="space-y-2 text-[0.8rem]">
+                                            <div className="flex justify-between gap-4">
+                                                <span className="text-slate-400">Nom complet</span>
+                                                <span className="text-slate-100">
+                          {[profile.firstname, profile.lastname]
+                              .filter(Boolean)
+                              .join(" ") || "—"}
+                        </span>
+                                            </div>
+                                            <div className="flex justify-between gap-4">
+                                                <span className="text-slate-400">Adresse e-mail</span>
+                                                <span className="text-slate-100 break-all">
+                          {profile.email || "—"}
+                        </span>
+                                            </div>
+                                            <div className="flex justify-between gap-4">
+                                                <span className="text-slate-400">Téléphone</span>
+                                                <span className="text-slate-100">
+                          {profile.phone || "Non renseigné"}
+                        </span>
+                                            </div>
+                                            <div className="flex justify-between gap-4">
+                                                <span className="text-slate-400">Secteur</span>
+                                                <span className="text-slate-100">
+                          {profile.sector || "Non renseigné"}
+                        </span>
+                                            </div>
+                                            <div className="flex justify-between gap-4">
+                                                <span className="text-slate-400">Statut</span>
+                                                <span
+                                                    className={
+                                                        isVerified ? "text-emerald-300" : "text-amber-300"
+                                                    }
+                                                >
+                          {profile.status || "—"}
+                        </span>
+                                            </div>
+
+                                            {profileUpdateMessage && (
+                                                <p className="text-[0.7rem] text-emerald-300 mt-2">
+                                                    {profileUpdateMessage}
+                                                </p>
+                                            )}
+                                            {profileUpdateError && (
+                                                <p className="text-[0.7rem] text-red-300 mt-1">
+                                                    {profileUpdateError}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 text-[0.8rem]">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                        Prénom
+                                                    </label>
+                                                    <Input
+                                                        size="sm"
+                                                        variant="bordered"
+                                                        radius="lg"
+                                                        classNames={inputClassNames}
+                                                        value={profileForm.firstname}
+                                                        onChange={(e) =>
+                                                            handleProfileFieldChange(
+                                                                "firstname",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                        Nom
+                                                    </label>
+                                                    <Input
+                                                        size="sm"
+                                                        variant="bordered"
+                                                        radius="lg"
+                                                        classNames={inputClassNames}
+                                                        value={profileForm.lastname}
+                                                        onChange={(e) =>
+                                                            handleProfileFieldChange(
+                                                                "lastname",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                        Téléphone
+                                                    </label>
+                                                    <Input
+                                                        size="sm"
+                                                        variant="bordered"
+                                                        radius="lg"
+                                                        classNames={inputClassNames}
+                                                        value={profileForm.phone}
+                                                        onChange={(e) =>
+                                                            handleProfileFieldChange(
+                                                                "phone",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                        Secteur
+                                                    </label>
+                                                    <Input
+                                                        size="sm"
+                                                        variant="bordered"
+                                                        radius="lg"
+                                                        classNames={inputClassNames}
+                                                        value={profileForm.sector}
+                                                        onChange={(e) =>
+                                                            handleProfileFieldChange(
+                                                                "sector",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {profileUpdateError && (
+                                                <p className="text-[0.7rem] text-red-300">
+                                                    {profileUpdateError}
+                                                </p>
+                                            )}
+
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                <Button
+                                                    size="sm"
+                                                    className="rounded-full bg-[#ff922b] text-slate-900 text-[0.75rem] font-semibold hover:bg-[#ffa94d]"
+                                                    onPress={handleSaveProfile}
+                                                    isDisabled={profileSaving}
+                                                >
+                                                    {profileSaving
+                                                        ? "Enregistrement..."
+                                                        : "Enregistrer les modifications"}
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    className="rounded-full bg-white/5 border border-white/10 text-[0.75rem] text-slate-100 hover:bg-white/10"
+                                                    onPress={() => {
+                                                        setEditMode(false);
+                                                        setProfileUpdateError("");
+                                                    }}
+                                                >
+                                                    Annuler
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </section>
+
+                                {/* Sécurité */}
+                                <section className="rounded-2xl bg-[#191f46]/80 border border-white/5 px-5 py-4 space-y-3">
+                                    <h2 className="text-sm font-semibold mb-1">
+                                        Sécurité & connexion
+                                    </h2>
+                                    <p className="text-[0.75rem] text-slate-300">
+                                        Gère ton mot de passe et la sécurité de ton compte. Les
+                                        options avancées (2FA, connexions récentes) arriveront dans
+                                        une prochaine version.
+                                    </p>
+
+                                    <Button
+                                        size="sm"
+                                        className="mt-1 rounded-full bg-white/5 border border-white/10 text-[0.75rem] text-slate-100 hover:bg-white/10"
+                                        isDisabled={!canEdit}
+                                        onPress={() => setShowPasswordForm((prev) => !prev)}
+                                    >
+                                        {showPasswordForm
+                                            ? "Annuler"
+                                            : "Modifier mon mot de passe"}
+                                    </Button>
+
+                                    {!canEdit && (
+                                        <p className="text-[0.7rem] text-amber-300 mt-1">
+                                            Disponible après vérification de votre compte.
+                                        </p>
+                                    )}
+
+                                    {showPasswordForm && (
+                                        <form
+                                            className="mt-3 space-y-3 text-[0.75rem]"
+                                            onSubmit={handleChangePassword}
+                                        >
+                                            <div>
+                                                <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                    Mot de passe actuel
+                                                </label>
+                                                <Input
+                                                    type="password"
+                                                    size="sm"
+                                                    variant="bordered"
+                                                    radius="lg"
+                                                    classNames={inputClassNames}
+                                                    value={passwordForm.currentPassword}
+                                                    onChange={(e) =>
+                                                        handlePasswordFieldChange(
+                                                            "currentPassword",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                    Nouveau mot de passe
+                                                </label>
+                                                <Input
+                                                    type="password"
+                                                    size="sm"
+                                                    variant="bordered"
+                                                    radius="lg"
+                                                    classNames={inputClassNames}
+                                                    value={passwordForm.newPassword}
+                                                    onChange={(e) =>
+                                                        handlePasswordFieldChange(
+                                                            "newPassword",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                                {/* 🔍 Règle affichée juste sous l'input */}
+                                                <p
+                                                    className={`mt-1 text-[0.65rem] ${
+                                                        passwordForm.newPassword &&
+                                                        !isPasswordCompliant(passwordForm.newPassword)
+                                                            ? "text-amber-300"
+                                                            : "text-slate-500"
+                                                    }`}
+                                                >
+                                                    {passwordPolicyText}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[0.7rem] text-slate-300 mb-1">
+                                                    Confirmer le nouveau mot de passe
+                                                </label>
+                                                <Input
+                                                    type="password"
+                                                    size="sm"
+                                                    variant="bordered"
+                                                    radius="lg"
+                                                    classNames={inputClassNames}
+                                                    value={passwordForm.confirmPassword}
+                                                    onChange={(e) =>
+                                                        handlePasswordFieldChange(
+                                                            "confirmPassword",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+
+                                            {passwordError && (
+                                                <p className="text-[0.7rem] text-red-300">
+                                                    {passwordError}
+                                                </p>
+                                            )}
+                                            {passwordSuccess && (
+                                                <p className="text-[0.7rem] text-emerald-300">
+                                                    {passwordSuccess}
+                                                </p>
+                                            )}
+
+                                            <Button
+                                                type="submit"
+                                                size="sm"
+                                                className="rounded-full bg-[#ff922b] text-slate-900 text-[0.75rem] font-semibold hover:bg-[#ffa94d]"
+                                                isDisabled={passwordLoading}
+                                            >
+                                                {passwordLoading
+                                                    ? "Enregistrement..."
+                                                    : "Mettre à jour mon mot de passe"}
+                                            </Button>
+                                        </form>
+                                    )}
+                                </section>
+
+                                {/* Activité */}
+                                <section className="rounded-2xl bg-[#191f46]/60 border border-white/5 px-5 py-4 space-y-2">
+                                    <h2 className="text-sm font-semibold mb-1">
+                                        Activité & espace formation
+                                    </h2>
+                                    <p className="text-[0.75rem] text-slate-300">
+                                        Bientôt, vous retrouverez ici un résumé de vos sessions,
+                                        réservations et statistiques clés liées à vos formations et
+                                        locations.
+                                    </p>
+                                </section>
+                            </div>
+                        </div>
+                    </CardBody>
                 ) : (
-                    <CardBody className="p-6">
-                        <p className="text-sm text-default-600">
-                            Profil introuvable.
-                        </p>
+                    <CardBody className="p-6 md:p-8">
+                        <p className="text-sm text-slate-300">Profil introuvable.</p>
                     </CardBody>
                 )}
             </Card>
