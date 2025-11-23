@@ -28,8 +28,6 @@
 
     body {
         margin: 0;
-        /*background-color: var(--color-background);*/
-        /*color: var(--color-foreground);*/
         font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -37,4 +35,32 @@
         color: inherit;
         text-decoration: none;
     }
+
+    /* --- Fix HeroUI Input texte sur fond sombre --- */
+
+    /* Texte des champs */
+    [data-slot="input"] {
+        color: #e5e7eb !important;          /* texte clair */
+        font-size: 0.875rem;                /* 14px */
+    }
+
+    /* Placeholder */
+    [data-slot="input"]::placeholder {
+        color: #64748b !important;          /* gris lisible */
+    }
+
+    /* Optionnel : wrapper d'input */
+    [data-slot="input-wrapper"] {
+        background-color: transparent !important;
+    }
+
+    /* --- Fix autofill Chrome/Edge sur fond sombre --- */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: #e5e7eb !important;
+        -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+        transition: background-color 9999s ease-out 0s !important;
+    }
 }
+
