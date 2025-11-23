@@ -1,13 +1,26 @@
 import React from "react";
+import {
+    ChartBarSquareIcon,
+    ArrowPathIcon,
+    DocumentTextIcon,
+    BellAlertIcon,
+    CheckCircleIcon,
+} from "@heroicons/react/24/outline";
+import {
+    ArrowTrendingUpIcon,
+    ArrowTrendingDownIcon,
+    ExclamationTriangleIcon,
+} from "@heroicons/react/24/solid";
 
 const months = [
-    { label: "Jan", value: 4.1, trend: "+8" },
-    { label: "Fév", value: 5.2, trend: "+18" },
-    { label: "Mar", value: 5.0, trend: "+7" },
-    { label: "Avr", value: 3.8, trend: "-5" },
-    { label: "Mai", value: 5.4, trend: "+15" },
-    { label: "Juin", value: 5.8, trend: "+15" },
+    { label: "Jan", value: 4.1, trend: "+8",  height: 140 },
+    { label: "Fév", value: 5.2, trend: "+18", height: 200 },
+    { label: "Mar", value: 5.0, trend: "+7",  height: 190 },
+    { label: "Avr", value: 3.8, trend: "-5",  height: 150 },
+    { label: "Mai", value: 5.4, trend: "+15", height: 210 },
+    { label: "Juin", value: 5.8, trend: "+15", height: 230 },
 ];
+
 
 const alerts = [
     {
@@ -52,16 +65,17 @@ const pillClass = (priority) => {
 };
 
 const DashboardRevenueSection = () => {
-    const maxValue = Math.max(...months.map((m) => m.value));
+
 
     return (
-        <div className="grid gap-4 xl:grid-cols-[2fr,1.2fr]">
+        <div className="grid gap-4 xl:grid-cols-[2fr_1.2fr]">
             {/* Bloc graph CA */}
-            <div className="rounded-3xl bg-gradient-to-br from-[#171c42] via-[#141937] to-[#090d23] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.75)]">
-                <div className="flex items-center justify-between">
+            <div className="rounded-[32px] bg-gradient-to-br from-[#171c42] via-[#141937] to-[#090d23] p-6 lg:p-7 border border-white/5">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                            <span>📊</span>
+                        <h3 className="text-sm lg:text-base font-semibold text-white flex items-center gap-2">
+                            <ChartBarSquareIcon className="h-5 w-5 text-orange-400" />
                             <span>Évolution du chiffre d’affaires</span>
                         </h3>
                         <p className="mt-1 text-xs text-slate-300/80">
@@ -69,53 +83,75 @@ const DashboardRevenueSection = () => {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <button className="rounded-full bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10">
+                        <button className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3.5 py-1.5 text-xs text-slate-100 hover:bg-white/10 border border-white/10">
+                            <ArrowPathIcon className="h-3.5 w-3.5" />
                             Actualiser
                         </button>
-                        <button className="rounded-full bg-white/8 px-3 py-1.5 text-xs text-slate-200 border border-white/10 hover:bg-white/10">
+                        <button className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3.5 py-1.5 text-xs text-slate-100 hover:bg-white/10 border border-white/15">
+                            <DocumentTextIcon className="h-3.5 w-3.5" />
                             Rapport détaillé
                         </button>
                     </div>
                 </div>
 
-                {/* Graph */}
-                <div className="mt-6 h-60 flex items-end justify-between gap-4">
-                    {months.map((m) => (
-                        <div key={m.label} className="flex flex-1 flex-col items-center">
-                            <div className="flex flex-col-reverse items-center justify-end h-44 w-full">
-                                <div className="w-full rounded-2xl bg-gradient-to-t from-[#ff7a1a] via-[#ff922b] to-[#ffc857] shadow-[0_24px_40px_rgba(255,146,43,0.8)]"
-                                     style={{ height: `${(m.value / maxValue) * 100}%` }}
-                                />
+                {/* Graph sans blur */}
+                {/* Graph sans blur, barres à hauteur fixe comme la maquette */}
+                <div className="mt-6 lg:mt-7 flex items-end justify-between gap-6 h-64">
+                    {months.map((m) => {
+                        const isPositive = m.trend.startsWith("+");
+                        const TrendIcon = isPositive
+                            ? ArrowTrendingUpIcon
+                            : ArrowTrendingDownIcon;
+                        const trendColor = isPositive ? "text-emerald-400" : "text-rose-400";
+
+                        return (
+                            <div
+                                key={m.label}
+                                className="flex flex-1 flex-col items-center"
+                            >
+                                <div className="flex items-end justify-center h-full w-full">
+                                    <div
+                                        className="w-16 rounded-[28px] bg-[#ff922b]"
+                                        style={{ height: `${m.height}px` }}
+                                    />
+                                </div>
+                                <div className="mt-3 text-[0.7rem] text-slate-200 text-center">
+                                    {m.label}
+                                </div>
+                                <div
+                                    className={`mt-0.5 flex items-center gap-1 text-[0.65rem] ${trendColor}`}
+                                >
+                                    <TrendIcon className="h-3 w-3" />
+                                    <span>{m.trend} %</span>
+                                </div>
                             </div>
-                            <div className="mt-2 text-[0.7rem] text-slate-300 text-center">
-                                {m.label}
-                            </div>
-                            <div className="text-[0.65rem] text-emerald-400">
-                                {m.trend} %
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
+
+                {/* Ligne de séparation */}
+                <div className="mt-5 h-px w-full bg-slate-600/40" />
+
                 {/* Stats sous le graph */}
-                <div className="mt-6 grid gap-3 sm:grid-cols-4 text-[0.75rem] text-slate-200">
-                    <div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-4 text-[0.75rem] text-slate-200">
+                    <div className="rounded-2xl bg-white/5 px-3 py-2.5 text-center">
                         <p className="text-slate-400">Moyenne mensuelle</p>
                         <p className="mt-1 text-sm font-semibold text-white">4,117€</p>
                     </div>
-                    <div>
+                    <div className="rounded-2xl bg-white/5 px-3 py-2.5 text-center">
                         <p className="text-slate-400">Meilleur mois</p>
                         <p className="mt-1 text-sm font-semibold text-emerald-400">
                             5,200€
                         </p>
                     </div>
-                    <div>
+                    <div className="rounded-2xl bg-white/5 px-3 py-2.5 text-center">
                         <p className="text-slate-400">Croissance totale</p>
                         <p className="mt-1 text-sm font-semibold text-sky-400">
                             +62.5%
                         </p>
                     </div>
-                    <div>
+                    <div className="rounded-2xl bg-white/5 px-3 py-2.5 text-center">
                         <p className="text-slate-400">Prévision Nov</p>
                         <p className="mt-1 text-sm font-semibold text-violet-300">
                             5,800€
@@ -126,36 +162,34 @@ const DashboardRevenueSection = () => {
 
             {/* Colonne droite : alertes + tâches */}
             <div className="flex flex-col gap-4">
-                {/* Alertes */}
-                <div className="rounded-3xl bg-gradient-to-br from-[#171c42] via-[#141937] to-[#090d23] p-5 shadow-[0_26px_55px_rgba(0,0,0,0.8)]">
+                {/* Alertes importantes */}
+                <div className="rounded-[28px] bg-gradient-to-br from-[#171c42] via-[#141937] to-[#090d23] p-5 border border-white/5">
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                            <span>🔔</span>
+                            <BellAlertIcon className="h-4 w-4 text-amber-400" />
                             <span>Alertes importantes</span>
                         </h3>
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-semibold">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white">
               3
             </span>
                     </div>
 
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-4 space-y-2.5">
                         {alerts.map((a, idx) => (
                             <div
                                 key={idx}
-                                className="flex items-center justify-between rounded-2xl bg-white/5 px-3.5 py-3 text-xs text-slate-100 border border-white/10"
+                                className="rounded-2xl bg-white/3 px-3.5 py-2.5 text-xs text-slate-100 border border-white/5 flex items-center gap-3"
                             >
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className={`h-8 w-8 rounded-xl bg-gradient-to-br ${a.color} flex items-center justify-center text-white text-lg`}
-                                    >
-                                        !
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">{a.label}</p>
-                                        <p className="text-[0.7rem] text-slate-300/80">
-                                            {a.date}
-                                        </p>
-                                    </div>
+                                <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br ${a.color}`}
+                                >
+                                    <ExclamationTriangleIcon className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-[0.8rem]">{a.label}</p>
+                                    <p className="text-[0.7rem] text-slate-300/80">
+                                        {a.date}
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -163,10 +197,10 @@ const DashboardRevenueSection = () => {
                 </div>
 
                 {/* Tâches du jour */}
-                <div className="rounded-3xl bg-gradient-to-br from-[#171c42] via-[#141937] to-[#090d23] p-5 shadow-[0_26px_55px_rgba(0,0,0,0.8)]">
+                <div className="rounded-[28px] bg-gradient-to-br from-[#171c42] via-[#141937] to-[#090d23] p-5 border border-white/5">
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                            <span>✅</span>
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-400" />
                             <span>Tâches du jour</span>
                         </h3>
                         <span className="text-[0.7rem] text-slate-300/80">
@@ -194,9 +228,7 @@ const DashboardRevenueSection = () => {
                                 <span
                                     className={`ml-3 inline-flex min-w-[70px] justify-center rounded-full px-2 py-0.5 text-[0.65rem] font-semibold text-white ${pillClass(
                                         t.priority
-                                    )} ${
-                                        t.disabled ? "opacity-40" : ""
-                                    }`}
+                                    )} ${t.disabled ? "opacity-40" : ""}`}
                                 >
                   {t.priority}
                 </span>
