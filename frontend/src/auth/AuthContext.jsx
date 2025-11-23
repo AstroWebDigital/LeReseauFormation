@@ -71,7 +71,10 @@ export function AuthProvider({ children }) {
     login,
     logout,
     isAuthenticated: !!user && !!token,
+    setUser,   // 👈 AJOUTER ÇA
+    setToken,  // 👈 ET ÇA
   };
+
 
   return (
       <AuthContext.Provider value={value}>

@@ -5,7 +5,7 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 
 const Login = () => {
-    const { setUser, setToken } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
@@ -21,28 +21,22 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const resp = await AuthAPI.login({ email, password });
-
-            setToken(resp.token);
-            setUser?.(resp.user);
+            const resp = await login(email, password);  // 👈 utilise le contexte
 
             navigate("/profile");
         } catch (err) {
             console.error(err);
 
             const status = err?.response?.status;
-
             let apiMessage =
                 err?.response?.data?.message ||
                 err?.response?.data ||
+                err?.message || // utile si c'est l'erreur throw dans login()
                 "";
 
-            // Erreurs serveur (500, 502, etc.) → message générique
             if (status >= 500) {
                 apiMessage = "Une erreur est survenue. Merci de réessayer plus tard.";
             }
-
-            // Rien de compréhensible côté backend → fallback
             if (!apiMessage) {
                 apiMessage = "Identifiant incorrect.";
             }
