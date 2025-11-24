@@ -1,0 +1,6 @@
+DROP TABLE trainers CASCADE;
+
+DROP TABLE "user" CASCADE;
+DROP TABLE trainers CASCADE;
+
+DROP TABLE "user" CASCADE;
