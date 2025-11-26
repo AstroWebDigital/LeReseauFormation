@@ -13,8 +13,8 @@ public class ReservationRequest {
     private OffsetDateTime endDate;
     private String pickupLocation;
     private String returnLocation;
-    private String status;           // <- ajouté
+    private String status;
     private BigDecimal totalAmount;
-    private BigDecimal depositAmount;     // <- ajouté
-    private BigDecimal securityDeposit;   // <- ajouté
+    private BigDecimal depositAmount;
+    private BigDecimal securityDeposit;
 }
