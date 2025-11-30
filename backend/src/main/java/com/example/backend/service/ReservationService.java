@@ -30,6 +30,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final VehicleRepository vehicleRepository;
     private final CustomerRepository customerRepository;
+    private final ChatService chatService; // <-- NOUVELLE INJECTION DU CHAT SERVICE
 
     @Transactional
     public Reservation createReservation(ReservationRequest request) {
@@ -79,7 +80,7 @@ public class ReservationService {
         reservation.setPickupLocation(request.getPickupLocation());
         reservation.setReturnLocation(request.getReturnLocation());
 
-        // CORRECTION FINALE : Utilisation de PENDING en majuscules pour correspondre à l'Enum
+        // Statut initial de la réservation. Mise en majuscules pour potentiellement satisfaire la contrainte SQL
         reservation.setStatus("accepte");
 
         // Définition des montants
@@ -94,9 +95,25 @@ public class ReservationService {
 
 
         // 5. METTRE À JOUR LE STATUT DU VÉHICULE
-        vehicle.setStatus("reserve"); // Ce statut n'est pas lié à l'Enum ReservationStatus
+        vehicle.setStatus("reserve");
 
-        return reservationRepository.save(reservation);
+        // 6. SAUVEGARDER LA RÉSERVATION
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        // 7. CRÉER LE CANAL DE DISCUSSION ASSOCIÉ À LA RÉSERVATION
+        try {
+            chatService.createChannelForReservation(savedReservation); // <-- NOUVEL APPEL CRITIQUE
+        } catch (Exception e) {
+            // Log l'erreur mais permet à la transaction principale de continuer si vous ne voulez pas la bloquer
+            // Pour le moment, si la création du chat échoue (ex: ALP manquant), la transaction entière va échouer (rollback)
+            // car createChannelForReservation est @Transactional(Propagation.MANDATORY).
+            // L'exception sera propagée.
+            System.err.println("ERREUR LORS DE LA CRÉATION DU CANAL DE CHAT: " + e.getMessage());
+            // Laissez l'exception se propager pour annuler la réservation si le canal de chat ne peut pas être créé.
+            throw e;
+        }
+
+        return savedReservation;
     }
 
     /**
