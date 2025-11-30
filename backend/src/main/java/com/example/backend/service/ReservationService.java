@@ -3,6 +3,9 @@ package com.example.backend.service;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.example.backend.dto.ReservationRequest;
 import com.example.backend.dto.ReservationResponse;
@@ -30,7 +33,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final VehicleRepository vehicleRepository;
     private final CustomerRepository customerRepository;
-    private final ChatService chatService; // <-- NOUVELLE INJECTION DU CHAT SERVICE
+    private final ChatService chatService;
 
     @Transactional
     public Reservation createReservation(ReservationRequest request) {
@@ -58,10 +61,8 @@ public class ReservationService {
 
         // 3. Calcul du montant TOTAL
         BigDecimal dailyRate = vehicle.getBaseDailyPrice();
-        // Calcule le nombre de jours entiers (ou 1 si la durée est inférieure à 24h mais positive)
         long days = Duration.between(request.getStartDate(), request.getEndDate()).toDays();
 
-        // Assure que la durée est d'au moins 1 jour si la date de début est avant la date de fin
         if (days <= 0 && request.getStartDate().isBefore(request.getEndDate())) {
             days = 1;
         } else if (days <= 0) {
@@ -80,7 +81,7 @@ public class ReservationService {
         reservation.setPickupLocation(request.getPickupLocation());
         reservation.setReturnLocation(request.getReturnLocation());
 
-        // Statut initial de la réservation. Mise en majuscules pour potentiellement satisfaire la contrainte SQL
+        // Statut initial de la réservation.
         reservation.setStatus("accepte");
 
         // Définition des montants
@@ -102,14 +103,9 @@ public class ReservationService {
 
         // 7. CRÉER LE CANAL DE DISCUSSION ASSOCIÉ À LA RÉSERVATION
         try {
-            chatService.createChannelForReservation(savedReservation); // <-- NOUVEL APPEL CRITIQUE
+            chatService.createChannelForReservation(savedReservation);
         } catch (Exception e) {
-            // Log l'erreur mais permet à la transaction principale de continuer si vous ne voulez pas la bloquer
-            // Pour le moment, si la création du chat échoue (ex: ALP manquant), la transaction entière va échouer (rollback)
-            // car createChannelForReservation est @Transactional(Propagation.MANDATORY).
-            // L'exception sera propagée.
             System.err.println("ERREUR LORS DE LA CRÉATION DU CANAL DE CHAT: " + e.getMessage());
-            // Laissez l'exception se propager pour annuler la réservation si le canal de chat ne peut pas être créé.
             throw e;
         }
 
@@ -117,12 +113,43 @@ public class ReservationService {
     }
 
     /**
+     * NOUVEAU: Récupère l'historique des réservations d'un client spécifique, trié par date.
+     * C'est la méthode manquante qui causait l'erreur de compilation.
+     * @param customerId L'ID du client.
+     * @return La liste des réservations converties en DTOs.
+     */
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getCustomerHistory(UUID customerId) {
+        // 1. Vérifier si le client existe (bonne pratique)
+        if (!customerRepository.existsById(customerId)) {
+            throw new EntityNotFoundException("Customer not found with ID: " + customerId);
+        }
+
+        // 2. Récupérer toutes les réservations du client, triées par date (nécessite une méthode dans le Repository)
+        // Assurez-vous que ReservationRepository contient bien une méthode comme :
+        // List<Reservation> findByCustomerIdOrderByStartDateDesc(UUID customerId);
+        List<Reservation> reservations = reservationRepository.findByCustomerIdOrderByStartDateDesc(customerId);
+
+        // 3. Convertir la liste d'entités en liste de DTOs de réponse
+        return reservations.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
      * Convertit l'entité Reservation en DTO de réponse.
+     * Mis à jour pour inclure les détails du véhicule (marque/modèle) si le DTO a été modifié.
      */
     public ReservationResponse toResponse(Reservation reservation) {
         ReservationResponse response = new ReservationResponse();
         response.setId(reservation.getId());
         response.setVehicleId(reservation.getVehicle().getId());
+
+        // Ajout des détails du véhicule pour l'historique (nécessite la mise à jour du DTO ReservationResponse)
+        response.setVehicleBrand(reservation.getVehicle().getBrand());
+        response.setVehicleModel(reservation.getVehicle().getModel());
+
         response.setCustomerId(reservation.getCustomer().getId());
         response.setStartDate(reservation.getStartDate());
         response.setEndDate(reservation.getEndDate());
