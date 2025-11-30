@@ -9,6 +9,8 @@ import java.util.UUID;
 public class ReservationResponse {
     private UUID id;
     private UUID vehicleId;
+    private String vehicleBrand;
+    private String vehicleModel;
     private UUID customerId;
     private OffsetDateTime startDate;
     private OffsetDateTime endDate;
