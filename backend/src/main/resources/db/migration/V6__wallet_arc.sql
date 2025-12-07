@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS wallet_arc (
                              CONSTRAINT fk_wallet_arc_user
                              FOREIGN KEY (user_id)
     REFERENCES "user" (id)
-
+                         ON DELETE CASCADE
 );

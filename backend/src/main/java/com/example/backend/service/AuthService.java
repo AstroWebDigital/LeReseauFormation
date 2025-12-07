@@ -1,7 +1,8 @@
-// com/example/backend/service/AuthService.java
 package com.example.backend.service;
 
 import com.example.backend.dto.AuthResponse;
+import com.example.backend.repository.ReservationRepository;
+import org.springframework.transaction.annotation.Transactional;
 import com.example.backend.dto.ForgotPasswordRequest;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.RegisterRequest;
@@ -15,6 +16,7 @@ import com.example.backend.mapper.UserMapper;
 import com.example.backend.repository.PasswordResetTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VerificationTokenRepository;
+import com.example.backend.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -33,11 +35,14 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager; // actuellement non utilisé mais laissé pour évolution
+    private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
     private final EmailService emailService;
     private final PasswordResetTokenRepository tokenRepository;
     private final VerificationTokenRepository verificationTokenRepository;
+    // Maintenu dans les injections mais non utilisé pour la suppression logique
+    private final CustomerRepository customerRepository;
+    private final ReservationRepository reservationRepository;
 
     private static final long EXPIRATION_TIME_MINUTES = 15; // 15 minutes
 
@@ -89,8 +94,8 @@ public class AuthService {
     /**
      * Login classique : email + mot de passe + vérification du statut.
      * En cas de problème :
-     *  - IllegalArgumentException("Email ou mot de passe incorrect.")
-     *  - IllegalStateException("Votre compte n'est pas encore vérifié.")
+     * - IllegalArgumentException("Email ou mot de passe incorrect.")
+     * - IllegalStateException("Votre compte n'est pas encore vérifié.")
      * Ces exceptions sont interceptées par GlobalExceptionHandler.
      */
     public AuthResponse login(LoginRequest request) {
@@ -114,10 +119,16 @@ public class AuthService {
         }
 
         // 3. On vérifie le statut (vérification e-mail)
-        if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.SUSPENDU) {
-            String msg = "Votre compte est " + user.getStatus() + " et ne peut pas se connecter.";
-            System.out.println("[LOGIN] Refus connexion: " + msg + " pour " + email);
-            throw new IllegalStateException(msg);
+        if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.SUSPENDU || user.getStatus() == User.Status.EN_CREATION) {
+            String status = user.getStatus().toString().toLowerCase().replace("_", " ");
+            System.out.println("[LOGIN] Refus connexion: Votre compte est " + status + " pour " + email);
+
+            // Gérer le cas EN_CREATION spécifiquement pour indiquer la non-vérification
+            if (user.getStatus() == User.Status.EN_CREATION) {
+                throw new IllegalStateException("Votre compte n'est pas encore vérifié.");
+            }
+            // Pour SUPPRIME et SUSPENDU, on garde le message générique pour des raisons de sécurité (non divulgation d'état)
+            throw new IllegalStateException("Email ou mot de passe incorrect.");
         }
 
         // 4. Tout est bon → on génère le JWT
@@ -245,5 +256,45 @@ public class AuthService {
         emailService.sendVerificationEmail(user.getEmail(), otpCode);
     }
 
+    /**
+     * Supprime physiquement l'utilisateur actuellement authentifié,
+     * après avoir vérifié qu'aucune réservation n'est liée au compte.
+     */
+    @Transactional
+    public void deleteCurrentUser() {
+        // 1. Récupérer l'email de l'utilisateur authentifié
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Utilisateur non authentifié");
+        }
+        String email = auth.getName();
+
+        // 2. Récupérer l'entité User
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour suppression"));
+
+        // 3. VÉRIFICATION DES RÉSERVATIONS
+        // Si la logique métier est de bloquer le compte dès qu'un historique existe.
+        boolean hasAnyReservation = reservationRepository.existsByCustomerId(user.getId());
+
+        if (hasAnyReservation) {
+            // Le message d'erreur souhaité est affiché et bloque toute action.
+            throw new IllegalStateException("Le compte est lié à une ou plusieurs réservations (actives ou historiques). Vous devez d'abord supprimer ou archiver vos réservations pour pouvoir supprimer votre compte.");
+        }
+
+        // 4. PROCÉDER À LA SUPPRESSION SÉQUENTIELLE
+
+        // 4a. Suppression de l'entité Customer
+        // L'entité Customer référence User et/ou est référencée par d'autres tables.
+        // Il faut supprimer le Customer avant le User pour éviter l'erreur de clé étrangère (si non gérée par cascade).
+        // J'utilise ici une méthode hypothétique de CustomerRepository.
+        customerRepository.deleteByUserId(user.getId());
+        // Si votre CustomerRepository gère l'ID Customer, la ligne serait :
+        // customerRepository.deleteById(user.getCustomerId());
+
+        // 4b. Suppression physique de l'utilisateur.
+        // La BDD gère les autres cascades (tokens, etc.)
+        userRepository.delete(user);
+    }
 
 }

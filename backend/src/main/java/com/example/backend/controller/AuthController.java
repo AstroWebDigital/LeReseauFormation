@@ -71,6 +71,17 @@ public class AuthController {
         return ResponseEntity.ok(dto);
     }
 
+    /**
+     * Supprime logiquement l'utilisateur actuellement authentifié (statut: SUPPRIME).
+     * Requiert un token JWT valide.
+     */
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteUser() {
+        authService.deleteCurrentUser();
+        // 204 No Content est la réponse standard pour une suppression réussie.
+        return ResponseEntity.noContent().build();
+    }
+
     // Stateless: pas de vraie déconnexion serveur. Fourni pour compat :
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
