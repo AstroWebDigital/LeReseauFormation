@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS alp (
                              CONSTRAINT fk_alp_user
                              FOREIGN KEY (user_id)
     REFERENCES "user" (id)
-
+                         ON DELETE CASCADE
 );

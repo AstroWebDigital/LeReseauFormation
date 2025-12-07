@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS customer (
                              CONSTRAINT fk_customer_user
                              FOREIGN KEY (user_id)
     REFERENCES "user" (id)
-
+                         ON DELETE CASCADE
 );

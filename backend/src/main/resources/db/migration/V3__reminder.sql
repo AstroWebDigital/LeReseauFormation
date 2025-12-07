@@ -9,4 +9,5 @@ CREATE TABLE IF NOT EXISTS reminder (
                              CONSTRAINT fk_reminder_user
                              FOREIGN KEY (user_id)
     REFERENCES "user" (id)
+                         ON DELETE CASCADE
     );

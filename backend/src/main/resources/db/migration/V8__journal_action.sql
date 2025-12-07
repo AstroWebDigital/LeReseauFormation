@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS journal_action (
                              CONSTRAINT fk_journal_action_user
                              FOREIGN KEY (user_id)
     REFERENCES "user" (id)
-
+                         ON DELETE CASCADE
 );
