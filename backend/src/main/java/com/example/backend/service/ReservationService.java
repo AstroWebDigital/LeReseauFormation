@@ -34,6 +34,7 @@ public class ReservationService {
     private final VehicleRepository vehicleRepository;
     private final CustomerRepository customerRepository;
     private final ChatService chatService;
+    private final NotificationService notificationService; // <--- INJECTION DU SERVICE DE NOTIFICATION
 
     @Transactional
     public Reservation createReservation(ReservationRequest request) {
@@ -101,7 +102,11 @@ public class ReservationService {
         // 6. SAUVEGARDER LA RÉSERVATION
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        // 7. CRÉER LE CANAL DE DISCUSSION ASSOCIÉ À LA RÉSERVATION
+        // 7. DÉCLENCHEMENT DE LA NOTIFICATION 🚀
+        // Envoi l'email de confirmation au client et la notification à l'ALP.
+        notificationService.sendReservationConfirmation(savedReservation);
+
+        // 8. CRÉER LE CANAL DE DISCUSSION ASSOCIÉ À LA RÉSERVATION
         try {
             chatService.createChannelForReservation(savedReservation);
         } catch (Exception e) {
@@ -139,7 +144,6 @@ public class ReservationService {
 
     /**
      * Convertit l'entité Reservation en DTO de réponse.
-     * Mis à jour pour inclure les détails du véhicule (marque/modèle) si le DTO a été modifié.
      */
     public ReservationResponse toResponse(Reservation reservation) {
         ReservationResponse response = new ReservationResponse();
