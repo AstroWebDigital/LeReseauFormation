@@ -1,8 +1,11 @@
 package com.example.backend.entity;
 
+import com.example.backend.validation.OnCreate;
+import com.example.backend.validation.OnUpdate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +13,6 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -19,10 +21,13 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "vehicle")
-public class Vehicle {
+// 🌟 MODIFICATION CLÉ : HÉRITER DE LA CLASSE AUDITABLE
+public class Vehicle extends Auditable {
+
     @Id
     @ColumnDefault("gen_random_uuid()")
     @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
 
     @Size(max = 255)
@@ -38,7 +43,7 @@ public class Vehicle {
     @Size(max = 255)
     @NotNull
     @Column(name = "license_plate", nullable = false)
-    private String licensePlate;
+    private String plateNumber;
 
     @Size(max = 50)
     @NotNull
@@ -80,17 +85,15 @@ public class Vehicle {
     private String defaultParkingLocation;
 
     @JsonIgnore
-    @NotNull
+    // Requis par la DB/JPA pour la persistance (pour OnUpdate)
+    @NotNull(groups = OnUpdate.class)
+    // Doit être NULL dans le JSON entrant (pour OnCreate)
+    @Null(groups = OnCreate.class)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "alp_id", nullable = false)
     private Alp alp;
 
-    @NotNull
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    // ❌ LES CHAMPS 'createdAt' et 'updatedAt' ONT ÉTÉ SUPPRIMÉS CAR ILS SONT DÉSORMAIS DANS 'Auditable'
 
     @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
