@@ -66,6 +66,11 @@ public class User {
     @Column
     private String sector;
 
+    // 💡 AJOUT OBLIGATOIRE : Relation vers l'entité ALP
+    // 'mappedBy = "user"' suppose que dans Alp.java, le champ qui référence User s'appelle 'user'.
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Alp alp;
+
     // ---- Métadonnées ----
 
     @Column(name = "created_at", nullable = false, updatable = false)
