@@ -1,24 +1,25 @@
 // src/layout/RootLayout.jsx
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom"; // <-- Importez useLocation
 import AppNavbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Sidebar from "@/components/Sidebar";
 
 const RootLayout = () => {
+    const location = useLocation();
+    const hideLayoutElementsPaths = ["/messages"];
+    const isChatPage = hideLayoutElementsPaths.includes(location.pathname);
+
     return (
+        // Le container principal prend toute la hauteur
         <div className="h-screen flex bg-[#05071a] text-slate-100 overflow-hidden">
-            {/* Sidebar fixe à gauche */}
             <Sidebar />
 
-            {/* Colonne droite : navbar + contenu scrollable + footer */}
             <div className="flex-1 flex flex-col">
                 <AppNavbar />
-
-                {/* Zone scrollable */}
                 <div className="flex-1 overflow-y-auto">
                     <Outlet />
-                    <Footer />
+                    {!isChatPage && <Footer />}
                 </div>
             </div>
         </div>
