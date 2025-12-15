@@ -41,7 +41,7 @@ const AppNavbar = ({
         .slice(0, 2);
 
     return (
-        <header className="w-full bg-[#d7d9de] px-6 lg:px-10 py-3 shadow-sm">
+        <header className="w-full bg-gradient-to-b from-[#060d33] to-[#050718] px-6 lg:px-10 py-3 shadow-sm">
             <div className="flex items-center gap-6">
                 {/* Titre + sous-titre */}
                 <div className="flex flex-col min-w-[170px]">

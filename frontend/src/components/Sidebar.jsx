@@ -59,9 +59,6 @@ const DashboardSidebar = () => {
     const guestNavItems = [
         { label: "Accueil", icon: HomeIcon, to: "/" },
         { label: "Se connecter", icon: ArrowRightOnRectangleIcon, to: "/login" },
-        { label: "Offre entreprise", icon: DocumentTextIcon, to: "/offre-entreprise" },
-        { label: "Des questions ?", icon: ChatBubbleLeftRightIcon, to: "/faq" },
-        { label: "Blog", icon: ChartBarIcon, to: "/blog" },
     ];
 
     const navItems = isAuthenticated ? authNavItems : guestNavItems;
