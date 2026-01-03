@@ -31,11 +31,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                         <Route path="/register" element={<Register />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
-                        <Route element={<ProtectedRoute component={RootLayout} />}>
-                            <Route path="/" element={<Dashboard />} />
-                            <Route path="/profile" element={<Profile />} />
-                                <Route path="/messages" element={<Messages />} />
-                        </Route>
+                       <Route element={
+                         <ProtectedRoute>
+                           <RootLayout />
+                         </ProtectedRoute>
+                       }>
+                         <Route index element={<Dashboard />} />
+                         <Route path="profile" element={<Profile />} />
+                         <Route path="messages" element={<Messages />} />
+                       </Route>
+
 
                         {/* Optionnel : Route 404 */}
                         {/* <Route path="*" element={<NotFoundPage />} /> */}
