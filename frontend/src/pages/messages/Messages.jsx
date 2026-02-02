@@ -1,40 +1,253 @@
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import EmojiPicker from "emoji-picker-react";
+import api from "@/services/auth/client";
+
 import {
     Avatar,
     Button,
-    Card,
-    CardBody,
     Input,
     ScrollShadow,
     Tabs,
     Tab,
-    Badge
-} from "@heroui/react"
+    Card,
+    CardBody,
+} from "@heroui/react";
+
 import {
     Search,
-    Bell,
     Phone,
     MoreVertical,
     Send,
     Paperclip,
-    Smile
-} from "lucide-react"
+    Smile,
+} from "lucide-react";
+
+import { useAuth } from "@/auth/AuthContext";
+
+/* ================= AUTH UTILS ================= */
+
+const useMessageAuth = () => {
+    const { user, isAuthenticated } = useAuth();
+
+    const userId = user?.id || null;
+    let userRole = null;
+
+    if (user?.roles) {
+        const roles = Array.isArray(user.roles)
+            ? user.roles.join(",").toUpperCase()
+            : String(user.roles).toUpperCase();
+
+        userRole = roles.includes("ALP") || roles.includes("PARTENAIRE")
+            ? "alp"
+            : "customer";
+    }
+
+    return { userId, userRole, isAuthenticated };
+};
+
+/* ================= COMPONENT ================= */
 
 export default function Messages() {
-    return (
-        // Utilisez 'h-full' ou 'min-h-screen' si ce composant ne prend pas toute la hauteur
-        <div className="h-screen flex bg-background">
+    const { userId: CURRENT_USER_ID, userRole, isAuthenticated } =
+        useMessageAuth();
 
-            {/* SIDEBAR (Conversation List) */}
+    const [conversations, setConversations] = useState([]);
+    const [activeConversation, setActiveConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [message, setMessage] = useState("");
+    const [isEmojiPickerVisible, setIsEmojiPickerVisible] = useState(false);
+
+    const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [hasAuthError, setHasAuthError] = useState(false);
+
+    const messagesEndRef = useRef(null);
+
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    };
+
+    /* ================= LOAD CONVERSATIONS ================= */
+
+    useEffect(() => {
+        if (!isAuthenticated || !CURRENT_USER_ID) {
+            setHasAuthError(true);
+            setIsLoadingConversations(false);
+            return;
+        }
+
+        const fetchConversations = async () => {
+            setIsLoadingConversations(true);
+            console.log("🔍 Fetching conversations for user:", CURRENT_USER_ID);
+            console.log("🔍 User role:", userRole);
+
+            try {
+                // Récupérer les conversations de l'utilisateur connecté
+                // L'endpoint utilise l'authentification, pas besoin de passer l'userId
+                const { data } = await api.get(`/channels`);
+
+                console.log("✅ Conversations reçues:", data);
+
+                const formatted = data.map((channel) => {
+                    // Déterminer l'autre utilisateur dans la conversation
+                    const isCustomer = CURRENT_USER_ID === channel.customerId;
+                    const otherUserId = isCustomer ? channel.alpId : channel.customerId;
+                    const otherUserType = isCustomer ? "ALP" : "Client";
+
+                    return {
+                        id: channel.id,
+                        conversation_name: channel.channelName || `Conversation #${channel.id?.toString().slice(0, 8)}`,
+                        last_message: channel.lastMessage || "Démarrer la conversation...",
+                        last_message_time: channel.updatedAt || channel.createdAt || "",
+                        status: channel.status,
+                        customerId: channel.customerId,
+                        alpId: channel.alpId,
+                        initials: isCustomer ? "A" : "C",
+                        otherUserType,
+                        otherUserId,
+                    };
+                });
+
+                console.log("✅ Conversations formatées:", formatted);
+                setConversations(formatted);
+                if (formatted.length > 0) {
+                    setActiveConversation(formatted[0]);
+                }
+            } catch (err) {
+                console.error("❌ Erreur chargement conversations:", err);
+                console.error("❌ Details:", err.response?.data);
+                setConversations([]);
+            } finally {
+                setIsLoadingConversations(false);
+            }
+        };
+
+        fetchConversations();
+    }, [CURRENT_USER_ID, isAuthenticated]);
+
+    /* ================= LOAD MESSAGES ================= */
+
+    useEffect(() => {
+        if (!activeConversation) return;
+
+        const fetchMessages = async () => {
+            setIsLoadingMessages(true);
+            try {
+                const { data } = await api.get(
+                    `/conversations/${activeConversation.id}/messages`
+                );
+                setMessages(data);
+            } catch (err) {
+                console.error("Erreur chargement messages", err);
+                setMessages([]);
+            } finally {
+                setIsLoadingMessages(false);
+            }
+        };
+
+        fetchMessages();
+    }, [activeConversation]);
+
+    useEffect(scrollToBottom, [messages]);
+
+    /* ================= SEND MESSAGE ================= */
+
+    const handleSendMessage = useCallback(async () => {
+        if (!message.trim() || !activeConversation) return;
+
+        const content = message.trim();
+        setMessage("");
+        setIsEmojiPickerVisible(false);
+
+        const temp = {
+            id: Date.now(),
+            sender_id: CURRENT_USER_ID,
+            content,
+            created_at: new Date().toLocaleTimeString("fr-FR", {
+                hour: "2-digit",
+                minute: "2-digit",
+            }),
+            isTemp: true,
+        };
+
+        setMessages((prev) => [...prev, temp]);
+
+        try {
+            const { data } = await api.post("/messages", {
+                conversation_id: activeConversation.id,
+                sender_id: CURRENT_USER_ID,
+                content,
+            });
+
+            setMessages((prev) =>
+                prev.map((m) => (m.id === temp.id ? data : m))
+            );
+
+            // Mettre à jour le dernier message dans la liste des conversations
+            setConversations((prev) =>
+                prev.map((c) =>
+                    c.id === activeConversation.id
+                        ? {
+                            ...c,
+                            last_message: content,
+                            last_message_time: new Date().toISOString(),
+                        }
+                        : c
+                )
+            );
+        } catch (err) {
+            console.error("Erreur envoi message", err);
+            setMessages((prev) => prev.filter((m) => !m.isTemp));
+            setMessage(content);
+        }
+    }, [message, activeConversation, CURRENT_USER_ID]);
+
+    /* ================= FORMAT TIME ================= */
+
+    const formatTime = (timestamp) => {
+        if (!timestamp) return "";
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+
+        if (hours < 24) {
+            return date.toLocaleTimeString("fr-FR", {
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        }
+        return date.toLocaleDateString("fr-FR", {
+            day: "2-digit",
+            month: "2-digit",
+        });
+    };
+
+    /* ================= RENDER ================= */
+
+    if (hasAuthError) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <p className="text-red-500">
+                    Erreur d'authentification. Veuillez vous reconnecter.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="h-full flex bg-background">
+            {/* SIDEBAR */}
             <aside className="w-[360px] border-r flex flex-col">
-                {/* Header: Titre Accenté */}
                 <div className="p-5 border-b">
-                    <h1 className="text-2xl font-bold text-default-800">Messagerie</h1>
+                    <h1 className="text-2xl font-bold text-black">Messagerie</h1>
                     <p className="text-sm text-default-500">
-                        Agent Loueur Partenaire
+                        {userRole === "alp" ? "Agent ALP" : "Client"}
                     </p>
                 </div>
 
-                {/* Search */}
                 <div className="p-4">
                     <Input
                         startContent={<Search size={18} />}
@@ -42,125 +255,196 @@ export default function Messages() {
                     />
                 </div>
 
-                {/* Filters */}
-                <Tabs
-                    aria-label="Filtres"
-                    className="px-4"
-                    variant="light"
-                >
+                <Tabs className="px-4">
                     <Tab key="all" title="Tous" />
-                    <Tab key="unread" title="Non lus" />
-                    <Tab key="clients" title="Clients" />
+                    <Tab key="active" title="Actives" />
                 </Tabs>
 
-                {/* Conversations: Scrollable */}
                 <ScrollShadow className="flex-1">
-                    <Conversation active name="Marie Dubois" message="Question sur l'assurance du véhicule..." time="14:32" initials="MD" />
-                    <Conversation name="Pierre Martin" message="Merci pour la réservation rapide" time="13:15" initials="PM" />
-                    <Conversation name="Sophie Laurent" message="Quand puis-je récupérer la voiture ?" time="12:08" initials="SL" />
-                    <Conversation name="Support ARC" message="Rappel : Formation mensuelle demain" time="11:30" initials="SA" />
-                    <Conversation name="Client Test 1" message="Message de test 1" time="11:00" initials="C1" />
-                    <Conversation name="Client Test 2" message="Message de test 2" time="10:45" initials="C2" />
-                    <Conversation name="Client Test 3" message="Message de test 3" time="10:30" initials="C3" />
-                    <Conversation name="Client Test 4" message="Message de test 4" time="10:15" initials="C4" />
-                    <Conversation name="Client Test 5" message="Message de test 5" time="10:00" initials="C5" />
-                    <Conversation name="Client Test 6" message="Message de test 6" time="09:45" initials="C6" />
-                    <Conversation name="Client Test 7" message="Message de test 7" time="09:30" initials="C7" />
+                    {isLoadingConversations ? (
+                        <p className="p-5 text-center text-default-500">
+                            Chargement des conversations...
+                        </p>
+                    ) : conversations.length === 0 ? (
+                        <p className="p-5 text-center text-default-500">
+                            Aucune conversation
+                        </p>
+                    ) : (
+                        conversations.map((conv) => (
+                            <ConversationItem
+                                key={conv.id}
+                                {...conv}
+                                active={activeConversation?.id === conv.id}
+                                onClick={() => setActiveConversation(conv)}
+                                formatTime={formatTime}
+                            />
+                        ))
+                    )}
                 </ScrollShadow>
             </aside>
 
-            {/* CHAT (Zone Principale) */}
+            {/* CHAT */}
             <main className="flex-1 flex flex-col">
-
-                {/* Top bar: Titre de conversation accenté */}
-                <div className="flex items-center justify-between p-5 border-b">
-                    <div className="flex items-center gap-3">
-                        <Avatar name="Marie Dubois" className="bg-orange-400 text-white" />
-                        <div>
-                            {/* Titre de conversation mis en évidence */}
-                            <p className="text-lg font-bold text-default-900">Marie Dubois</p>
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="w-2 h-2 rounded-full bg-success" />
-                                <span className="text-default-500">En ligne</span>
+                {!activeConversation ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <p className="text-default-500">
+                            Sélectionnez une conversation pour commencer
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="p-5 border-b flex justify-between">
+                            <div className="flex gap-3 items-center">
+                                <Avatar
+                                    name={activeConversation.initials}
+                                    className="bg-orange-400 text-white"
+                                />
+                                <div>
+                                    <p className="font-bold text-black">
+                                        {activeConversation.conversation_name}
+                                    </p>
+                                    <p className="text-xs text-default-500">
+                                        {activeConversation.otherUserType} •{" "}
+                                        {activeConversation.status}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button isIconOnly variant="light">
+                                    <Phone size={18} />
+                                </Button>
+                                <Button isIconOnly variant="light">
+                                    <MoreVertical size={18} />
+                                </Button>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex gap-2">
-                        <Button isIconOnly variant="light">
-                            <Phone size={18} />
-                        </Button>
-                        <Button isIconOnly variant="light">
-                            <MoreVertical size={18} />
-                        </Button>
-                    </div>
-                </div>
+                        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
+                            {isLoadingMessages ? (
+                                <p className="text-center text-default-500">
+                                    Chargement des messages...
+                                </p>
+                            ) : messages.length === 0 ? (
+                                <p className="text-center text-default-500">
+                                    Aucun message. Envoyez le premier message!
+                                </p>
+                            ) : (
+                                messages.map((m) => (
+                                    <Message
+                                        key={m.id}
+                                        {...m}
+                                        left={m.sender_id !== CURRENT_USER_ID}
+                                    />
+                                ))
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
 
-                <ScrollShadow className="flex-1 px-8 py-6 space-y-6">
-                    <Message left text="Est-ce que l'assurance tous risques est incluse dans le tarif de 180€ pour 3 jours ?" time="14:30" />
-                    <Message right text="Oui, le tarif inclut bien l'assurance tous risques avec une franchise de 500€. Vous pouvez également opter pour une option zéro franchise à +15€/jour." time="14:31" />
-                    <Message left text="Parfait ! Et pour la carte grise, j'ai bien besoin de ma carte d'identité et de mon permis de conduire uniquement ?" time="14:32" />
-                    <Message right text="C'est exact ! Et n'oubliez pas votre justificatif de domicile de moins de 3 mois." time="14:33" />
+                        <div className="p-4 border-t flex gap-2">
+                            <Button
+                                isIconOnly
+                                variant="light"
+                                onClick={() => setIsEmojiPickerVisible((v) => !v)}
+                            >
+                                <Smile size={18} />
+                            </Button>
 
-                    {/* Ajout de messages pour tester le défilement (simuler une longue conversation) */}
-                    <p className="text-center text-xs text-default-400 my-4 pt-8">Hier</p>
-                    {Array(20).fill(0).map((_, i) => (
-                        <Message
-                            key={i}
-                            left={i % 2 === 0}
-                            text={`Message de test ${i + 1}. Ceci est un message pour tester le défilement de la conversation.`}
-                            time={`0${Math.floor(Math.random() * 9)}:0${Math.floor(Math.random() * 9)}`}
-                        />
-                    ))}
-                    <Message left text="Super, merci pour toutes ces précisions." time="09:00" />
-                </ScrollShadow>
+                            <Input
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                placeholder="Écrire un message..."
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" && handleSendMessage()
+                                }
+                            />
 
-                {/* ANCIEN FOOTER SUPPRIMÉ */}
+                            <Button
+                                isIconOnly
+                                className="bg-primary text-white"
+                                onClick={handleSendMessage}
+                                isDisabled={!message.trim()}
+                            >
+                                <Send size={18} />
+                            </Button>
+                        </div>
+
+                        {isEmojiPickerVisible && (
+                            <div className="absolute bottom-24 right-6 z-50">
+                                <EmojiPicker
+                                    onEmojiClick={(e) =>
+                                        setMessage((m) => m + e.emoji)
+                                    }
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
             </main>
         </div>
-    )
+    );
 }
 
-/* ================= COMPONENTS ================= */
+/* ================= UI COMPONENTS ================= */
 
-function Conversation({ name, message, time, initials, active }) {
+function ConversationItem({
+                              conversation_name,
+                              last_message,
+                              last_message_time,
+                              initials,
+                              active,
+                              onClick,
+                              formatTime,
+                              status,
+                          }) {
     return (
         <div
-            className={`flex items-center gap-3 px-5 py-4 cursor-pointer transition
-      ${active ? "bg-default-100 border-l-4 border-primary" : "hover:bg-default-100"}`}
+            onClick={onClick}
+            className={`px-5 py-4 cursor-pointer flex gap-3 hover:bg-default-50 transition-colors ${
+                active ? "bg-default-100 border-l-4 border-primary" : ""
+            }`}
         >
-            <Avatar
-                name={initials}
-                className="bg-orange-400 text-white"
-            />
-                <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate text-default-800">{name}</p>
-                    <p className="text-sm text-default-500 truncate">
-                        {message}
-                    </p>
+            <Avatar name={initials} className="bg-orange-400 text-white" />
+            <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start">
+                    <p className="font-medium truncate">{conversation_name}</p>
+                    <span className="text-xs text-default-400 whitespace-nowrap ml-2">
+                        {formatTime(last_message_time)}
+                    </span>
                 </div>
-            <span className="text-xs text-default-400">{time}</span>
+                <p className="text-sm text-default-500 truncate">
+                    {last_message}
+                </p>
+                {status && (
+                    <span
+                        className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${
+                            status === "ACTIVE"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                        }`}
+                    >
+                        {status}
+                    </span>
+                )}
+            </div>
         </div>
-    )
+    );
 }
 
-function Message({ text, time, left }) {
+function Message({ content, created_at, left }) {
     return (
         <div className={`flex ${left ? "justify-start" : "justify-end"}`}>
             <Card
                 className={`max-w-[60%] ${
-                    left
-                        ? "bg-default-100"
-                        : "bg-primary text-white"
+                    left ? "bg-default-100" : "bg-primary text-white"
                 }`}
             >
                 <CardBody>
-                    <p className="text-sm leading-relaxed">{text}</p>
+                    <p className="text-sm">{content}</p>
                     <p className="text-xs opacity-70 text-right mt-1">
-                        {time}
+                        {created_at}
                     </p>
                 </CardBody>
             </Card>
         </div>
-    )
+    );
 }
