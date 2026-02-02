@@ -297,4 +297,14 @@ public class AuthService {
         userRepository.delete(user);
     }
 
+    public User getCurrentUser() {
+        // This assumes you are using Spring Security
+        org.springframework.security.core.Authentication authentication =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 }
