@@ -30,15 +30,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                         <Route path="/register" element={<Register />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
+                       <Route element={
+                         <ProtectedRoute>
+                           <RootLayout />
+                         </ProtectedRoute>
+                       }>
+                         <Route index element={<Dashboard />} />
+                         <Route path="profile" element={<Profile />} />
+                         <Route path="messages" element={<Messages />} />
+                       </Route>
 
-                        {/* Routes protégées */}
-                        <Route element={<ProtectedRoute />}>
-                            <Route element={<RootLayout />}>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/profile" element={<Profile />} />
-                                <Route path="/messages" element={<Messages />} />
-                            </Route>
-                        </Route>
 
                     </Routes>
                 </AuthProvider>
