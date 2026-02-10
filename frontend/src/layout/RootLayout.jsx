@@ -1,26 +1,34 @@
-// src/layout/RootLayout.jsx
 import React from "react";
-import { Outlet, useLocation } from "react-router-dom"; // <-- Importez useLocation
+import { Outlet, useLocation } from "react-router-dom";
+
 import AppNavbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Sidebar from "@/components/Sidebar";
+import Footer from "@/components/Footer";
 
 const RootLayout = () => {
     const location = useLocation();
-    const hideLayoutElementsPaths = ["/messages"];
-    const isChatPage = hideLayoutElementsPaths.includes(location.pathname);
+
+    // Pages où on cache le footer (ex: chat)
+    const hideFooterPaths = ["/messages"];
+    const hideFooter = hideFooterPaths.includes(location.pathname);
 
     return (
-        // Le container principal prend toute la hauteur
-        <div className="h-screen flex bg-[#05071a] text-slate-100 overflow-hidden">
+        <div className="min-h-screen w-full flex bg-[#05071a] text-slate-100">
+            {/* Sidebar */}
             <Sidebar />
 
-            <div className="flex-1 flex flex-col">
+            {/* Zone principale */}
+            <div className="flex-1 flex flex-col min-h-screen">
+                {/* Navbar */}
                 <AppNavbar />
-                <div className="flex-1 overflow-y-auto">
+
+                {/* Contenu */}
+                <main className="flex-1 overflow-y-auto px-6 py-4">
                     <Outlet />
-                    {!isChatPage && <Footer />}
-                </div>
+                </main>
+
+                {/* Footer */}
+                {!hideFooter && <Footer />}
             </div>
         </div>
     );

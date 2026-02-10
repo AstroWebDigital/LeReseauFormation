@@ -1,20 +1,18 @@
-// frontend/src/auth/ProtectedRoute.jsx
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "./AuthContext";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "@/auth/AuthContext";
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = () => {
+  const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Chargement...</div>;
+    return <div style={{ color: "white" }}>Chargement...</div>;
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

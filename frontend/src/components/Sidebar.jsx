@@ -164,7 +164,7 @@ const DashboardSidebar = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
                             aria-label="Se déconnecter"
                         >
-                            <ArrowRightOnRectangleIcon className="h-4 w-4"/>
+                        <ArrowRightOnRectangleIcon className="h-4 w-4"/>
                         </button>
                     </div>
                 ) : (
