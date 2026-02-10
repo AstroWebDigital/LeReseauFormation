@@ -24,23 +24,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <BrowserRouter>
                 <AuthProvider>
                     <Routes>
-
                         {/* Routes publiques */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
-                       <Route element={
-                         <ProtectedRoute>
-                           <RootLayout />
-                         </ProtectedRoute>
-                       }>
-                         <Route index element={<Dashboard />} />
-                         <Route path="profile" element={<Profile />} />
-                         <Route path="messages" element={<Messages />} />
-                       </Route>
 
-
+                        {/* Routes protégées */}
+                        <Route element={<ProtectedRoute />}>
+                            {/* ProtectedRoute appelle <Outlet />, ce qui affichera RootLayout */}
+                            <Route element={<RootLayout />}>
+                                <Route index element={<Dashboard />} />
+                                <Route path="profile" element={<Profile />} />
+                                <Route path="messages" element={<Messages />} />
+                            </Route>
+                        </Route>
                     </Routes>
                 </AuthProvider>
             </BrowserRouter>
