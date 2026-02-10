@@ -45,10 +45,10 @@ const AppNavbar = ({
             <div className="flex items-center gap-6">
                 {/* Titre + sous-titre */}
                 <div className="flex flex-col min-w-[170px]">
-                    <h1 className="text-lg lg:text-xl font-semibold text-[#111b46]">
+                    <h1 className="text-lg lg:text-xl font-semibold text-white">
                         {title}
                     </h1>
-                    <p className="text-[0.7rem] lg:text-xs text-[#7a849f]">
+                    <p className="text-[0.7rem] lg:text-xs text-white">
                         {subtitle}
                     </p>
                 </div>
@@ -115,10 +115,10 @@ const AppNavbar = ({
                             <DropdownTrigger>
                                 <button className="flex items-center gap-3 cursor-pointer">
                                     <div className="hidden sm:block text-right leading-tight">
-                                        <p className="text-sm font-medium text-[#111b46]">
+                                        <p className="text-sm font-medium text-white">
                                             {userDisplayName}
                                         </p>
-                                        <p className="text-[0.7rem] text-[#7a849f]">
+                                        <p className="text-[0.7rem] text-white">
                                             {user?.roleLabel || "Agent Loueur Partenaire"}
                                         </p>
                                     </div>

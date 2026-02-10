@@ -238,7 +238,7 @@ export default function Messages() {
     }
 
     return (
-        <div className="h-full flex bg-background">
+        <div className="h-full flex bg-background -mx-6">
             {/* SIDEBAR */}
             <aside className="w-[360px] border-r flex flex-col">
                 <div className="p-5 border-b">
