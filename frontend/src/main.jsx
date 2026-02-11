@@ -10,6 +10,7 @@ import Profile from "@/pages/Profile";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import Messages from "@/pages/messages/Messages";
+import Vehicle from "@/pages/vehicle/Vehicle"; // Nouveau composant
 
 import ProtectedRoute from "@/auth/ProtectedRoute";
 
@@ -24,19 +25,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <BrowserRouter>
                 <AuthProvider>
                     <Routes>
-                        {/* Routes publiques */}
+                        {/* Public Routes */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
 
-                        {/* Routes protégées */}
+                        {/* Protected Routes */}
                         <Route element={<ProtectedRoute />}>
-                            {/* ProtectedRoute appelle <Outlet />, ce qui affichera RootLayout */}
                             <Route element={<RootLayout />}>
                                 <Route index element={<Dashboard />} />
                                 <Route path="profile" element={<Profile />} />
                                 <Route path="messages" element={<Messages />} />
+                                <Route path="vehicles" element={<Vehicle />} />
                             </Route>
                         </Route>
                     </Routes>

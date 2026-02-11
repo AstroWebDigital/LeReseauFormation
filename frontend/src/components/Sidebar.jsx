@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -21,8 +20,7 @@ const DashboardSidebar = () => {
 
     const isAuthenticated = !!token && !!user;
 
-    const API_BASE_URL =
-        import.meta.env.VITE_API_URL || "http://localhost:8080";
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
     const resolvePhotoUrl = (url) => {
         if (!url) return null;
@@ -46,7 +44,7 @@ const DashboardSidebar = () => {
     // Liens quand connecté
     const authNavItems = [
         { label: "Tableau de bord", icon: HomeIcon, to: "/" },
-        { label: "Mes véhicules", icon: TruckIcon, to: "/vehicules" },
+        { label: "Mes véhicules", icon: TruckIcon, to: "/vehicles" },
         { label: "Réservations", icon: CalendarDaysIcon, to: "/reservations" },
         { label: "Messages", icon: ChatBubbleLeftRightIcon, to: "/messages" },
         { label: "Documents", icon: DocumentTextIcon, to: "/documents" },
@@ -63,8 +61,9 @@ const DashboardSidebar = () => {
 
     const navItems = isAuthenticated ? authNavItems : guestNavItems;
 
+    // LOGIQUE CORRIGÉE : Évite que "/" soit toujours actif
     const isActive = (to) => {
-        if (to === "/dashboard") return pathname === "/dashboard";
+        if (to === "/") return pathname === "/";
         return pathname === to || pathname.startsWith(to);
     };
 
@@ -72,11 +71,10 @@ const DashboardSidebar = () => {
         <aside
             className="sticky top-0 h-screen w-64 shrink-0 bg-gradient-to-b from-[#060d33] to-[#050718] text-white flex flex-col justify-between border-r border-white/5"
         >
-            {/* Header : logo + texte (même rendu pour tous les cas) */}
+            {/* Header : logo + texte */}
             <div className="px-5 pt-6 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-3">
-                    <div
-                        className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-lg shadow-black/30 overflow-hidden">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-lg shadow-black/30 overflow-hidden">
                         <img
                             src="/Logo-Reseau-Formation.png"
                             alt="Le Réseau Formation"
@@ -123,15 +121,13 @@ const DashboardSidebar = () => {
             {/* Bas de sidebar */}
             <div className="px-5 pb-4">
                 {isAuthenticated ? (
-                    <div
-                        className="rounded-2xl bg-white/5 px-4 py-3 flex items-center gap-3 backdrop-blur-sm border border-white/10">
+                    <div className="rounded-2xl bg-white/5 px-4 py-3 flex items-center gap-3 backdrop-blur-sm border border-white/10">
                         <button
                             type="button"
                             onClick={() => navigate("/profile")}
                             className="relative"
                         >
-                            <div
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-orange-500 to-yellow-400 text-[0.85rem] font-semibold shadow-lg shadow-orange-500/40 overflow-hidden">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-orange-500 to-yellow-400 text-[0.85rem] font-semibold shadow-lg shadow-orange-500/40 overflow-hidden">
                                 {user?.profilPhoto ? (
                                     <img
                                         src={resolvePhotoUrl(user.profilPhoto)}
@@ -142,19 +138,15 @@ const DashboardSidebar = () => {
                                     <span>{initials}</span>
                                 )}
                             </div>
-                            <span
-                                className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-[#050718]"/>
+                            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-[#050718]"/>
                         </button>
 
                         <div className="flex-1 leading-tight">
-                            <p className="text-sm font-semibold">
+                            <p className="text-sm font-semibold truncate w-24">
                                 {userDisplayName}
                             </p>
                             <p className="text-[0.7rem] text-white/70">
                                 {user?.roleLabel || "Agent · Loueur"}
-                            </p>
-                            <p className="text-[0.7rem] text-white/50">
-                                Partenaire
                             </p>
                         </div>
 
@@ -164,15 +156,13 @@ const DashboardSidebar = () => {
                             className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
                             aria-label="Se déconnecter"
                         >
-                        <ArrowRightOnRectangleIcon className="h-4 w-4"/>
+                            <ArrowRightOnRectangleIcon className="h-4 w-4"/>
                         </button>
                     </div>
                 ) : (
-                    <div
-                        className="rounded-2xl bg-white/5 px-4 py-3 flex flex-col gap-2 backdrop-blur-sm border border-white/10">
+                    <div className="rounded-2xl bg-white/5 px-4 py-3 flex flex-col gap-2 backdrop-blur-sm border border-white/10">
                         <p className="text-xs text-white/80">
-                            Connecte-toi pour accéder à ton tableau de bord,
-                            tes véhicules et ton profil.
+                            Connecte-toi pour accéder à ton tableau de bord.
                         </p>
                         <Link
                             to="/login"
@@ -184,8 +174,7 @@ const DashboardSidebar = () => {
                     </div>
                 )}
 
-                {/* Copyright en bas */}
-                <div className="mt-3 text-[0.65rem] text-white/30">
+                <div className="mt-3 text-[0.65rem] text-white/30 text-center">
                     © {new Date().getFullYear()} Le Réseau Formation
                 </div>
             </div>
