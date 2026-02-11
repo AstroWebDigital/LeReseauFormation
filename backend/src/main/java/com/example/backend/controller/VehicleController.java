@@ -123,4 +123,20 @@ public class VehicleController {
         return userService.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé ou session invalide."));
     }
+    /**
+     * GET /api/vehicles/my-fleet : Récupère les véhicules appartenant à l'utilisateur connecté.
+     */
+    @GetMapping("/my-fleet")
+    public ResponseEntity<Page<Vehicle>> getMyVehicles(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        User currentUser = loadCurrentUser(userDetails);
+
+        Page<Vehicle> myVehicles = vehicleService.getVehiclesByUserId(currentUser.getId(), page, size);
+
+        return ResponseEntity.ok(myVehicles);
+    }
+
 }

@@ -125,4 +125,13 @@ public class VehicleService {
 
         return vehicleRepository.findByStatus(AVAILABLE_STATUS, pageable);
     }
+
+    public Page<Vehicle> getVehiclesByAlpId(UUID alpId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return vehicleRepository.findByAlpId(alpId, pageable);
+    }
+
+    public Page<Vehicle> getVehiclesByUserId(UUID userId, int page, int size) {
+        return vehicleRepository.findByAlpUserId(userId, PageRequest.of(page, size));
+    }
 }

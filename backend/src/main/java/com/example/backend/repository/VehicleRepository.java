@@ -20,5 +20,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
      * @return Une page de véhicules.
      */
     Page<Vehicle> findByStatus(String status, Pageable pageable);
+    Page<Vehicle> findByAlpId(UUID alpId, Pageable pageable);
+    Page<Vehicle> findByAlpUserId(UUID userId, Pageable pageable);
 
 }

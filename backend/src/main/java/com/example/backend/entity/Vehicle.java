@@ -93,8 +93,6 @@ public class Vehicle extends Auditable {
     @JoinColumn(name = "alp_id", nullable = false)
     private Alp alp;
 
-    // ❌ LES CHAMPS 'createdAt' et 'updatedAt' ONT ÉTÉ SUPPRIMÉS CAR ILS SONT DÉSORMAIS DANS 'Auditable'
-
     @JsonIgnore
     @OneToMany(mappedBy = "vehicle")
     private Set<ComplianceBlock> complianceBlocks = new LinkedHashSet<>();
