@@ -13,6 +13,9 @@ public class UserMapper {
     @Value("${app.public-base-url}")
     private String publicBaseUrl;
 
+    // Ajoute l'injection du mapper pour l'entité Alp/Customer
+    private final CustomerMapper customerMapper;
+
     public UserDto toDto(User u) {
         if (u == null) return null;
 
@@ -30,6 +33,7 @@ public class UserMapper {
                 .providerId(u.getProviderId())
                 .createdAt(u.getCreatedAt() != null ? u.getCreatedAt().toString() : null)
                 .updatedAt(u.getUpdatedAt() != null ? u.getUpdatedAt().toString() : null)
+                .customer(u.getAlp() != null ? customerMapper.toDto(u.getAlp()) : null)
                 .build();
     }
 
@@ -38,7 +42,6 @@ public class UserMapper {
         if (path.startsWith("http://") || path.startsWith("https://")) return path;
         String base = publicBaseUrl != null ? publicBaseUrl.replaceAll("/+$", "") : "";
         String rel  = path.startsWith("/") ? path : ("/" + path);
-
         return base + rel;
     }
 }

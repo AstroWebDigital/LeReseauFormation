@@ -19,4 +19,5 @@ public class UserDto {
     private String providerId;
     private String createdAt;
     private String updatedAt;
+    private CustomerDto customer;
 }

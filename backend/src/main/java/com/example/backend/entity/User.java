@@ -2,7 +2,7 @@ package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -58,6 +58,10 @@ public class User {
     @Column(name = "profil_photo")
     private String profilPhoto;
 
+    @OneToOne(mappedBy = "user")
+    @JsonIgnore
+    private Customer customer;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -69,6 +73,7 @@ public class User {
     // 💡 AJOUT OBLIGATOIRE : Relation vers l'entité ALP
     // 'mappedBy = "user"' suppose que dans Alp.java, le champ qui référence User s'appelle 'user'.
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Alp alp;
 
     // ---- Métadonnées ----

@@ -11,13 +11,14 @@ import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import Messages from "@/pages/messages/Messages";
 import Vehicle from "@/pages/vehicle/Vehicle"; // Nouveau composant
-
+import DocumentPage from "./pages/document/DocumentPage";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 
 import { HeroUIProvider } from "@heroui/react";
 import { AuthProvider } from "@/auth/AuthContext";
 
 import "@/styles/global.css";
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
@@ -38,6 +39,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                                 <Route path="profile" element={<Profile />} />
                                 <Route path="messages" element={<Messages />} />
                                 <Route path="vehicles" element={<Vehicle />} />
+                                <Route path="documents" element={<DocumentPage />} />
                             </Route>
                         </Route>
                     </Routes>
