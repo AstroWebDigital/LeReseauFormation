@@ -2,187 +2,310 @@ import React, { useState, useEffect } from "react";
 import {
     Card, CardHeader, CardBody,
     Input, Button, Tabs, Tab,
-    Avatar, Divider, Switch
+    Avatar, Divider, Switch, Spinner
 } from "@heroui/react";
-import { User, Lock, Bell, Camera, Save } from "lucide-react";
-import axios from "axios";
+import {
+    User, Lock, Bell, Camera, Save,
+    Mail, Phone, Shield, LogOut, AlertCircle, CheckCircle2
+} from "lucide-react";
+
+// Utilisation des alias @ pour éviter les erreurs de chemins relatifs
+import { useAuth } from "@/auth/AuthContext";
+import { AuthAPI } from "@/services/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {
-    const [loading, setLoading] = useState(false);
-    const [userData, setUserData] = useState({
-        firstname: "Jean",
-        lastname: "Admin",
-        email: "jean.admin@le-reseau.fr",
-        phone: "06 00 00 00 00",
-        sector: "Location",
-        profilPhoto: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
+    const { user, token, logout, setUser } = useAuth();
+    const navigate = useNavigate();
+
+    const [isLoading, setIsLoading] = useState(!user && !!token);
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileUpdateMessage, setProfileUpdateMessage] = useState("");
+    const [profileUpdateError, setProfileUpdateError] = useState("");
+
+    const [formData, setFormData] = useState({
+        firstname: "",
+        lastname: "",
+        email: "",
+        phone: "",
+        sector: ""
     });
 
-    // Fonction pour sauvegarder les infos (lie au SettingsController)
+    // Gestion Mot de passe
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState("");
+
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    // Initialisation des données du formulaire
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                firstname: user.firstname || "",
+                lastname: user.lastname || "",
+                email: user.email || "",
+                phone: user.phone || "",
+                sector: user.sector || ""
+            });
+            setIsLoading(false);
+        }
+    }, [user]);
+
     const handleUpdateProfile = async () => {
-        setLoading(true);
+        setProfileSaving(true);
+        setProfileUpdateError("");
+        setProfileUpdateMessage("");
+
         try {
-            // await axios.patch("/api/settings/me/profile", userData);
-            console.log("Profil mis à jour !", userData);
-        } catch (error) {
-            console.error("Erreur de mise à jour", error);
+            const updated = await AuthAPI.updateProfile(formData);
+            if (setUser) setUser(updated);
+            setProfileUpdateMessage("Profil mis à jour avec succès.");
+        } catch (err) {
+            setProfileUpdateError(err?.response?.data?.message || "Erreur de mise à jour.");
         } finally {
-            setLoading(false);
+            setProfileSaving(false);
         }
     };
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            setPasswordError("Les mots de passe ne correspondent pas.");
+            return;
+        }
+
+        setPasswordLoading(true);
+        setPasswordError("");
+        setPasswordSuccess("");
+
+        try {
+            await AuthAPI.changePassword({
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword
+            });
+            setPasswordSuccess("Mot de passe mis à jour !");
+            setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        } catch (err) {
+            setPasswordError(err?.response?.data?.message || "Ancien mot de passe incorrect.");
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
+
+    const resolvePhotoUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith("http")) return url;
+        return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
+    const sharedInputClass = {
+        label: "!text-white !opacity-100 font-bold text-sm",
+        input: "!text-white",
+        inputWrapper: "border-slate-700 bg-transparent group-data-[focus=true]:border-white transition-all",
+    };
+
+    if (!token) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-[#050721]">
+                <Card className="bg-slate-900 border-slate-800 p-6 text-center">
+                    <AlertCircle className="mx-auto text-orange-500 mb-4" size={40} />
+                    <p className="text-white font-bold">Session expirée</p>
+                    <Button className="mt-4 bg-[#ff922b]" onPress={() => navigate("/")}>Retourner à l'accueil</Button>
+                </Card>
+            </div>
+        );
+    }
+
+    if (isLoading) return <div className="h-full flex items-center justify-center min-h-[400px]"><Spinner color="warning" /></div>;
+
     return (
-        <div className="min-h-screen bg-[#070b1d] p-6 lg:p-10 text-white">
-            <div className="max-w-5xl mx-auto">
-                <header className="mb-8">
-                    <h1 className="text-3xl font-bold">Paramètres</h1>
-                    <p className="text-slate-400">Gérez votre compte et vos préférences système.</p>
-                </header>
-
-                <Tabs
-                    aria-label="Options"
-                    color="warning"
-                    variant="underlined"
-                    classNames={{
-                        tabList: "gap-6 w-full relative rounded-none p-0 border-b border-white/10",
-                        cursor: "w-full bg-[#f5a524]",
-                        tab: "max-w-fit px-0 h-12",
-                        tabContent: "group-data-[selected=true]:text-[#f5a524]"
-                    }}
+        <div className="p-6 lg:p-10 max-w-6xl mx-auto">
+            <header className="flex justify-between items-center mb-10">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-100">Paramètres</h1>
+                    <p className="text-default-500 text-sm">Gérez votre compte et vos préférences</p>
+                </div>
+                <Button
+                    variant="flat"
+                    color="danger"
+                    className="font-bold rounded-full"
+                    startContent={<LogOut size={18} />}
+                    onPress={logout}
                 >
-                    {/* --- ONGLET PROFIL --- */}
-                    <Tab
-                        key="profile"
-                        title={
-                            <div className="flex items-center space-x-2">
-                                <User size={18} />
-                                <span>Mon Profil</span>
-                            </div>
-                        }
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                            {/* Carte Photo */}
-                            <Card className="bg-[#111729] border border-white/5 shadow-2xl">
-                                <CardBody className="flex flex-col items-center py-10">
-                                    <div className="relative">
-                                        <Avatar
-                                            src={userData.profilPhoto}
-                                            className="w-32 h-32 text-large ring-2 ring-orange-500/50"
-                                        />
-                                        <Button
-                                            isIconOnly
-                                            size="sm"
-                                            radius="full"
-                                            className="absolute bottom-0 right-0 bg-orange-500 text-white shadow-lg"
-                                        >
-                                            <Camera size={16} />
-                                        </Button>
-                                    </div>
-                                    <h3 className="mt-4 text-xl font-bold">{userData.firstname} {userData.lastname}</h3>
-                                    <p className="text-slate-400 text-sm">Agent Loueur</p>
-                                </CardBody>
-                            </Card>
+                    Déconnexion
+                </Button>
+            </header>
 
-                            {/* Formulaire */}
-                            <Card className="md:col-span-2 bg-[#111729] border border-white/5 shadow-2xl">
-                                <CardHeader className="text-lg font-semibold">Informations personnelles</CardHeader>
-                                <Divider className="bg-white/5" />
-                                <CardBody className="gap-6 py-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Input
-                                            label="Prénom"
-                                            variant="bordered"
-                                            value={userData.firstname}
-                                            onChange={(e) => setUserData({...userData, firstname: e.target.value})}
-                                            classNames={{ inputWrapper: "border-white/10" }}
-                                        />
-                                        <Input
-                                            label="Nom"
-                                            variant="bordered"
-                                            value={userData.lastname}
-                                            onChange={(e) => setUserData({...userData, lastname: e.target.value})}
-                                            classNames={{ inputWrapper: "border-white/10" }}
-                                        />
-                                        <Input
-                                            label="Email"
-                                            variant="flat"
-                                            disabled
-                                            value={userData.email}
-                                            classNames={{ inputWrapper: "opacity-50" }}
-                                        />
-                                        <Input
-                                            label="Téléphone"
-                                            variant="bordered"
-                                            value={userData.phone}
-                                            onChange={(e) => setUserData({...userData, phone: e.target.value})}
-                                            classNames={{ inputWrapper: "border-white/10" }}
-                                        />
+            <Tabs
+                aria-label="Settings"
+                variant="underlined"
+                classNames={{
+                    tabList: "gap-8 border-b border-slate-800",
+                    cursor: "bg-[#ff922b]",
+                    tab: "max-w-fit px-0 h-12",
+                    tabContent: "group-data-[selected=true]:text-[#ff922b] font-bold"
+                }}
+            >
+                <Tab key="profile" title="Mon Profil">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
+                        <div className="lg:col-span-4">
+                            <Card className="bg-slate-900 border-slate-800 shadow-xl overflow-hidden">
+                                <div className="h-24 bg-gradient-to-r from-orange-600/20 to-orange-400/10" />
+                                <CardBody className="flex flex-col items-center -mt-12">
+                                    <Avatar
+                                        src={resolvePhotoUrl(user?.profilPhoto)}
+                                        className="w-24 h-24 ring-4 ring-slate-900 shadow-xl"
+                                        name={user?.firstname}
+                                    />
+                                    <h3 className="mt-4 text-xl font-bold text-white">{formData.firstname} {formData.lastname}</h3>
+                                    <p className="text-orange-500 text-xs font-bold uppercase mt-1">{formData.sector || "Membre"}</p>
+                                    <div className="w-full mt-6 space-y-3">
+                                        <div className="flex items-center gap-3 text-slate-400 text-sm p-3 bg-slate-950/40 rounded-xl">
+                                            <Mail size={16} className="text-orange-500" />
+                                            <span className="truncate">{formData.email}</span>
+                                        </div>
                                     </div>
-                                    <Button
-                                        className="bg-gradient-to-r from-orange-500 to-yellow-500 font-bold text-white mt-4"
-                                        onClick={handleUpdateProfile}
-                                        isLoading={loading}
-                                        startContent={<Save size={18} />}
-                                    >
-                                        Enregistrer les modifications
-                                    </Button>
                                 </CardBody>
                             </Card>
                         </div>
-                    </Tab>
 
-                    {/* --- ONGLET SECURITE --- */}
-                    <Tab
-                        key="security"
-                        title={
-                            <div className="flex items-center space-x-2">
-                                <Lock size={18} />
-                                <span>Sécurité</span>
-                            </div>
-                        }
-                    >
-                        <Card className="mt-6 bg-[#111729] border border-white/5 max-w-2xl">
-                            <CardBody className="gap-4">
-                                <h3 className="text-lg font-semibold">Changer le mot de passe</h3>
-                                <Input label="Mot de passe actuel" type="password" variant="bordered" classNames={{ inputWrapper: "border-white/10" }} />
-                                <Input label="Nouveau mot de passe" type="password" variant="bordered" classNames={{ inputWrapper: "border-white/10" }} />
-                                <Button color="warning" variant="flat" className="font-bold">Mettre à jour le mot de passe</Button>
+                        <div className="lg:col-span-8">
+                            <Card className="bg-slate-900 border-slate-800 shadow-xl">
+                                <CardHeader className="p-6 pb-0 flex flex-col items-start">
+                                    <h3 className="text-white font-bold">Informations Personnelles</h3>
+                                    {profileUpdateMessage && <p className="text-emerald-400 text-xs mt-2 flex items-center gap-1"><CheckCircle2 size={14}/> {profileUpdateMessage}</p>}
+                                    {profileUpdateError && <p className="text-red-400 text-xs mt-2">{profileUpdateError}</p>}
+                                </CardHeader>
+                                <CardBody className="p-6 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Input
+                                            label="Prénom"
+                                            value={formData.firstname}
+                                            onChange={(e) => setFormData({...formData, firstname: e.target.value})}
+                                            variant="bordered"
+                                            classNames={sharedInputClass}
+                                        />
+                                        <Input
+                                            label="Nom"
+                                            value={formData.lastname}
+                                            onChange={(e) => setFormData({...formData, lastname: e.target.value})}
+                                            variant="bordered"
+                                            classNames={sharedInputClass}
+                                        />
+                                        <Input
+                                            label="Téléphone"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            variant="bordered"
+                                            classNames={sharedInputClass}
+                                        />
+                                        <Input
+                                            label="Secteur / Agence"
+                                            value={formData.sector}
+                                            onChange={(e) => setFormData({...formData, sector: e.target.value})}
+                                            variant="bordered"
+                                            classNames={sharedInputClass}
+                                        />
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <Button
+                                            className="bg-[#ff922b] text-white font-bold px-8 shadow-lg shadow-orange-500/20"
+                                            startContent={<Save size={18} />}
+                                            isLoading={profileSaving}
+                                            onPress={handleUpdateProfile}
+                                        >
+                                            Sauvegarder
+                                        </Button>
+                                    </div>
+                                </CardBody>
+                            </Card>
+                        </div>
+                    </div>
+                </Tab>
+
+                <Tab key="security" title="Sécurité">
+                    <div className="mt-6 max-w-2xl">
+                        <Card className="bg-slate-900 border-slate-800 shadow-xl">
+                            <CardHeader className="p-6">
+                                <h3 className="text-white font-bold flex items-center gap-2">
+                                    <Shield size={20} className="text-orange-500" /> Modifier le mot de passe
+                                </h3>
+                            </CardHeader>
+                            <Divider className="bg-slate-800" />
+                            <CardBody className="p-6 gap-5">
+                                <form onSubmit={handleChangePassword} className="space-y-5">
+                                    <Input
+                                        label="Mot de passe actuel"
+                                        type="password"
+                                        value={passwordForm.currentPassword}
+                                        onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                                        variant="bordered"
+                                        classNames={sharedInputClass}
+                                    />
+                                    <Input
+                                        label="Nouveau mot de passe"
+                                        type="password"
+                                        value={passwordForm.newPassword}
+                                        onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                                        variant="bordered"
+                                        classNames={sharedInputClass}
+                                    />
+                                    <Input
+                                        label="Confirmer le nouveau mot de passe"
+                                        type="password"
+                                        value={passwordForm.confirmPassword}
+                                        onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                                        variant="bordered"
+                                        classNames={sharedInputClass}
+                                    />
+
+                                    {passwordError && <p className="text-red-400 text-xs">{passwordError}</p>}
+                                    {passwordSuccess && <p className="text-emerald-400 text-xs">{passwordSuccess}</p>}
+
+                                    <Button
+                                        type="submit"
+                                        className="w-full bg-slate-800 text-white font-bold mt-2"
+                                        isLoading={passwordLoading}
+                                    >
+                                        Mettre à jour la sécurité
+                                    </Button>
+                                </form>
                             </CardBody>
                         </Card>
-                    </Tab>
+                    </div>
+                </Tab>
 
-                    {/* --- ONGLET NOTIFICATIONS --- */}
-                    <Tab
-                        key="notifications"
-                        title={
-                            <div className="flex items-center space-x-2">
-                                <Bell size={18} />
-                                <span>Notifications</span>
-                            </div>
-                        }
-                    >
-                        <Card className="mt-6 bg-[#111729] border border-white/5 max-w-2xl">
-                            <CardBody className="gap-6">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="font-medium text-white">Alertes de réservation</p>
-                                        <p className="text-xs text-slate-400">Recevoir un email à chaque nouvelle location.</p>
+                <Tab key="notifications" title="Notifications">
+                    <div className="mt-6 max-w-2xl">
+                        <Card className="bg-slate-900 border-slate-800 shadow-xl">
+                            <CardBody className="p-0">
+                                {[
+                                    { title: "Alertes par email", desc: "Recevoir les notifications importantes par courriel." },
+                                    { title: "Documents expirés", desc: "Alerte 30 jours avant la fin d'un document." },
+                                    { title: "Accès système", desc: "Être prévenu lors d'une nouvelle connexion." }
+                                ].map((item, i) => (
+                                    <div key={i}>
+                                        <div className="flex items-center justify-between p-6">
+                                            <div>
+                                                <p className="text-white font-bold text-sm">{item.title}</p>
+                                                <p className="text-slate-500 text-xs">{item.desc}</p>
+                                            </div>
+                                            <Switch color="warning" defaultSelected size="sm" />
+                                        </div>
+                                        {i < 2 && <Divider className="bg-slate-800" />}
                                     </div>
-                                    <Switch color="warning" defaultSelected />
-                                </div>
-                                <Divider className="bg-white/5" />
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="font-medium text-white">Maintenance véhicules</p>
-                                        <p className="text-xs text-slate-400">Alertes quand une révision est dépassée.</p>
-                                    </div>
-                                    <Switch color="warning" defaultSelected />
-                                </div>
+                                ))}
                             </CardBody>
                         </Card>
-                    </Tab>
-                </Tabs>
-            </div>
+                    </div>
+                </Tab>
+            </Tabs>
         </div>
     );
 }

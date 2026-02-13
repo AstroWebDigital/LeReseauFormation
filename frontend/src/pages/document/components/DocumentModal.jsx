@@ -128,7 +128,7 @@ export const DocumentModal = ({ isOpen, onOpenChange, formData, setFormData, onS
 
                             {/* SELECTS & INPUTS */}
                             <Select
-                                label="Domaine (Scope) *" variant="bordered" labelPlacement="outside" classNames={selectClasses}
+                                label="Domaine *" variant="bordered" labelPlacement="outside" classNames={selectClasses}
                                 selectedKeys={formData.scope ? [formData.scope] : []}
                                 onSelectionChange={(keys) => handleSelectChange("scope", keys)}
                                 isInvalid={!!errors.scope} errorMessage={errors.scope}
@@ -186,7 +186,7 @@ export const DocumentModal = ({ isOpen, onOpenChange, formData, setFormData, onS
                             >
                                 {vehicles.map((v) => (
                                     <SelectItem key={String(v.id)} textValue={`${v.brand} ${v.model}`}>
-                                        {v.brand} {v.model} ({v.licensePlate || "Sans plaque"})
+                                        {v.brand} {v.model}
                                     </SelectItem>
                                 ))}
                             </Select>
