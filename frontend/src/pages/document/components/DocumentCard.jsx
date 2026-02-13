@@ -1,9 +1,15 @@
 import { Card, CardHeader, CardBody, Button, Chip, Divider } from "@heroui/react";
-import { FileText, Calendar, Link2, Edit, Trash2, User, Car } from "lucide-react";
+import { FileText, Calendar, Link2, Edit, Trash2, User, Car, Eye } from "lucide-react";
 
 export const DocumentCard = ({ doc, onEdit, onDelete, statusColorMap }) => {
+    // 1. Définition de l'URL du Backend (Spring Boot)
+    const API_BASE_URL = "http://localhost:8080";
+
     // Sécurité : si doc n'existe pas, on ne rend rien
     if (!doc) return null;
+
+    // 2. Construction de l'URL complète pour le fichier
+    const fullFileUrl = doc.fileUrl ? `${API_BASE_URL}${doc.fileUrl}` : null;
 
     return (
         <Card className="bg-slate-900 border-slate-800 border shadow-md">
@@ -17,7 +23,6 @@ export const DocumentCard = ({ doc, onEdit, onDelete, statusColorMap }) => {
                             {doc.scope || "N/A"}
                         </p>
                         <h2 className="text-lg font-bold capitalize">
-                            {/* Protection contre le undefined sur replace */}
                             {doc.type ? doc.type.replace('_', ' ') : "Document sans type"}
                         </h2>
                     </div>
@@ -38,27 +43,38 @@ export const DocumentCard = ({ doc, onEdit, onDelete, statusColorMap }) => {
                         <span>Expire le : {doc.expirationDate || "N/A"}</span>
                     </div>
 
-                    {/* Utilisation de l'optional chaining ?. pour éviter les crashs */}
-                    {doc.customer?.id && (
+                    {/* Affichage des IDs liés */}
+                    {doc.customerId && (
                         <div className="flex items-center gap-2 text-tiny">
                             <User size={14} />
-                            <span className="truncate">Client: {doc.customer.id.substring(0, 8)}...</span>
+                            <span className="truncate">Client: {doc.customerId.substring(0, 8)}...</span>
                         </div>
                     )}
 
-                    {doc.vehicle?.id && (
+                    {doc.vehicleId && (
                         <div className="flex items-center gap-2 text-tiny">
                             <Car size={14} />
-                            <span className="truncate">Véhicule: {doc.vehicle.id.substring(0, 8)}...</span>
+                            <span className="truncate">Véhicule: {doc.vehicleId.substring(0, 8)}...</span>
                         </div>
                     )}
-
-                    {doc.fileUrl && (
-                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-400 hover:underline">
-                            <Link2 size={14} /> Voir le document
-                        </a>
-                    )}
                 </div>
+
+                {/* 3. Bouton d'accès au fichier PDF mis à jour */}
+                {fullFileUrl && (
+                    <Button
+                        as="a"
+                        href={fullFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="flat"
+                        color="primary"
+                        className="w-full bg-blue-500/10 text-blue-400 font-semibold mb-2"
+                        startContent={<Eye size={16} />}
+                    >
+                        Consulter le PDF
+                    </Button>
+                )}
+
                 <Divider className="my-3 bg-slate-800" />
                 <div className="flex justify-end">
                     <Chip
@@ -73,4 +89,4 @@ export const DocumentCard = ({ doc, onEdit, onDelete, statusColorMap }) => {
             </CardBody>
         </Card>
     );
-};
+}

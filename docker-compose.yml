@@ -43,7 +43,7 @@ services:
       SMTP_USERNAME: "${SMTP_USERNAME}"
       SMTP_PASSWORD: "${SMTP_PASSWORD}"
     volumes:
-      - ./uploads:/data/uploads
+      - ./backend/uploads:/app/uploads
     ports:
       - "8080:8080"
 

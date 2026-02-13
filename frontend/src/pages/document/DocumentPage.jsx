@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "@/services/auth/client";
 import { Button, Spinner, useDisclosure } from "@heroui/react";
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 
 import { DocumentGrid } from "./components/DocumentGrid";
@@ -24,7 +24,7 @@ export default function DocumentPage() {
     const [formData, setFormData] = useState({
         scope: "vehicule",
         type: "assurance",
-        fileUrl: "",
+        file: null,
         issueDate: "",
         expirationDate: "",
         status: "en_attente",
@@ -35,13 +35,9 @@ export default function DocumentPage() {
         try {
             setIsLoading(true);
             const { data } = await api.get("/api/documents");
-
-            // AJOUTE CE LOG ICI
-            console.log("RÉPONSE API DOCUMENTS:", data);
-
             setDocuments(Array.isArray(data) ? data : []);
         } catch (err) {
-            console.error("ERREUR API:", err.response);
+            console.error("ERREUR API:", err);
             setError("Impossible de charger les documents.");
         } finally {
             setIsLoading(false);
@@ -50,45 +46,59 @@ export default function DocumentPage() {
 
     useEffect(() => { fetchDocuments(); }, []);
 
+    // FONCTION DE TÉLÉCHARGEMENT
+    const handleDownload = async (fileUrl) => {
+        if (!fileUrl) return alert("Pas de fichier associé");
+        try {
+            const filename = fileUrl.split('/').pop();
+            const response = await api.get(`/api/documents/download/${filename}`, {
+                responseType: 'blob',
+            });
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert("Erreur lors du téléchargement du fichier.");
+        }
+    };
+
     const handleSave = async () => {
         try {
-            // On récupère le profil client depuis l'utilisateur connecté
-            const customerId = user?.customer?.id;
-
-            if (!customerId) {
-                alert("Erreur : Profil client non détecté. Essayez de vous reconnecter.");
-                return;
-            }
-
-            const now = new Date().toISOString();
-
-            // Construction du payload avec les dates pour passer la validation @NotNull du Backend
-            const payload = {
+            const data = new FormData();
+            const documentPayload = {
                 scope: formData.scope,
                 type: formData.type,
-                fileUrl: formData.fileUrl,
                 issueDate: formData.issueDate || null,
                 expirationDate: formData.expirationDate || null,
                 status: formData.status,
-                customer: { id: customerId },
                 vehicle: formData.vehicleId ? { id: formData.vehicleId } : null,
-                createdAt: selectedDoc ? selectedDoc.createdAt : now, // Indispensable pour le @Valid
-                updatedAt: now
             };
 
+            data.append("document", JSON.stringify(documentPayload));
+            if (formData.file) {
+                data.append("file", formData.file);
+            }
+
+            const config = { headers: { "Content-Type": "multipart/form-data" } };
+
             if (selectedDoc) {
-                await api.put(`/api/documents/${selectedDoc.id}`, payload);
+                await api.put(`/api/documents/${selectedDoc.id}`, data, config);
             } else {
-                await api.post("/api/documents", payload);
+                await api.post("/api/documents", data, config);
             }
 
             onOpenChange(false);
             fetchDocuments();
         } catch (err) {
             console.error("Erreur sauvegarde:", err);
-            // On affiche le message d'erreur précis renvoyé par le GlobalExceptionHandler
-            const message = err.response?.data?.message || "Erreur lors de l'enregistrement.";
-            alert(message);
+            alert("Erreur lors de l'enregistrement.");
         }
     };
 
@@ -108,14 +118,15 @@ export default function DocumentPage() {
             setSelectedDoc(doc);
             setFormData({
                 ...doc,
-                vehicleId: doc.vehicle?.id || ""
+                file: null,
+                vehicleId: doc.vehicleId || ""
             });
         } else {
             setSelectedDoc(null);
             setFormData({
                 scope: "vehicule",
                 type: "assurance",
-                fileUrl: "",
+                file: null,
                 issueDate: "",
                 expirationDate: "",
                 status: "en_attente",
@@ -131,7 +142,7 @@ export default function DocumentPage() {
         inputWrapper: "border-slate-700 bg-transparent group-data-[focus=true]:border-white transition-all",
     };
 
-    if (isLoading) return <div className="h-full flex items-center justify-center min-h-[400px]"><Spinner size="lg" color="primary" /></div>;
+    if (isLoading) return <div className="h-full flex items-center justify-center min-h-[400px]"><Spinner size="lg" color="warning" /></div>;
 
     return (
         <div className="p-6">
@@ -141,10 +152,9 @@ export default function DocumentPage() {
                     <p className="text-default-500">{documents.length} document(s) enregistré(s)</p>
                 </div>
                 <Button
-                    color="primary"
+                    className="bg-[#ff922b] text-white font-bold shadow-lg shadow-orange-500/20"
                     onPress={() => openModal()}
                     startContent={<Plus size={18} />}
-                    className="font-bold"
                 >
                     Ajouter un document
                 </Button>
@@ -154,6 +164,7 @@ export default function DocumentPage() {
                 documents={documents}
                 onEdit={openModal}
                 onDelete={handleDelete}
+                onDownload={handleDownload}
                 statusColorMap={statusColorMap}
             />
 

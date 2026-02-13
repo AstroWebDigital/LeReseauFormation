@@ -10,6 +10,7 @@ import Profile from "@/pages/Profile";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import Messages from "@/pages/messages/Messages";
+import Settings from "@/pages/settings/settings";
 import Vehicle from "@/pages/vehicle/Vehicle"; // Nouveau composant
 import DocumentPage from "./pages/document/DocumentPage";
 import ProtectedRoute from "@/auth/ProtectedRoute";
@@ -40,6 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                                 <Route path="messages" element={<Messages />} />
                                 <Route path="vehicles" element={<Vehicle />} />
                                 <Route path="documents" element={<DocumentPage />} />
+                                <Route path="settings" element={<Settings />} />
                             </Route>
                         </Route>
                     </Routes>
