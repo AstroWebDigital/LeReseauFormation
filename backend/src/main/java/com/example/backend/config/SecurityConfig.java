@@ -40,6 +40,7 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/health",
                                 "/files/**",
+                                "/uploads/**",
                                 // Swagger / OpenAPI
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

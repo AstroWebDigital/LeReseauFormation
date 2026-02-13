@@ -49,7 +49,7 @@ const DashboardSidebar = () => {
         { label: "Messages", icon: ChatBubbleLeftRightIcon, to: "/messages" },
         { label: "Documents", icon: DocumentTextIcon, to: "/documents" },
         { label: "Statistiques", icon: ChartBarIcon, to: "/statistiques" },
-        { label: "Paramètres", icon: Cog6ToothIcon, to: "/parametres" },
+        { label: "Paramètres", icon: Cog6ToothIcon, to: "/settings" },
         { label: "Mon profil", icon: UserCircleIcon, to: "/profile" },
     ];
 

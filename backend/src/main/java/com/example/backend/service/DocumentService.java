@@ -8,7 +8,10 @@ import com.example.backend.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -20,30 +23,43 @@ public class DocumentService {
     private final CustomerRepository customerRepository;
     private final AuthService authService;
 
+    // Dossier racine pour le stockage
+    private final String UPLOAD_DIR = "uploads/documents/";
+
     @Transactional
-    public Document createDocument(Document document) {
-        // 1. Récupérer l'utilisateur connecté via le token JWT
+    public Document createDocument(Document document, MultipartFile file) throws IOException {
+        // 1. Récupérer l'utilisateur connecté
         User currentUser = authService.getCurrentUser();
-
-        // 2. Trouver le profil "Customer" correspondant à cet utilisateur
-        // Cela garantit que le document est lié au bon compte en base
         Customer customer = customerRepository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("Profil client introuvable pour cet utilisateur"));
+                .orElseThrow(() -> new RuntimeException("Profil client introuvable"));
 
-        // 3. Préparer l'identifiant unique si absent
-        if (document.getId() == null) {
-            document.setId(UUID.randomUUID());
+        // 2. Gestion physique du fichier PDF
+        if (file != null && !file.isEmpty()) {
+            // Créer le dossier s'il n'existe pas
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Générer un nom unique pour éviter les doublons (ex: uuid_nom-original.pdf)
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+
+            // Copier le fichier sur le disque
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // On stocke le chemin relatif dans l'entité
+            document.setFileUrl("/uploads/documents/" + fileName);
         }
 
-        // 4. Forcer les données de sécurité et de traçabilité
+        // 3. Préparer l'entité
+        if (document.getId() == null) document.setId(UUID.randomUUID());
         document.setCustomer(customer);
 
-        // On initialise ou on écrase les dates pour utiliser l'heure du serveur
         OffsetDateTime now = OffsetDateTime.now();
         document.setCreatedAt(now);
         document.setUpdatedAt(now);
 
-        // 5. Sauvegarde finale
         return documentRepository.save(document);
     }
 }
