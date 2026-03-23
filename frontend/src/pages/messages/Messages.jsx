@@ -86,25 +86,24 @@ export default function Messages() {
             try {
                 // Récupérer les conversations de l'utilisateur connecté
                 // L'endpoint utilise l'authentification, pas besoin de passer l'userId
-                const { data } = await api.get(`/channels`);
+                const { data } = await api.get(`/api/channels`);
 
                 console.log("✅ Conversations reçues:", data);
 
                 const formatted = data.map((channel) => {
                     // Déterminer l'autre utilisateur dans la conversation
-                    const isCustomer = CURRENT_USER_ID === channel.customerId;
-                    const otherUserId = isCustomer ? channel.alpId : channel.customerId;
-                    const otherUserType = isCustomer ? "ALP" : "Client";
-
+                    const isRenter = CURRENT_USER_ID === channel.renterUserId;
+                    const otherUserId = isRenter ? channel.ownerUserId : channel.renterUserId;
+                    const otherUserType = isRenter ? "Propriétaire" : "Locataire";
                     return {
                         id: channel.id,
                         conversation_name: channel.channelName || `Conversation #${channel.id?.toString().slice(0, 8)}`,
                         last_message: channel.lastMessage || "Démarrer la conversation...",
                         last_message_time: channel.updatedAt || channel.createdAt || "",
                         status: channel.status,
-                        customerId: channel.customerId,
-                        alpId: channel.alpId,
-                        initials: isCustomer ? "A" : "C",
+                        renterUserId: channel.renterUserId,
+                        ownerUserId: channel.ownerUserId,
+                        initials: isRenter ? "P" : "L",
                         otherUserType,
                         otherUserId,
                     };

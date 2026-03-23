@@ -31,50 +31,42 @@ public class VehicleController {
         this.userService = userService;
     }
 
-    /**
-     * GET /api/vehicles/{id} : Récupère un véhicule par son ID.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<Vehicle> getVehicleById(@PathVariable UUID id) {
-        Vehicle vehicle = vehicleService.getVehicleById(id);
-        return ResponseEntity.ok(vehicle);
-    }
+    // ─── Routes fixes en PREMIER (avant les routes avec @PathVariable) ──────────
 
     /**
-     * GET /api/vehicles/available : Récupère la liste paginée des véhicules disponibles.
+     * GET /api/vehicles/available
      */
     @GetMapping("/available")
     public ResponseEntity<Page<Vehicle>> getAvailableVehicles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-
-        Page<Vehicle> vehicles = vehicleService.getAvailableVehicles(page, size);
-
-        return ResponseEntity.ok(vehicles);
+        return ResponseEntity.ok(vehicleService.getAvailableVehicles(page, size));
     }
 
     /**
-     * POST /api/vehicles : Crée un nouveau véhicule.
+     * GET /api/vehicles/my-fleet
      */
-    @PostMapping
-    public ResponseEntity<Vehicle> createVehicle(
-            @Validated(OnCreate.class) @RequestBody VehicleRequest vehicleRequest,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        // 1. Charger l'entité User complète
+    @GetMapping("/my-fleet")
+    public ResponseEntity<Page<Vehicle>> getMyVehicles(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         User currentUser = loadCurrentUser(userDetails);
+        return ResponseEntity.ok(vehicleService.getVehiclesByUserId(currentUser.getId(), page, size));
+    }
 
-        // 2. Convertir le DTO en Entité (sans les relations)
-        Vehicle vehicleToCreate = vehicleRequest.toNewEntity();
+    // ─── Routes dynamiques avec @PathVariable APRÈS ──────────────────────────────
 
-        // 3. Transmettre au service
-        Vehicle createdVehicle = vehicleService.createVehicle(vehicleToCreate, currentUser);
-
-        return new ResponseEntity<>(createdVehicle, HttpStatus.CREATED);
+    /**
+     * GET /api/vehicles/{id}
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Vehicle> getVehicleById(@PathVariable UUID id) {
+        return ResponseEntity.ok(vehicleService.getVehicleById(id));
     }
 
     /**
-     * PUT /api/vehicles/{id} : Met à jour un véhicule existant.
+     * PUT /api/vehicles/{id}
      */
     @PutMapping("/{id}")
     public ResponseEntity<Vehicle> updateVehicle(
@@ -83,60 +75,39 @@ public class VehicleController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User currentUser = loadCurrentUser(userDetails);
-
-        // 1. Créer une "enveloppe" de détails à mettre à jour à partir du DTO
         Vehicle vehicleDetails = vehicleRequest.toNewEntity();
-
-        // 2. Ajouter les champs spécifiques à la mise à jour (Status, MaintenanceDate)
-        if (vehicleRequest.getStatus() != null) {
-            vehicleDetails.setStatus(vehicleRequest.getStatus());
-        }
-        if (vehicleRequest.getLastMaintenanceDate() != null) {
-            vehicleDetails.setLastMaintenanceDate(vehicleRequest.getLastMaintenanceDate());
-        }
-
-        Vehicle updatedVehicle = vehicleService.updateVehicle(id, vehicleDetails, currentUser);
-
-        return ResponseEntity.ok(updatedVehicle);
+        if (vehicleRequest.getStatus() != null) vehicleDetails.setStatus(vehicleRequest.getStatus());
+        if (vehicleRequest.getLastMaintenanceDate() != null) vehicleDetails.setLastMaintenanceDate(vehicleRequest.getLastMaintenanceDate());
+        return ResponseEntity.ok(vehicleService.updateVehicle(id, vehicleDetails, currentUser));
     }
 
     /**
-     * DELETE /api/vehicles/{id} : Supprime un véhicule.
+     * DELETE /api/vehicles/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVehicle(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetails userDetails) {
-
-        User currentUser = loadCurrentUser(userDetails);
-
-        vehicleService.deleteVehicle(id, currentUser);
-
+        vehicleService.deleteVehicle(id, loadCurrentUser(userDetails));
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * Méthode utilitaire pour charger l'entité User complète à partir de Spring Security.
+     * POST /api/vehicles
      */
+    @PostMapping
+    public ResponseEntity<Vehicle> createVehicle(
+            @Validated(OnCreate.class) @RequestBody VehicleRequest vehicleRequest,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User currentUser = loadCurrentUser(userDetails);
+        Vehicle createdVehicle = vehicleService.createVehicle(vehicleRequest.toNewEntity(), currentUser);
+        return new ResponseEntity<>(createdVehicle, HttpStatus.CREATED);
+    }
+
+    // ─── Utilitaire ──────────────────────────────────────────────────────────────
+
     private User loadCurrentUser(UserDetails userDetails) {
-        // Supposant que le nom d'utilisateur est l'email
         return userService.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé ou session invalide."));
     }
-    /**
-     * GET /api/vehicles/my-fleet : Récupère les véhicules appartenant à l'utilisateur connecté.
-     */
-    @GetMapping("/my-fleet")
-    public ResponseEntity<Page<Vehicle>> getMyVehicles(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        User currentUser = loadCurrentUser(userDetails);
-
-        Page<Vehicle> myVehicles = vehicleService.getVehiclesByUserId(currentUser.getId(), page, size);
-
-        return ResponseEntity.ok(myVehicles);
-    }
-
 }

@@ -21,7 +21,6 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "vehicle")
-// 🌟 MODIFICATION CLÉ : HÉRITER DE LA CLASSE AUDITABLE
 public class Vehicle extends Auditable {
 
     @Id
@@ -85,13 +84,11 @@ public class Vehicle extends Auditable {
     private String defaultParkingLocation;
 
     @JsonIgnore
-    // Requis par la DB/JPA pour la persistance (pour OnUpdate)
     @NotNull(groups = OnUpdate.class)
-    // Doit être NULL dans le JSON entrant (pour OnCreate)
     @Null(groups = OnCreate.class)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "alp_id", nullable = false)
-    private Alp alp;
+    @JoinColumn(name = "user_id", nullable = false)  // ← alp_id → user_id
+    private User user;  // ← Alp → User
 
     @JsonIgnore
     @OneToMany(mappedBy = "vehicle")

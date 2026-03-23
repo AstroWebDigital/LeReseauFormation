@@ -1,10 +1,8 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.DocumentResponseDTO;
-import com.example.backend.entity.Customer;
 import com.example.backend.entity.Document;
 import com.example.backend.entity.User;
-import com.example.backend.repository.CustomerRepository;
 import com.example.backend.repository.DocumentRepository;
 import com.example.backend.service.AuthService;
 import com.example.backend.service.DocumentService;
@@ -38,17 +36,15 @@ public class DocumentController {
 
     private final DocumentRepository documentRepository;
     private final DocumentService documentService;
-    private final CustomerRepository customerRepository;
     private final AuthService authService;
+    // ← customerRepository supprimé
 
     @GetMapping
     @Operation(summary = "Récupérer les documents de l'utilisateur connecté")
     public List<DocumentResponseDTO> getAllDocuments() {
         User currentUser = authService.getCurrentUser();
-        Customer customer = customerRepository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("Profil client introuvable"));
 
-        return documentRepository.findByCustomerId(customer.getId())
+        return documentRepository.findByUserId(currentUser.getId())  // ← findByCustomerId → findByUserId
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -60,7 +56,6 @@ public class DocumentController {
         try {
             Path filePath = Paths.get("/app/uploads/documents").resolve(filename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
-
             if (resource.exists() || resource.isReadable()) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
@@ -91,7 +86,6 @@ public class DocumentController {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         Document document = mapper.readValue(documentJson, Document.class);
-
         Document savedDocument = documentService.createDocument(document, file);
         return ResponseEntity.ok(this.convertToDTO(savedDocument));
     }
@@ -115,7 +109,6 @@ public class DocumentController {
                 doc.setExpirationDate(details.getExpirationDate());
                 doc.setStatus(details.getStatus());
                 doc.setUpdatedAt(OffsetDateTime.now());
-
                 Document updated = documentService.createDocument(doc, file);
                 return ResponseEntity.ok(this.convertToDTO(updated));
             } catch (IOException e) {
@@ -142,7 +135,7 @@ public class DocumentController {
                 .issueDate(doc.getIssueDate())
                 .expirationDate(doc.getExpirationDate())
                 .status(doc.getStatus())
-                .customerId(doc.getCustomer() != null ? doc.getCustomer().getId() : null)
+                .userId(doc.getUser() != null ? doc.getUser().getId() : null)  // ← customerId → userId
                 .vehicleId(doc.getVehicle() != null ? doc.getVehicle().getId() : null)
                 .createdAt(doc.getCreatedAt())
                 .updatedAt(doc.getUpdatedAt())

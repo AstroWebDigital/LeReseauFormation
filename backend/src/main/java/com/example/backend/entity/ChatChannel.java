@@ -13,6 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "chat_channel")
 public class ChatChannel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
@@ -23,18 +24,18 @@ public class ChatChannel {
     @JoinColumn(name = "reservation_id", nullable = false, unique = true)
     private Reservation reservation;
 
+    // Le locataire (anciennement Customer)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
+    @JoinColumn(name = "renter_user_id", nullable = false)
+    private User renterUser;
 
-    // L'ALP est le propriétaire du véhicule
+    // Le propriétaire du véhicule (anciennement Alp)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "alp_id", nullable = false)
-    private Alp alp;
+    @JoinColumn(name = "owner_user_id", nullable = false)
+    private User ownerUser;
 
-    // *** CHAMPS CRITIQUE MANQUANT/INACCESSIBLE PRÉCÉDEMMENT ***
     @NotNull
     @Column(name = "status", nullable = false, length = 50)
     private String status;
@@ -46,7 +47,6 @@ public class ChatChannel {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    // Nom du canal (par exemple, "Réservation #XYZ - Discussion")
     @NotNull
     @Column(name = "channel_name", nullable = false, length = 255)
     private String channelName;

@@ -15,6 +15,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "reservation")
 public class Reservation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
@@ -63,8 +64,8 @@ public class Reservation {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
+    @JoinColumn(name = "user_id", nullable = false)  // ← customer_id → user_id
+    private User user;                               // ← Customer → User
 
     @NotNull
     @Column(name = "created_at", nullable = false)
@@ -72,5 +73,4 @@ public class Reservation {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
-
 }

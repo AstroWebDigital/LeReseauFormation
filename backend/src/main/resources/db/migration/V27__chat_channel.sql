@@ -11,20 +11,20 @@ CREATE TABLE chat_channel (
                                       REFERENCES reservation (id) ON DELETE CASCADE,
                               CONSTRAINT uk_channel_reservation_id UNIQUE (reservation_id),
 
-                              customer_id UUID NOT NULL,
-                              CONSTRAINT fk_channel_customer
-                                  FOREIGN KEY (customer_id)
-                                      REFERENCES customer (id),
+                              renter_user_id UUID NOT NULL,
+                              CONSTRAINT fk_channel_renter
+                                  FOREIGN KEY (renter_user_id)
+                                      REFERENCES "user" (id),
 
-                              alp_id UUID NOT NULL,
-                              CONSTRAINT fk_channel_alp
-                                  FOREIGN KEY (alp_id)
-                                      REFERENCES alp (id),
+                              owner_user_id UUID NOT NULL,
+                              CONSTRAINT fk_channel_owner
+                                  FOREIGN KEY (owner_user_id)
+                                      REFERENCES "user" (id),
 
                               created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
                               updated_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_chat_channel_reservation ON chat_channel (reservation_id);
-CREATE INDEX idx_chat_channel_customer ON chat_channel (customer_id);
-CREATE INDEX idx_chat_channel_alp ON chat_channel (alp_id);
+CREATE INDEX idx_chat_channel_renter ON chat_channel (renter_user_id);   -- ← customer → renter
+CREATE INDEX idx_chat_channel_owner ON chat_channel (owner_user_id);     -- ← alp → owner

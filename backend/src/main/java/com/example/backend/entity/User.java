@@ -1,115 +1,66 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.time.Instant;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "\"user\"")
 public class User {
 
     public enum Status {
-        ACTIF,
-        SUSPENDU,
-        SUPPRIME,
-        EN_CREATION
+        EN_CREATION, ACTIF, SUSPENDU, SUPPRIME
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid default gen_random_uuid()")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    // Nullable pour comptes SSO si besoin
-    @Column
+    @Column(name = "password", length = 255)
     private String password;
 
-    // LOCAL / KEYCLOAK / GOOGLE ...
-    @Column(nullable = false)
+    @Column(name = "provider", nullable = false, length = 255)
     private String provider;
 
-    @Column(name = "provider_id")
+    @Column(name = "provider_id", length = 255)
     private String providerId;
 
-    @Column(nullable = false)
+    @Column(name = "roles", nullable = false, length = 255)
     private String roles;
 
-    // ---- Nouveaux champs ----
-
-    @Column
+    @Column(name = "firstname", length = 255)
     private String firstname;
 
-    @Column
+    @Column(name = "lastname", length = 255)
     private String lastname;
 
-    @Column
+    @Column(name = "phone", length = 255)
     private String phone;
 
-    @Column(name = "profil_photo")
+    @Column(name = "profil_photo", length = 255)
     private String profilPhoto;
 
-    @OneToOne(mappedBy = "user")
-    @JsonIgnore
-    private Customer customer;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
-    private Status status = Status.ACTIF;
+    @Column(name = "status", nullable = false, length = 255)
+    private Status status;
 
-    @Column
+    @Column(name = "sector", length = 255)
     private String sector;
 
-    // 💡 AJOUT OBLIGATOIRE : Relation vers l'entité ALP
-    // 'mappedBy = "user"' suppose que dans Alp.java, le champ qui référence User s'appelle 'user'.
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Alp alp;
-
-    // ---- Métadonnées ----
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+    @NotNull
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private Instant updatedAt;
-
-    // ---- Lifecycle ----
-
-    @PrePersist
-    public void prePersist() {
-        Instant now = Instant.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
-        updatedAt = now;
-
-        if (roles == null) {
-            roles = "ROLE_USER";
-        }
-        if (provider == null) {
-            provider = "LOCAL";
-        }
-        if (status == null) {
-            status = Status.ACTIF;
-        }
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        updatedAt = Instant.now();
-        if (status == null) {
-            status = Status.ACTIF;
-        }
-    }
+    private LocalDateTime updatedAt;
 }

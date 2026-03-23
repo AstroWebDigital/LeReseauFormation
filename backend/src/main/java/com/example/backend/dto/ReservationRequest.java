@@ -8,13 +8,10 @@ import java.util.UUID;
 @Data
 public class ReservationRequest {
     private UUID vehicleId;
-    private UUID customerId;
     private OffsetDateTime startDate;
     private OffsetDateTime endDate;
     private String pickupLocation;
     private String returnLocation;
-    private String status;
-    private BigDecimal totalAmount;
     private BigDecimal depositAmount;
     private BigDecimal securityDeposit;
 }

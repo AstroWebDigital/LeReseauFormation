@@ -16,6 +16,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "document")
 public class Document {
+
     @Id
     @ColumnDefault("gen_random_uuid()")
     @Column(name = "id", nullable = false)
@@ -48,8 +49,8 @@ public class Document {
     private String status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    @JoinColumn(name = "user_id")       // ← customer_id → user_id
+    private User user;                  // ← Customer → User
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id")
@@ -61,5 +62,4 @@ public class Document {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
-
 }

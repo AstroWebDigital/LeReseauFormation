@@ -10,9 +10,7 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    // On remplace "u.customer" par "u.alp" pour correspondre à ton entité User
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.alp WHERE u.email = :email")
-    Optional<User> findByEmail(@Param("email") String email);
+    Optional<User> findByEmail(String email);
 
     boolean existsByEmailIgnoreCase(String email);
 }

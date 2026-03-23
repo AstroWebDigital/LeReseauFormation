@@ -19,31 +19,25 @@ public class ChatChannelService {
 
     private final ChatChannelRepository chatChannelRepository;
 
-    // Création d'un canal pour une réservation
     public ChatChannel createChannelForReservation(Reservation reservation) {
         ChatChannel channel = new ChatChannel();
         channel.setReservation(reservation);
-
-        // Stocker directement Customer et Alp (pas besoin de .getUser())
-        channel.setCustomer(reservation.getCustomer());
-        channel.setAlp(reservation.getVehicle().getAlp());
-
+        channel.setRenterUser(reservation.getUser());               // ← setCustomer → setRenterUser
+        channel.setOwnerUser(reservation.getVehicle().getUser());   // ← setAlp → setOwnerUser
         channel.setCreatedAt(OffsetDateTime.now());
         channel.setUpdatedAt(OffsetDateTime.now());
         channel.setStatus("ACTIVE");
         channel.setChannelName("Conversation - Réservation #" + reservation.getId().toString().substring(0, 8));
-
         return chatChannelRepository.save(channel);
     }
 
-    // Récupération des channels pour un utilisateur (customer ou ALP)
     public List<ChatChannelResponse> getChannelsForUser(UUID userId) {
-        List<ChatChannel> channels = chatChannelRepository.findByCustomerIdOrAlpId(userId);
+        List<ChatChannel> channels = chatChannelRepository.findByRenterUserIdOrOwnerUserId(userId); // ← userId, userId → userId
         return channels.stream()
                 .map(channel -> new ChatChannelResponse(
                         channel.getId(),
-                        channel.getCustomer().getUser().getId(), // Récupérer le User ID depuis Customer
-                        channel.getAlp().getUser().getId(),       // Récupérer le User ID depuis Alp
+                        channel.getRenterUser().getId(),   // ← getCustomer().getUser()
+                        channel.getOwnerUser().getId(),    // ← getAlp().getUser()
                         channel.getChannelName(),
                         channel.getStatus(),
                         channel.getCreatedAt(),

@@ -19,6 +19,7 @@ import { HeroUIProvider } from "@heroui/react";
 import { AuthProvider } from "@/auth/AuthContext";
 
 import "@/styles/global.css";
+import ReservationPage from "./pages/reservation/ReservationPage";
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                                 <Route path="vehicles" element={<Vehicle />} />
                                 <Route path="documents" element={<DocumentPage />} />
                                 <Route path="settings" element={<Settings />} />
+                                <Route path="reservations" element={<ReservationPage />} />
                             </Route>
                         </Route>
                     </Routes>

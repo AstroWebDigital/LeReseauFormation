@@ -51,8 +51,8 @@ public class EmailService {
      */
     public void sendReservationConfirmationEmail(Reservation reservation) {
 
-        String toEmail = reservation.getCustomer().getUser().getEmail();
-        String customerFirstName = reservation.getCustomer().getUser().getFirstname();
+        String toEmail = reservation.getUser().getEmail();
+        String customerFirstName = reservation.getUser().getFirstname();
         // Utilisation d'une référence courte
         String reservationRef = reservation.getId().toString().substring(0, 8).toUpperCase();
 
@@ -283,8 +283,8 @@ public class EmailService {
                 reservationRef,
                 vehicleName,
                 pickUpDateTime, // Variable mise à jour
-                reservation.getCustomer().getUser().getFirstname(),
-                reservation.getCustomer().getUser().getLastname(),
+                reservation.getUser().getFirstname(),
+                reservation.getUser().getLastname(),
                 reservationLink,
                 java.time.Year.now().getValue()
         );

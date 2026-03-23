@@ -2,19 +2,16 @@ package com.example.backend.mapper;
 
 import com.example.backend.dto.UserDto;
 import com.example.backend.entity.User;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class UserMapper {
 
     @Value("${app.public-base-url}")
     private String publicBaseUrl;
 
-    // Ajoute l'injection du mapper pour l'entité Alp/Customer
-    private final CustomerMapper customerMapper;
+    // ← CustomerMapper supprimé
 
     public UserDto toDto(User u) {
         if (u == null) return null;
@@ -33,7 +30,6 @@ public class UserMapper {
                 .providerId(u.getProviderId())
                 .createdAt(u.getCreatedAt() != null ? u.getCreatedAt().toString() : null)
                 .updatedAt(u.getUpdatedAt() != null ? u.getUpdatedAt().toString() : null)
-                .customer(u.getAlp() != null ? customerMapper.toDto(u.getAlp()) : null)
                 .build();
     }
 

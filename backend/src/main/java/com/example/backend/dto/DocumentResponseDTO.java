@@ -16,7 +16,7 @@ public class DocumentResponseDTO {
     private LocalDate issueDate;
     private LocalDate expirationDate;
     private String status;
-    private UUID customerId;
+    private UUID userId;      // ← customerId → userId
     private UUID vehicleId;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

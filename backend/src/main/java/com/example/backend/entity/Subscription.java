@@ -15,6 +15,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "subscription")
 public class Subscription {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
@@ -44,8 +45,8 @@ public class Subscription {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "alp_id", nullable = false)
-    private Alp alp;
+    @JoinColumn(name = "user_id", nullable = false)  // ← alp_id → user_id
+    private User user;  // ← Alp → User
 
     @NotNull
     @Column(name = "created_at", nullable = false)
@@ -53,5 +54,4 @@ public class Subscription {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
-
 }
