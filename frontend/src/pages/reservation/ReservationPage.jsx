@@ -20,7 +20,7 @@ export default function ReservationPage() {
     const fetchVehicles = async () => {
         try {
             setIsLoading(true);
-            const { data } = await api.get("/api/vehicles?status=disponible");
+            const { data } = await api.get("/api/vehicles/available");
             setVehicles(data.content || data || []);
         } catch (err) {
             console.error("Erreur API:", err);
