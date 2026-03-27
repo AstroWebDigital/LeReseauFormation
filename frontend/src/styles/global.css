@@ -1,24 +1,14 @@
 @import "tailwindcss";
 @layer theme, base, components, utilities;
 
-/* Branche HeroUI sur Tailwind v4 */
 @plugin "./hero.ts";
 
-/* Important : inclure les styles du thème HeroUI */
 @source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 
-/* Thème de base (à ajuster si tu veux) */
 @theme {
-    /*--color-primary: #eab308;*/
-    /*--color-primary-foreground: #111827;*/
-
-    /*--color-background: #020617;*/
-    /*--color-foreground: #e5e7eb;*/
-
     --radius-lg: 0.75rem;
 }
 
-/* ➜ Ici on remet ta police d'avant + le fond */
 @layer base {
     html,
     body,
@@ -35,32 +25,38 @@
         color: inherit;
         text-decoration: none;
     }
-
-    /* --- Fix HeroUI Input texte sur fond sombre --- */
-
-    /* Texte des champs */
-    [data-slot="input"] {
-        color: #e5e7eb !important;          /* texte clair */
-        font-size: 0.875rem;                /* 14px */
-    }
-
-    /* Placeholder */
-    [data-slot="input"]::placeholder {
-        color: #64748b !important;          /* gris lisible */
-    }
-
-    /* Optionnel : wrapper d'input */
-    [data-slot="input-wrapper"] {
-        background-color: transparent !important;
-    }
-
-    /* --- Fix autofill Chrome/Edge sur fond sombre --- */
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus {
-        -webkit-text-fill-color: #e5e7eb !important;
-        -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-        transition: background-color 9999s ease-out 0s !important;
-    }
 }
 
+/* ── Mode DARK : texte clair ── */
+html.dark [data-slot="input"] {
+    color: #e5e7eb !important;
+}
+
+html.dark [data-slot="input"]::placeholder {
+    color: #64748b !important;
+}
+
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e5e7eb !important;
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+    transition: background-color 9999s ease-out 0s !important;
+}
+
+/* ── Mode LIGHT : texte sombre ── */
+html.light [data-slot="input"] {
+    color: #1e293b !important;
+}
+
+html.light [data-slot="input"]::placeholder {
+    color: #94a3b8 !important;
+}
+
+html.light input:-webkit-autofill,
+html.light input:-webkit-autofill:hover,
+html.light input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #1e293b !important;
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+    transition: background-color 9999s ease-out 0s !important;
+}

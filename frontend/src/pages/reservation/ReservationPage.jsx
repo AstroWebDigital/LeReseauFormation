@@ -2,11 +2,15 @@ import React, { useState, useEffect } from "react";
 import api from "@/services/auth/client";
 import { Spinner, Input } from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
+import { useTheme } from "@/theme/ThemeProvider";
 
 import { VehicleGrid } from "./components/VehicleGrid";
 import { BookingModal } from "./components/BookingModal";
 
 export default function ReservationPage() {
+    const { isDark } = useTheme();
+    const isLight = !isDark;
+
     const [vehicles, setVehicles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -51,7 +55,7 @@ export default function ReservationPage() {
             });
             onOpenChange(false);
             setSuccessMsg(`Réservation confirmée pour ${selectedVehicle.brand} ${selectedVehicle.model} !`);
-            fetchVehicles(); // refresh pour retirer le véhicule réservé
+            fetchVehicles();
         } catch (err) {
             const msg = err.response?.data?.message || err.response?.data || "Erreur lors de la réservation.";
             alert(msg);
@@ -79,12 +83,13 @@ export default function ReservationPage() {
     );
 
     return (
-        <div className="p-6">
-            {/* Header */}
+        <div className={`p-6 min-h-screen ${isLight ? "bg-slate-50" : ""}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-100">Réserver un véhicule</h1>
-                    <p className="text-default-500 text-sm mt-1">
+                    <h1 className={`text-2xl font-bold ${isLight ? "text-slate-800" : "text-slate-100"}`}>
+                        Réserver un véhicule
+                    </h1>
+                    <p className={`text-sm mt-1 ${isLight ? "text-slate-500" : "text-default-500"}`}>
                         {filtered.length} véhicule{filtered.length !== 1 ? "s" : ""} disponible{filtered.length !== 1 ? "s" : ""}
                     </p>
                 </div>
@@ -94,8 +99,12 @@ export default function ReservationPage() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="max-w-xs"
                     classNames={{
-                        input: "!text-white bg-transparent text-sm",
-                        inputWrapper: "border border-white/10 bg-white/5 hover:border-orange-400/50 focus-within:!border-orange-400 rounded-xl transition-all",
+                        input: isLight
+                            ? "!text-slate-800 !placeholder-slate-400 bg-transparent text-sm"
+                            : "!text-white !placeholder-slate-500 bg-transparent text-sm",
+                        inputWrapper: isLight
+                            ? "border border-slate-300 bg-white hover:border-orange-400/50 focus-within:!border-orange-400 rounded-xl transition-all"
+                            : "border border-white/10 bg-white/5 hover:border-orange-400/50 focus-within:!border-orange-400 rounded-xl transition-all",
                     }}
                     variant="bordered"
                     isClearable
@@ -103,21 +112,18 @@ export default function ReservationPage() {
                 />
             </div>
 
-            {/* Success banner */}
             {successMsg && (
-                <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-emerald-400 text-sm flex items-center gap-2">
+                <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-emerald-600 text-sm flex items-center gap-2">
                     <span>✅</span> {successMsg}
                 </div>
             )}
-
-            {/* Error */}
             {error && (
-                <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm">
+                <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-500 text-sm">
                     {error}
                 </div>
             )}
 
-            <VehicleGrid vehicles={filtered} onBook={handleBook} />
+            <VehicleGrid vehicles={filtered} onBook={handleBook} isDark={isDark} />
 
             <BookingModal
                 isOpen={isOpen}
@@ -125,6 +131,7 @@ export default function ReservationPage() {
                 vehicle={selectedVehicle}
                 onConfirm={handleConfirm}
                 isSubmitting={isSubmitting}
+                isDark={isDark}
             />
         </div>
     );

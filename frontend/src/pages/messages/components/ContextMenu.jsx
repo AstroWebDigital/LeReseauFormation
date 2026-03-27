@@ -3,16 +3,20 @@ import { Reply, Pencil, Copy, Trash2, Pin } from "lucide-react";
 
 const REACTIONS = ["❤️", "🔥", "😂", "👍", "😮", "😢"];
 
-function CtxItem({ icon, label, onClick, danger }) {
+function CtxItem({ icon, label, onClick, danger, isDark }) {
     return (
-        <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-slate-700/60 ${danger ? "text-red-400" : "text-slate-300 hover:text-slate-100"}`}>
-            <span className={danger ? "text-red-400" : "text-slate-400"}>{icon}</span>
+        <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+            danger
+                ? "text-red-400 hover:bg-red-500/10"
+                : isDark ? "text-slate-300 hover:bg-slate-700/60 hover:text-slate-100" : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+        }`}>
+            <span className={danger ? "text-red-400" : isDark ? "text-slate-400" : "text-slate-500"}>{icon}</span>
             {label}
         </button>
     );
 }
 
-export default function ContextMenu({ x, y, message, isOwn, onClose, onReply, onReact, onEdit, onCopy, onDelete, onPin }) {
+export default function ContextMenu({ x, y, message, isOwn, onClose, onReply, onReact, onEdit, onCopy, onDelete, onPin, isDark }) {
     const menuRef = useRef(null);
     const [pos, setPos] = useState({ x, y });
 
@@ -32,23 +36,28 @@ export default function ContextMenu({ x, y, message, isOwn, onClose, onReply, on
         }
     }, [x, y]);
 
+    const menuBg = isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200";
+    const reactionBg = isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200";
+    const reactionHover = isDark ? "hover:bg-slate-700" : "hover:bg-slate-100";
+    const divider = isDark ? "border-slate-700" : "border-slate-200";
+
     return (
         <div ref={menuRef} className="fixed z-[999] select-none" style={{ left: pos.x, top: pos.y }}>
-            <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-2xl px-3 py-2 mb-1.5 shadow-xl">
+            <div className={`flex items-center gap-1 border rounded-2xl px-3 py-2 mb-1.5 shadow-xl ${reactionBg}`}>
                 {REACTIONS.map((emoji) => (
                     <button key={emoji} onClick={() => { onReact(emoji); onClose(); }}
-                            className="text-xl hover:scale-125 transition-transform w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700">
+                            className={`text-xl transition-transform w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 ${reactionHover}`}>
                         {emoji}
                     </button>
                 ))}
             </div>
-            <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden min-w-[200px]">
-                <CtxItem icon={<Reply size={15} />} label="Répondre" onClick={() => { onReply(); onClose(); }} />
-                {isOwn && !message.deleted && <CtxItem icon={<Pencil size={15} />} label="Modifier" onClick={() => { onEdit(); onClose(); }} />}
-                {!message.deleted && <CtxItem icon={<Copy size={15} />} label="Copier" onClick={() => { onCopy(); onClose(); }} />}
-                <CtxItem icon={<Pin size={15} />} label={message.pinned ? "Désépingler" : "Épingler"} onClick={() => { onPin(); onClose(); }} />
-                <div className="border-t border-slate-700" />
-                {isOwn && !message.deleted && <CtxItem icon={<Trash2 size={15} />} label="Supprimer" onClick={() => { onDelete(); onClose(); }} danger />}
+            <div className={`border rounded-xl shadow-xl overflow-hidden min-w-[200px] ${menuBg}`}>
+                <CtxItem icon={<Reply size={15} />} label="Répondre" onClick={() => { onReply(); onClose(); }} isDark={isDark} />
+                {isOwn && !message.deleted && <CtxItem icon={<Pencil size={15} />} label="Modifier" onClick={() => { onEdit(); onClose(); }} isDark={isDark} />}
+                {!message.deleted && <CtxItem icon={<Copy size={15} />} label="Copier" onClick={() => { onCopy(); onClose(); }} isDark={isDark} />}
+                <CtxItem icon={<Pin size={15} />} label={message.pinned ? "Désépingler" : "Épingler"} onClick={() => { onPin(); onClose(); }} isDark={isDark} />
+                <div className={`border-t ${divider}`} />
+                {isOwn && !message.deleted && <CtxItem icon={<Trash2 size={15} />} label="Supprimer" onClick={() => { onDelete(); onClose(); }} danger isDark={isDark} />}
             </div>
         </div>
     );

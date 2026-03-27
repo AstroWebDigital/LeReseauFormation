@@ -5,56 +5,52 @@ import {
 } from "@heroui/react";
 import { MapPinIcon, ClockIcon } from "@heroicons/react/24/outline";
 
-// ─── Créneaux horaires fixes (00:00 → 23:00, tranche 1h) ─────────────────────
 const HOURS = Array.from({ length: 24 }, (_, i) => {
     const h = String(i).padStart(2, "0");
     return { value: `${h}:00`, label: `${h}h00` };
 });
 
-const inputClasses = {
-    label: "!text-white/80 !opacity-100 text-xs font-semibold",
-    input: "!text-white bg-transparent",
-    inputWrapper: "border border-white/10 bg-white/5 hover:border-orange-400/50 focus-within:!border-orange-400 transition-all rounded-xl",
-};
-
-// ─── Composant DateTimePicker (date + heure séparées) ────────────────────────
-function DateTimePicker({ label, dateValue, timeValue, onDateChange, onTimeChange, minDate }) {
+function DateTimePicker({ label, dateValue, timeValue, onDateChange, onTimeChange, minDate, isDark }) {
+    const isLight = !isDark;
     return (
         <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-white/80">{label}</span>
+            <span className={`text-xs font-semibold ${isLight ? "text-slate-600" : "text-white/80"}`}>{label}</span>
             <div className="flex gap-2">
-                {/* Date */}
                 <div className="flex-1">
                     <input
                         type="date"
                         value={dateValue}
                         min={minDate}
                         onChange={(e) => onDateChange(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm
-                                   hover:border-orange-400/50 focus:border-orange-400 focus:outline-none
-                                   transition-all [color-scheme:dark]"
+                        className={`w-full rounded-xl px-3 py-2 text-sm border transition-all focus:outline-none
+                            ${isLight
+                            ? "bg-white border-slate-300 text-slate-800 hover:border-orange-400/50 focus:border-orange-400 [color-scheme:light]"
+                            : "bg-white/5 border-white/10 text-white hover:border-orange-400/50 focus:border-orange-400 [color-scheme:dark]"
+                        }`}
                     />
                 </div>
-
-                {/* Heure dropdown */}
                 <div className="relative w-28">
-                    <ClockIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none z-10" />
+                    <ClockIcon className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none z-10
+                        ${isLight ? "text-slate-400" : "text-white/40"}`} />
                     <select
                         value={timeValue}
                         onChange={(e) => onTimeChange(e.target.value)}
-                        className="w-full bg-[#0e1535] border border-white/10 rounded-xl pl-8 pr-6 py-2 text-white text-sm
-                                   hover:border-orange-400/50 focus:border-orange-400 focus:outline-none
-                                   transition-all appearance-none cursor-pointer"
+                        className={`w-full rounded-xl pl-8 pr-6 py-2 text-sm border transition-all appearance-none cursor-pointer focus:outline-none
+                            ${isLight
+                            ? "bg-white border-slate-300 text-slate-800 hover:border-orange-400/50 focus:border-orange-400"
+                            : "bg-[#0e1535] border-white/10 text-white hover:border-orange-400/50 focus:border-orange-400"
+                        }`}
                     >
-                        <option value="" disabled className="text-white/40">Heure</option>
+                        <option value="" disabled>Heure</option>
                         {HOURS.map(({ value, label }) => (
-                            <option key={value} value={value} className="bg-[#0e1535]">
+                            <option key={value} value={value}
+                                    className={isLight ? "bg-white text-slate-800" : "bg-[#0e1535] text-white"}>
                                 {label}
                             </option>
                         ))}
                     </select>
-                    {/* Chevron */}
-                    <svg className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-white/40 pointer-events-none"
+                    <svg className={`absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 pointer-events-none
+                        ${isLight ? "text-slate-400" : "text-white/40"}`}
                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -64,8 +60,8 @@ function DateTimePicker({ label, dateValue, timeValue, onDateChange, onTimeChang
     );
 }
 
-// ─── BookingModal ─────────────────────────────────────────────────────────────
-export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmitting }) {
+export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmitting, isDark }) {
+    const isLight = !isDark;
     const todayStr = new Date().toISOString().slice(0, 10);
 
     const [form, setForm] = useState({
@@ -82,13 +78,10 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
         });
     }, [isOpen]);
 
-    // ISO strings reconstruits pour calcul + envoi
     const startISO = form.startDate && form.startTime
-        ? new Date(`${form.startDate}T${form.startTime}:00`).toISOString()
-        : null;
+        ? new Date(`${form.startDate}T${form.startTime}:00`).toISOString() : null;
     const endISO = form.endDate && form.endTime
-        ? new Date(`${form.endDate}T${form.endTime}:00`).toISOString()
-        : null;
+        ? new Date(`${form.endDate}T${form.endTime}:00`).toISOString() : null;
 
     const nbDays = (() => {
         if (!startISO || !endISO) return 0;
@@ -99,13 +92,17 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
     const totalAmount = vehicle ? (nbDays * Number(vehicle.baseDailyPrice)).toFixed(2) : "0.00";
     const canSubmit = startISO && endISO && form.pickupLocation && form.returnLocation && nbDays > 0;
 
-    const handleConfirm = () => {
-        onConfirm({
-            startDate: startISO,
-            endDate: endISO,
-            pickupLocation: form.pickupLocation,
-            returnLocation: form.returnLocation,
-        });
+    const inputClasses = {
+        label: isDark
+            ? "!text-white !opacity-100 font-bold text-sm"
+            : "!text-slate-700 !opacity-100 font-bold text-sm",
+        input: isDark
+            ? "!text-white !placeholder-slate-500"
+            : "!text-slate-900 !placeholder-slate-400",
+        inputWrapper: isDark
+            ? "border-slate-700 bg-transparent group-data-[focus=true]:border-orange-500 transition-all"
+            : "border-slate-300 bg-white group-data-[focus=true]:border-orange-500 transition-all",
+        innerWrapper: isDark ? "bg-transparent" : "bg-white",
     };
 
     return (
@@ -114,10 +111,12 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
             onOpenChange={onOpenChange}
             size="lg"
             classNames={{
-                base: "bg-[#0e1535] border border-white/10 text-white",
-                header: "border-b border-white/10",
-                footer: "border-t border-white/10",
-                closeButton: "text-white/50 hover:text-white",
+                base: isLight
+                    ? "bg-white border border-slate-200 text-slate-800"
+                    : "bg-[#0e1535] border border-white/10 text-white",
+                header: isLight ? "border-b border-slate-200" : "border-b border-white/10",
+                footer: isLight ? "border-t border-slate-200" : "border-t border-white/10",
+                closeButton: isLight ? "text-slate-400 hover:text-slate-700" : "text-white/50 hover:text-white",
             }}
         >
             <ModalContent>
@@ -127,33 +126,29 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
                             <p className="text-lg font-bold">
                                 Réserver — <span className="text-orange-400">{vehicle?.brand} {vehicle?.model}</span>
                             </p>
-                            <p className="text-xs text-white/40 font-normal">
+                            <p className={`text-xs font-normal ${isLight ? "text-slate-400" : "text-white/40"}`}>
                                 {Number(vehicle?.baseDailyPrice).toFixed(2)} € / jour
                             </p>
                         </ModalHeader>
 
                         <ModalBody className="gap-5 py-5">
-                            {/* Dates + heures */}
                             <div className="grid grid-cols-2 gap-4">
                                 <DateTimePicker
                                     label="Date de début"
-                                    dateValue={form.startDate}
-                                    timeValue={form.startTime}
-                                    minDate={todayStr}
+                                    dateValue={form.startDate} timeValue={form.startTime}
+                                    minDate={todayStr} isDark={isDark}
                                     onDateChange={(v) => setForm({ ...form, startDate: v })}
                                     onTimeChange={(v) => setForm({ ...form, startTime: v })}
                                 />
                                 <DateTimePicker
                                     label="Date de fin"
-                                    dateValue={form.endDate}
-                                    timeValue={form.endTime}
-                                    minDate={form.startDate || todayStr}
+                                    dateValue={form.endDate} timeValue={form.endTime}
+                                    minDate={form.startDate || todayStr} isDark={isDark}
                                     onDateChange={(v) => setForm({ ...form, endDate: v })}
                                     onTimeChange={(v) => setForm({ ...form, endTime: v })}
                                 />
                             </div>
 
-                            {/* Lieux */}
                             <Input
                                 label="Lieu de prise en charge"
                                 placeholder="ex: Niort, Parking A"
@@ -161,7 +156,7 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
                                 onChange={(e) => setForm({ ...form, pickupLocation: e.target.value })}
                                 classNames={inputClasses}
                                 variant="bordered"
-                                startContent={<MapPinIcon className="h-4 w-4 text-white/40" />}
+                                startContent={<MapPinIcon className={`h-4 w-4 ${isLight ? "text-slate-400" : "text-white/40"}`} />}
                             />
                             <Input
                                 label="Lieu de retour"
@@ -170,13 +165,12 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
                                 onChange={(e) => setForm({ ...form, returnLocation: e.target.value })}
                                 classNames={inputClasses}
                                 variant="bordered"
-                                startContent={<MapPinIcon className="h-4 w-4 text-white/40" />}
+                                startContent={<MapPinIcon className={`h-4 w-4 ${isLight ? "text-slate-400" : "text-white/40"}`} />}
                             />
 
-                            {/* Récap montant */}
                             {nbDays > 0 && (
                                 <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 px-4 py-3 flex items-center justify-between">
-                                    <span className="text-sm text-white/70">
+                                    <span className={`text-sm ${isLight ? "text-slate-600" : "text-white/70"}`}>
                                         {nbDays} jour{nbDays > 1 ? "s" : ""} × {Number(vehicle?.baseDailyPrice).toFixed(2)} €
                                     </span>
                                     <span className="text-orange-400 font-bold text-lg">{totalAmount} €</span>
@@ -185,14 +179,16 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
                         </ModalBody>
 
                         <ModalFooter>
-                            <Button variant="flat" className="text-white/60" onPress={onClose}>
+                            <Button variant="flat"
+                                    className={isLight ? "text-slate-500" : "text-white/60"}
+                                    onPress={onClose}>
                                 Annuler
                             </Button>
                             <Button
                                 className="bg-[#ff922b] text-white font-bold shadow-lg shadow-orange-500/30"
                                 isLoading={isSubmitting}
                                 isDisabled={!canSubmit}
-                                onPress={handleConfirm}
+                                onPress={() => onConfirm({ startDate: startISO, endDate: endISO, pickupLocation: form.pickupLocation, returnLocation: form.returnLocation })}
                             >
                                 Confirmer la réservation
                             </Button>

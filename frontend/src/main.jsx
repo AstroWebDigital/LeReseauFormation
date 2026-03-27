@@ -13,18 +13,20 @@ import Settings from "@/pages/settings/settings";
 import Vehicle from "@/pages/vehicle/Vehicle";
 import DocumentPage from "./pages/document/DocumentPage";
 import ProtectedRoute from "@/auth/ProtectedRoute";
-
-import { HeroUIProvider } from "@heroui/react";
-import { AuthProvider } from "@/auth/AuthContext";
-
-import "@/styles/global.css";
 import ReservationPage from "./pages/reservation/ReservationPage";
 import MessagesPage from "./pages/messages/MessagesPage";
 
+import { HeroUIProvider } from "@heroui/react";
+import { AuthProvider } from "@/auth/AuthContext";
+import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-    <React.StrictMode>
-        <HeroUIProvider>
+import "@/styles/global.css";
+
+function ThemedApp() {
+    const { theme } = useTheme();
+
+    return (
+        <HeroUIProvider theme={theme}>
             <BrowserRouter>
                 <AuthProvider>
                     <Routes>
@@ -38,7 +40,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                         <Route element={<ProtectedRoute />}>
                             <Route element={<RootLayout />}>
                                 <Route index element={<Dashboard />} />
-                                <Route path="profile" element={<Profile />} />
                                 <Route path="messages" element={<MessagesPage />} />
                                 <Route path="vehicles" element={<Vehicle />} />
                                 <Route path="documents" element={<DocumentPage />} />
@@ -50,5 +51,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 </AuthProvider>
             </BrowserRouter>
         </HeroUIProvider>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+    <React.StrictMode>
+        <ThemeProvider>
+            <ThemedApp />
+        </ThemeProvider>
     </React.StrictMode>
 );

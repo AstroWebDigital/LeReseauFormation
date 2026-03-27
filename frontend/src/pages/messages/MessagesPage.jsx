@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import api from "@/services/auth/client";
 import { MessageSquare, User } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useTheme } from "@/theme/ThemeProvider";
 
 import ConversationSidebar from "./components/ConversationSidebar";
 import ChatHeader from "./components/ChatHeader";
@@ -10,7 +11,6 @@ import MessageInput from "./components/MessageInput";
 import ContextMenu from "./components/ContextMenu";
 import PinnedPanel from "./components/PinnedPanel";
 
-/* ================= AUTH ================= */
 const useMessageAuth = () => {
     const { user, isAuthenticated } = useAuth();
     const userId = user?.id || null;
@@ -24,6 +24,11 @@ const useMessageAuth = () => {
 
 export default function MessagesPage() {
     const { userId: CURRENT_USER_ID, userRole, isAuthenticated } = useMessageAuth();
+    const { isDark } = useTheme();
+
+    const bg = isDark ? "#020617" : "#f8fafc";
+    const sideBg = isDark ? "#0f172a" : "#ffffff";
+    const borderColor = isDark ? "#1e293b" : "#e2e8f0";
 
     const [conversations, setConversations] = useState([]);
     const [activeConversation, setActiveConversation] = useState(null);
@@ -112,19 +117,16 @@ export default function MessagesPage() {
 
     const handleSend = useCallback(async (content) => {
         if (!activeConversation) return;
-
         if (editingMessage) {
             setMessages(prev => prev.map(m => m.id === editingMessage.id ? { ...m, content, edited: true } : m));
             setEditingMessage(null);
             api.patch(`/api/channels/${activeConversation.id}/messages/${editingMessage.id}`, { content }).catch(console.error);
             return;
         }
-
         const capturedReply = replyTo;
         setReplyTo(null);
         const temp = { id: Date.now(), senderUserId: CURRENT_USER_ID, content, sentAt: new Date().toISOString(), isTemp: true, replyTo: capturedReply ? { id: capturedReply.id, content: capturedReply.content } : null };
         setMessages(prev => [...prev, temp]);
-
         try {
             const { data } = await api.post(`/api/channels/${activeConversation.id}/messages`, { content, replyToId: capturedReply?.id });
             setMessages(prev => prev.map(m => m.id === temp.id ? { ...data, replyTo: temp.replyTo } : m));
@@ -146,17 +148,18 @@ export default function MessagesPage() {
     );
 
     if (hasAuthError) return (
-        <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#020617" }}>
+        <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: bg }}>
             <div className="text-center">
-                <div className="p-4 bg-red-500/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"><User size={28} className="text-red-400" /></div>
+                <div className="p-4 bg-red-500/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <User size={28} className="text-red-400" />
+                </div>
                 <p className="text-red-400 font-semibold">Erreur d'authentification</p>
             </div>
         </div>
     );
 
     return (
-        <div style={{ display: "flex", flexDirection: "row", height: "100%", overflow: "hidden", background: "#020617" }}>
-
+        <div style={{ display: "flex", flexDirection: "row", height: "100%", overflow: "hidden", background: bg }}>
             {contextMenu && (
                 <ContextMenu
                     x={contextMenu.x} y={contextMenu.y} message={contextMenu.message}
@@ -168,6 +171,7 @@ export default function MessagesPage() {
                     onCopy={() => handleCopy(contextMenu.message)}
                     onDelete={() => handleDelete(contextMenu.message)}
                     onPin={() => handlePin(contextMenu.message)}
+                    isDark={isDark}
                 />
             )}
 
@@ -182,39 +186,39 @@ export default function MessagesPage() {
                 isLoading={isLoadingConversations}
                 userRole={userRole}
                 formatTime={formatTime}
+                isDark={isDark}
             />
 
-            {/* CHAT */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", background: "#020617", position: "relative" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", background: bg, position: "relative" }}>
                 {!activeConversation ? (
                     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <div className="p-6 bg-slate-800/30 rounded-2xl border border-slate-800 text-center max-w-xs">
-                            <div className="p-4 bg-orange-500/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"><MessageSquare size={28} className="text-[#ff922b]" /></div>
-                            <p className="text-slate-300 font-semibold">Aucune conversation sélectionnée</p>
+                        <div className={`p-6 rounded-2xl border text-center max-w-xs ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-white border-slate-200 shadow-md"}`}>
+                            <div className="p-4 bg-orange-500/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <MessageSquare size={28} className="text-[#ff922b]" />
+                            </div>
+                            <p className={`font-semibold ${isDark ? "text-slate-300" : "text-slate-600"}`}>Aucune conversation sélectionnée</p>
                         </div>
                     </div>
                 ) : (
                     <>
-                        {showPinned && <PinnedPanel messages={messages} onClose={() => setShowPinned(false)} onScrollTo={scrollToMessage} />}
+                        {showPinned && <PinnedPanel messages={messages} onClose={() => setShowPinned(false)} onScrollTo={scrollToMessage} isDark={isDark} />}
+                        <ChatHeader conversation={activeConversation} messages={messages} onShowPinned={() => setShowPinned(true)} isDark={isDark} />
 
-                        <ChatHeader
-                            conversation={activeConversation}
-                            messages={messages}
-                            onShowPinned={() => setShowPinned(true)}
-                        />
-
-                        {/* Zone messages scrollable */}
-                        <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "16px 24px" }}>
+                        <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "16px 24px", background: bg }}>
                             {isLoadingMessages ? (
                                 <div className="flex flex-col gap-4">
-                                    {[1, 2, 3].map(i => <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}><div className="h-10 bg-slate-800 rounded-2xl animate-pulse w-48" /></div>)}
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}>
+                                            <div className={`h-10 rounded-2xl animate-pulse w-48 ${isDark ? "bg-slate-800" : "bg-slate-200"}`} />
+                                        </div>
+                                    ))}
                                 </div>
                             ) : messages.length === 0 ? (
                                 <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                    <div className="p-5 bg-slate-800/30 rounded-2xl border border-dashed border-slate-800 text-center">
-                                        <MessageSquare size={32} className="text-slate-700 mx-auto mb-3" />
-                                        <p className="text-slate-400 text-sm">Aucun message pour l'instant</p>
-                                        <p className="text-slate-600 text-xs mt-1">Envoyez le premier message !</p>
+                                    <div className={`p-5 rounded-2xl border border-dashed text-center ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-white border-slate-300 shadow-sm"}`}>
+                                        <MessageSquare size={32} className={`mx-auto mb-3 ${isDark ? "text-slate-700" : "text-slate-300"}`} />
+                                        <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Aucun message pour l'instant</p>
+                                        <p className={`text-xs mt-1 ${isDark ? "text-slate-600" : "text-slate-400"}`}>Envoyez le premier message !</p>
                                     </div>
                                 </div>
                             ) : (() => {
@@ -223,7 +227,7 @@ export default function MessagesPage() {
                                 messages.forEach((m, i) => {
                                     const d = m.sentAt ? new Date(m.sentAt) : null;
                                     if (d && (!lastDate || !isSameDay(lastDate, d))) {
-                                        items.push(<DateSeparator key={`sep-${m.id}`} label={formatDateLabel(m.sentAt)} />);
+                                        items.push(<DateSeparator key={`sep-${m.id}`} label={formatDateLabel(m.sentAt)} isDark={isDark} />);
                                         lastDate = d;
                                     }
                                     const prev = messages[i - 1];
@@ -235,6 +239,7 @@ export default function MessagesPage() {
                                             onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, message: m }); }}
                                             onReplyClick={() => scrollToMessage(m.replyTo?.id)}
                                             ref={(el) => { if (el) messageRefs.current[m.id] = el; }}
+                                            isDark={isDark}
                                         />
                                     );
                                 });
@@ -248,6 +253,7 @@ export default function MessagesPage() {
                             onCancelReply={() => setReplyTo(null)}
                             editingMessage={editingMessage}
                             onCancelEdit={() => setEditingMessage(null)}
+                            isDark={isDark}
                         />
                     </>
                 )}

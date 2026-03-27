@@ -50,7 +50,6 @@ const DashboardSidebar = () => {
         { label: "Documents", icon: DocumentTextIcon, to: "/documents" },
         { label: "Statistiques", icon: ChartBarIcon, to: "/statistiques" },
         { label: "Paramètres", icon: Cog6ToothIcon, to: "/settings" },
-        { label: "Mon profil", icon: UserCircleIcon, to: "/profile" },
     ];
 
     // Liens quand pas connecté

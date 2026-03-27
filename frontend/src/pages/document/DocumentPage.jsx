@@ -3,6 +3,7 @@ import api from "@/services/auth/client";
 import { Button, Spinner, useDisclosure } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useTheme } from "@/theme/ThemeProvider";
 
 import { DocumentGrid } from "./components/DocumentGrid";
 import { DocumentModal } from "./components/DocumentModal";
@@ -15,6 +16,8 @@ const statusColorMap = {
 
 export default function DocumentPage() {
     const { user } = useAuth();
+    const { isDark } = useTheme();
+
     const [documents, setDocuments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -46,15 +49,11 @@ export default function DocumentPage() {
 
     useEffect(() => { fetchDocuments(); }, []);
 
-    // FONCTION DE TÉLÉCHARGEMENT
     const handleDownload = async (fileUrl) => {
         if (!fileUrl) return alert("Pas de fichier associé");
         try {
             const filename = fileUrl.split('/').pop();
-            const response = await api.get(`/api/documents/download/${filename}`, {
-                responseType: 'blob',
-            });
-
+            const response = await api.get(`/api/documents/download/${filename}`, { responseType: 'blob' });
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -80,20 +79,15 @@ export default function DocumentPage() {
                 status: formData.status,
                 vehicle: formData.vehicleId ? { id: formData.vehicleId } : null,
             };
-
             data.append("document", JSON.stringify(documentPayload));
-            if (formData.file) {
-                data.append("file", formData.file);
-            }
+            if (formData.file) data.append("file", formData.file);
 
             const config = { headers: { "Content-Type": "multipart/form-data" } };
-
             if (selectedDoc) {
                 await api.put(`/api/documents/${selectedDoc.id}`, data, config);
             } else {
                 await api.post("/api/documents", data, config);
             }
-
             onOpenChange(false);
             fetchDocuments();
         } catch (err) {
@@ -116,39 +110,41 @@ export default function DocumentPage() {
     const openModal = (doc = null) => {
         if (doc) {
             setSelectedDoc(doc);
-            setFormData({
-                ...doc,
-                file: null,
-                vehicleId: doc.vehicleId || ""
-            });
+            setFormData({ ...doc, file: null, vehicleId: doc.vehicleId || "" });
         } else {
             setSelectedDoc(null);
-            setFormData({
-                scope: "vehicule",
-                type: "assurance",
-                file: null,
-                issueDate: "",
-                expirationDate: "",
-                status: "en_attente",
-                vehicleId: ""
-            });
+            setFormData({ scope: "vehicule", type: "assurance", file: null, issueDate: "", expirationDate: "", status: "en_attente", vehicleId: "" });
         }
         onOpen();
     };
 
-    const sharedClasses = {
-        label: "!text-white !opacity-100 font-bold text-sm",
-        input: "!text-white",
-        inputWrapper: "border-slate-700 bg-transparent group-data-[focus=true]:border-white transition-all",
+    // Classes adaptées au thème
+    const inputClasses = {
+        label: isDark
+            ? "!text-white !opacity-100 font-bold text-sm"
+            : "!text-slate-700 !opacity-100 font-bold text-sm",
+        input: isDark
+            ? "!text-white !placeholder-slate-500"
+            : "!text-slate-900 !placeholder-slate-400",
+        inputWrapper: isDark
+            ? "border-slate-700 bg-transparent group-data-[focus=true]:border-orange-500 transition-all"
+            : "border-slate-300 bg-white group-data-[focus=true]:border-orange-500 transition-all",
+        innerWrapper: isDark ? "bg-transparent" : "bg-white",
     };
 
-    if (isLoading) return <div className="h-full flex items-center justify-center min-h-[400px]"><Spinner size="lg" color="warning" /></div>;
+    if (isLoading) return (
+        <div className="h-full flex items-center justify-center min-h-[400px]">
+            <Spinner size="lg" color="warning" />
+        </div>
+    );
 
     return (
-        <div className="p-6">
+        <div className={`p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-100">Mes Documents</h1>
+                    <h1 className={`text-2xl font-bold ${isDark ? "text-slate-100" : "text-slate-800"}`}>
+                        Mes Documents
+                    </h1>
                     <p className="text-default-500">{documents.length} document(s) enregistré(s)</p>
                 </div>
                 <Button
@@ -166,6 +162,7 @@ export default function DocumentPage() {
                 onDelete={handleDelete}
                 onDownload={handleDownload}
                 statusColorMap={statusColorMap}
+                isDark={isDark}
             />
 
             <DocumentModal
@@ -175,7 +172,6 @@ export default function DocumentPage() {
                 setFormData={setFormData}
                 onSave={handleSave}
                 isEdit={!!selectedDoc}
-                inputClasses={sharedClasses}
             />
         </div>
     );

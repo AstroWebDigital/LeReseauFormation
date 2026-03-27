@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import api from "@/services/auth/client";
 import { Button, Spinner, useDisclosure } from "@heroui/react";
 import { Car } from "lucide-react";
+import { useTheme } from "@/theme/ThemeProvider";
 
-// Imports des composants découpés
 import { VehicleGrid } from "./components/VehicleGrid";
 import { VehicleModal } from "./components/VehicleModal";
 
@@ -14,6 +14,7 @@ const statusColorMap = {
 };
 
 export default function Vehicle() {
+    const { isDark } = useTheme();
     const [vehicles, setVehicles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -45,15 +46,12 @@ export default function Vehicle() {
     const handleSave = async () => {
         try {
             if (selectedVehicle) {
-                // UPDATE
                 await api.put(`/api/vehicles/${selectedVehicle.id}`, formData);
             } else {
-                // CREATE - Nettoyage pour éviter la 403 (OnCreate validation)
                 const payload = { ...formData };
                 delete payload.status;
                 delete payload.listingDate;
                 delete payload.id;
-
                 await api.post("/api/vehicles", payload);
             }
             onOpenChange(false);
@@ -90,29 +88,26 @@ export default function Vehicle() {
         onOpen();
     };
 
-    // Styles partagés pour les inputs et selects
-    const sharedClasses = {
-        label: "!text-white !opacity-100 font-bold text-sm",
-        input: "!text-white",
-        inputWrapper: "border-slate-700 bg-transparent group-data-[focus=true]:border-white transition-all",
-        trigger: "border-slate-700 bg-transparent data-[focus=true]:border-white transition-all",
-        value: "text-white",
-    };
-
     if (isLoading) return (
         <div className="h-full flex items-center justify-center min-h-[400px]">
-            <Spinner size="lg" label="Chargement..." color="primary" />
+            <Spinner size="lg" label="Chargement..." color="warning" />
         </div>
     );
 
     return (
-        <div className="p-6">
+        <div className={`p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-100">Mes Véhicules</h1>
+                    <h1 className={`text-2xl font-bold ${isDark ? "text-slate-100" : "text-slate-800"}`}>
+                        Mes Véhicules
+                    </h1>
                     <p className="text-default-500">{vehicles.length} véhicule(s) enregistré(s)</p>
                 </div>
-                <Button color="primary" onPress={() => openModal()} startContent={<Car size={18} />}>
+                <Button
+                    className="bg-[#ff922b] text-white font-bold shadow-lg shadow-orange-500/20"
+                    onPress={() => openModal()}
+                    startContent={<Car size={18} />}
+                >
                     Ajouter un véhicule
                 </Button>
             </div>
@@ -133,8 +128,6 @@ export default function Vehicle() {
                 setFormData={setFormData}
                 onSave={handleSave}
                 isEdit={!!selectedVehicle}
-                inputClasses={sharedClasses}
-                selectClasses={sharedClasses}
             />
         </div>
     );

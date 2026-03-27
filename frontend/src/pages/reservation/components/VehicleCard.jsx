@@ -23,14 +23,20 @@ const typeColor = (type) => {
     return map[(type || "").toLowerCase()] || "default";
 };
 
-export function VehicleCard({ vehicle, onBook }) {
+export function VehicleCard({ vehicle, onBook, isDark }) {
+    const isLight = !isDark;
     const photo = resolvePhotoUrl(vehicle.profilPhoto || vehicle.photo);
 
     return (
-        <div className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-[#111936] to-[#0b1025] hover:border-orange-500/40 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10 flex flex-col">
-
+        <div className={`group relative rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-xl flex flex-col
+            ${isLight
+            ? "border-slate-200 bg-white hover:border-orange-500/40 hover:shadow-orange-500/10"
+            : "border-white/10 bg-gradient-to-b from-[#111936] to-[#0b1025] hover:border-orange-500/40 hover:shadow-orange-500/10"
+        }`}
+        >
             {/* Image */}
-            <div className="relative h-44 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden">
+            <div className={`relative h-44 flex items-center justify-center overflow-hidden
+                ${isLight ? "bg-slate-100" : "bg-gradient-to-br from-slate-800 to-slate-900"}`}>
                 {photo ? (
                     <img
                         src={photo}
@@ -38,7 +44,7 @@ export function VehicleCard({ vehicle, onBook }) {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                 ) : (
-                    <TruckIcon className="h-16 w-16 text-white/20" />
+                    <TruckIcon className={`h-16 w-16 ${isLight ? "text-slate-300" : "text-white/20"}`} />
                 )}
                 <div className="absolute top-3 right-3">
                     <Chip size="sm" color="success" variant="flat" className="font-semibold text-xs">
@@ -54,24 +60,23 @@ export function VehicleCard({ vehicle, onBook }) {
 
             {/* Content */}
             <div className="p-4 flex flex-col flex-1 gap-3">
-                <h3 className="text-white font-bold text-lg leading-tight">
+                <h3 className={`font-bold text-lg leading-tight ${isLight ? "text-slate-800" : "text-white"}`}>
                     {vehicle.brand} <span className="text-orange-400">{vehicle.model}</span>
                 </h3>
 
-                {/* Specs */}
-                <div className="flex flex-wrap gap-2 text-xs text-white/60">
+                <div className={`flex flex-wrap gap-2 text-xs ${isLight ? "text-slate-500" : "text-white/60"}`}>
                     <span className="flex items-center gap-1">
                         <span>{fuelIcon(vehicle.fuel)}</span>
                         {vehicle.fuel}
                     </span>
-                    <span className="text-white/20">•</span>
+                    <span className={isLight ? "text-slate-300" : "text-white/20"}>•</span>
                     <span className="flex items-center gap-1">
                         <WrenchScrewdriverIcon className="h-3 w-3" />
                         {vehicle.transmission}
                     </span>
                     {vehicle.defaultParkingLocation && (
                         <>
-                            <span className="text-white/20">•</span>
+                            <span className={isLight ? "text-slate-300" : "text-white/20"}>•</span>
                             <span className="flex items-center gap-1">
                                 <MapPinIcon className="h-3 w-3" />
                                 {vehicle.defaultParkingLocation}
@@ -80,13 +85,13 @@ export function VehicleCard({ vehicle, onBook }) {
                     )}
                 </div>
 
-                {/* Price + CTA */}
-                <div className="mt-auto flex items-center justify-between pt-3 border-t border-white/10">
+                <div className={`mt-auto flex items-center justify-between pt-3 border-t
+                    ${isLight ? "border-slate-100" : "border-white/10"}`}>
                     <div>
-                        <span className="text-2xl font-bold text-white">
+                        <span className={`text-2xl font-bold ${isLight ? "text-slate-800" : "text-white"}`}>
                             {Number(vehicle.baseDailyPrice).toFixed(0)}€
                         </span>
-                        <span className="text-white/40 text-xs ml-1">/ jour</span>
+                        <span className={`text-xs ml-1 ${isLight ? "text-slate-400" : "text-white/40"}`}>/ jour</span>
                     </div>
                     <Button
                         size="sm"
