@@ -9,9 +9,8 @@ import Register from "@/pages/auth/Register";
 import Profile from "@/pages/Profile";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
-import Messages from "@/pages/messages/Messages";
 import Settings from "@/pages/settings/settings";
-import Vehicle from "@/pages/vehicle/Vehicle"; // Nouveau composant
+import Vehicle from "@/pages/vehicle/Vehicle";
 import DocumentPage from "./pages/document/DocumentPage";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 
@@ -20,6 +19,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 
 import "@/styles/global.css";
 import ReservationPage from "./pages/reservation/ReservationPage";
+import MessagesPage from "./pages/messages/MessagesPage";
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -39,7 +39,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                             <Route element={<RootLayout />}>
                                 <Route index element={<Dashboard />} />
                                 <Route path="profile" element={<Profile />} />
-                                <Route path="messages" element={<Messages />} />
+                                <Route path="messages" element={<MessagesPage />} />
                                 <Route path="vehicles" element={<Vehicle />} />
                                 <Route path="documents" element={<DocumentPage />} />
                                 <Route path="settings" element={<Settings />} />
