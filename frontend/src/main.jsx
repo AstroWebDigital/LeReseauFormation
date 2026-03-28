@@ -15,12 +15,16 @@ import DocumentPage from "./pages/document/DocumentPage";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import ReservationPage from "./pages/reservation/ReservationPage";
 import MessagesPage from "./pages/messages/MessagesPage";
+import StatisticsPage from "./pages/Statistics/StatisticsPage";
+import AdminVehiclesPage from "@/pages/admin/AdminVehiclesPage";
 
 import { HeroUIProvider } from "@heroui/react";
 import { AuthProvider } from "@/auth/AuthContext";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import "@/styles/global.css";
+
 
 function ThemedApp() {
     const { theme } = useTheme();
@@ -45,6 +49,8 @@ function ThemedApp() {
                                 <Route path="documents" element={<DocumentPage />} />
                                 <Route path="settings" element={<Settings />} />
                                 <Route path="reservations" element={<ReservationPage />} />
+                                <Route path="statistiques" element={<StatisticsPage />} />
+                                <Route path="admin/vehicles" element={<AdminVehiclesPage />} />
                             </Route>
                         </Route>
                     </Routes>
@@ -56,8 +62,10 @@ function ThemedApp() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
-        <ThemeProvider>
-            <ThemedApp />
-        </ThemeProvider>
+        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+            <ThemeProvider>
+                <ThemedApp />
+            </ThemeProvider>
+        </GoogleOAuthProvider>
     </React.StrictMode>
 );

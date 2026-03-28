@@ -2,8 +2,14 @@ spring:
   application:
     name: backend
 
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 100MB
+
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  upload-dir: ${UPLOAD_DIR:./uploads}
   jwt:
     secret: "T8zqP1hJjK2xM5nR9vU6bD3pE1sC7tF4wG8yH0aL2qN5rB8cZ6xV3mK1jP7uS9dT"
     expiration-ms: 3600000

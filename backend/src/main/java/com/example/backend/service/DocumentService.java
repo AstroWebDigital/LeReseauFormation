@@ -37,7 +37,12 @@ public class DocumentService {
             document.setFileUrl("/uploads/documents/" + fileName);
         }
 
-        if (document.getId() == null) document.setId(UUID.randomUUID());
+        if (document.getId() == null) {
+            document.setId(UUID.randomUUID());
+        }
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().contains("ADMIN");
+        document.setStatus(isAdmin ? "valide" : "en_attente");
+        document.setRejectionReason(null);
         document.setUser(currentUser);                      // ← setCustomer → setUser
 
         OffsetDateTime now = OffsetDateTime.now();

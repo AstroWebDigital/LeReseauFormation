@@ -13,7 +13,9 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -82,6 +84,15 @@ public class Vehicle extends Auditable {
     @Size(max = 255)
     @Column(name = "default_parking_location")
     private String defaultParkingLocation;
+
+    @Size(max = 500)
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "vehicle_images", joinColumns = @JoinColumn(name = "vehicle_id"))
+    @Column(name = "image_url")
+    private List<String> images = new ArrayList<>();
 
     @JsonIgnore
     @NotNull(groups = OnUpdate.class)

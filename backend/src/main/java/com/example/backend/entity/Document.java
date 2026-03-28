@@ -56,6 +56,10 @@ public class Document {
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
 
+    @Size(max = 500)
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
     @NotNull
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;

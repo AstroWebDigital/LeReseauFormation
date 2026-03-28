@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardHeader, CardBody, CardFooter, Chip, Button, Tooltip, Divider } from "@heroui/react";
 import {
     FileText, Calendar, Download, Edit2, Trash2,
-    Clock, ShieldCheck, Layers
+    Clock, ShieldCheck, Layers, AlertCircle
 } from "lucide-react";
 
 export const DocumentGrid = ({ documents, onEdit, onDelete, onDownload, statusColorMap, isDark }) => {
@@ -51,6 +51,14 @@ export const DocumentGrid = ({ documents, onEdit, onDelete, onDownload, statusCo
                     <Divider className={isDark ? "bg-slate-800 opacity-50" : "bg-slate-100"} />
 
                     <CardBody className="py-4 space-y-4">
+                        {doc.status === "rejete" && doc.rejectionReason && (
+                            <div className={`flex items-start gap-2 rounded-xl p-2.5 ${isDark ? "bg-red-500/10 border border-red-500/20" : "bg-red-50 border border-red-200"}`}>
+                                <AlertCircle size={14} className="text-danger flex-shrink-0 mt-0.5" />
+                                <p className={`text-xs ${isDark ? "text-red-300" : "text-red-700"}`}>
+                                    <span className="font-semibold">Motif : </span>{doc.rejectionReason}
+                                </p>
+                            </div>
+                        )}
                         <div className={`rounded-lg p-3 border space-y-2
                             ${isDark ? "bg-slate-950/50 border-slate-800/50" : "bg-slate-50 border-slate-200"}`}>
                             <div className="flex items-center justify-between text-sm">

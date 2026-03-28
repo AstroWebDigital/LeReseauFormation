@@ -64,15 +64,22 @@ export function AuthProvider({ children }) {
     setToken(null);
   };
 
+  const loginWithToken = (token, user) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    setToken(token);
+    setUser(user);
+  };
+
   const value = {
     user,
     token,
     loading,
     login,
     logout,
+    loginWithToken,
     isAuthenticated: !!user && !!token,
-    setUser,   // 👈 AJOUTER ÇA
-    setToken,  // 👈 ET ÇA
+    setUser,
+    setToken,
   };
 
 

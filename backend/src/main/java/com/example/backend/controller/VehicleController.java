@@ -8,20 +8,32 @@ import com.example.backend.dto.VehicleRequest;
 import com.example.backend.validation.OnCreate;
 import com.example.backend.validation.OnUpdate;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/vehicles")
 public class VehicleController {
+
+    @Value("${app.upload-dir:/data/uploads}")
+    private String uploadDir;
 
     private final VehicleService vehicleService;
     private final UserService userService;
@@ -102,6 +114,36 @@ public class VehicleController {
         User currentUser = loadCurrentUser(userDetails);
         Vehicle createdVehicle = vehicleService.createVehicle(vehicleRequest.toNewEntity(), currentUser);
         return new ResponseEntity<>(createdVehicle, HttpStatus.CREATED);
+    }
+
+    /**
+     * POST /api/vehicles/{id}/images
+     */
+    @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Vehicle> uploadImages(
+            @PathVariable UUID id,
+            @RequestParam("images") MultipartFile[] files,
+            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+
+        User currentUser = loadCurrentUser(userDetails);
+        Vehicle vehicle = vehicleService.getVehicleById(id);
+
+        if (!vehicle.getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé.");
+        }
+
+        List<String> imageUrls = new ArrayList<>();
+        Path uploadPath = Paths.get(uploadDir, "vehicles", id.toString());
+        Files.createDirectories(uploadPath);
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            file.transferTo(uploadPath.resolve(filename));
+            imageUrls.add("/uploads/vehicles/" + id + "/" + filename);
+        }
+
+        return ResponseEntity.ok(vehicleService.addImages(id, imageUrls));
     }
 
     // ─── Utilitaire ──────────────────────────────────────────────────────────────

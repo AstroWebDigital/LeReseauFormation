@@ -8,9 +8,14 @@ import { VehicleGrid } from "./components/VehicleGrid";
 import { VehicleModal } from "./components/VehicleModal";
 
 const statusColorMap = {
-    "disponible": "success",
-    "indisponible": "danger",
+    "en_attente":    "warning",
+    "disponible":    "success",
+    "indisponible":  "danger",
     "en maintenance": "warning",
+    "en_maintenance": "warning",
+    "rejete":        "danger",
+    "reserve":       "primary",
+    "bloque":        "danger",
 };
 
 export default function Vehicle() {
@@ -20,6 +25,7 @@ export default function Vehicle() {
     const [error, setError] = useState(null);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
 
     const [formData, setFormData] = useState({
         brand: "", model: "", plateNumber: "", type: "Compact",
@@ -45,15 +51,30 @@ export default function Vehicle() {
 
     const handleSave = async () => {
         try {
+            let vehicleId;
+
             if (selectedVehicle) {
                 await api.put(`/api/vehicles/${selectedVehicle.id}`, formData);
+                vehicleId = selectedVehicle.id;
             } else {
                 const payload = { ...formData };
                 delete payload.status;
                 delete payload.listingDate;
                 delete payload.id;
-                await api.post("/api/vehicles", payload);
+                delete payload.images;
+                const { data } = await api.post("/api/vehicles", payload);
+                vehicleId = data.id;
             }
+
+            // Upload des images si présentes
+            if (selectedImages.length > 0) {
+                const form = new FormData();
+                selectedImages.forEach(file => form.append("images", file));
+                await api.post(`/api/vehicles/${vehicleId}/images`, form, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                });
+            }
+
             onOpenChange(false);
             fetchVehicles();
         } catch (err) {
@@ -74,6 +95,7 @@ export default function Vehicle() {
     };
 
     const openModal = (vehicle = null) => {
+        setSelectedImages([]);
         if (vehicle) {
             setSelectedVehicle(vehicle);
             setFormData({ ...vehicle });
@@ -123,11 +145,13 @@ export default function Vehicle() {
 
             <VehicleModal
                 isOpen={isOpen}
-                onOpenChange={onOpenChange}
+                onOpenChange={(open) => { if (!open) setSelectedImages([]); onOpenChange(open); }}
                 formData={formData}
                 setFormData={setFormData}
                 onSave={handleSave}
                 isEdit={!!selectedVehicle}
+                selectedImages={selectedImages}
+                setSelectedImages={setSelectedImages}
             />
         </div>
     );

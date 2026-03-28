@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -39,6 +41,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         AuthResponse resp = authService.login(request);
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleAuth(@RequestBody Map<String, String> body) {
+        String accessToken = body.get("accessToken");
+        AuthResponse resp = authService.loginOrRegisterWithGoogle(accessToken);
         return ResponseEntity.ok(resp);
     }
 
@@ -65,7 +74,7 @@ public class AuthController {
 
 
     // 👉 Alias plus "parlant" pour le frontend : /profile
-    @GetMapping("/profile")
+    @GetMapping("/")
     public ResponseEntity<UserDto> profile() {
         UserDto dto = authService.currentUserDto();
         return ResponseEntity.ok(dto);

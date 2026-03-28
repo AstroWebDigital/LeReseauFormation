@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
-
+    List<Reservation> findByVehicleUserId(UUID userId);
     @Query("""
         SELECT r FROM Reservation r 
         WHERE r.vehicle.id = :vehicleId 

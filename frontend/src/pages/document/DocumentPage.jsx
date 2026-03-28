@@ -9,9 +9,10 @@ import { DocumentGrid } from "./components/DocumentGrid";
 import { DocumentModal } from "./components/DocumentModal";
 
 const statusColorMap = {
-    "valide": "success",
-    "expire": "danger",
+    "valide":     "success",
+    "expire":     "danger",
     "en_attente": "warning",
+    "rejete":     "danger",
 };
 
 export default function DocumentPage() {

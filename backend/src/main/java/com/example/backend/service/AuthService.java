@@ -17,14 +17,21 @@ import com.example.backend.repository.PasswordResetTokenRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -204,5 +211,69 @@ public class AuthService {
         String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Transactional
+    public AuthResponse loginOrRegisterWithGoogle(String accessToken) {
+        // 1. Récupérer les infos utilisateur depuis Google
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                HttpMethod.GET, entity, Map.class
+        );
+
+        Map<String, Object> googleUser = response.getBody();
+        if (googleUser == null || googleUser.containsKey("error")) {
+            throw new IllegalArgumentException("Token Google invalide.");
+        }
+
+        String email    = (String) googleUser.get("email");
+        String sub      = (String) googleUser.get("sub");
+        String firstname = (String) googleUser.getOrDefault("given_name", "");
+        String lastname  = (String) googleUser.getOrDefault("family_name", "");
+        String picture   = (String) googleUser.get("picture");
+
+        // 2. Trouver ou créer l'utilisateur
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.setStatus(User.Status.ACTIF);
+            user.setProvider("GOOGLE");
+            user.setProviderId(sub);
+            user.setFirstname(firstname);
+            user.setLastname(lastname);
+            user.setProfilPhoto(picture);
+            user.setRoles("USER");
+            user.setCreatedAt(LocalDateTime.now());
+            user = userRepository.save(user);
+        } else {
+            if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.SUSPENDU) {
+                throw new IllegalStateException("Compte suspendu ou supprimé.");
+            }
+            // Auto-vérifier si compte en attente de vérification
+            if (user.getStatus() == User.Status.EN_CREATION) {
+                user.setStatus(User.Status.ACTIF);
+            }
+            // Lier le compte Google si pas encore fait
+            if (user.getProviderId() == null) {
+                user.setProvider("GOOGLE");
+                user.setProviderId(sub);
+            }
+            user = userRepository.save(user);
+        }
+
+        String token = jwtService.generateToken(user.getEmail());
+        return AuthResponse.builder()
+                .token(token)
+                .tokenType("Bearer")
+                .user(userMapper.toDto(user))
+                .build();
     }
 }

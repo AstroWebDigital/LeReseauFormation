@@ -135,8 +135,9 @@ public class DocumentController {
                 .issueDate(doc.getIssueDate())
                 .expirationDate(doc.getExpirationDate())
                 .status(doc.getStatus())
-                .userId(doc.getUser() != null ? doc.getUser().getId() : null)  // ← customerId → userId
+                .userId(doc.getUser() != null ? doc.getUser().getId() : null)
                 .vehicleId(doc.getVehicle() != null ? doc.getVehicle().getId() : null)
+                .rejectionReason(doc.getRejectionReason())
                 .createdAt(doc.getCreatedAt())
                 .updatedAt(doc.getUpdatedAt())
                 .build();

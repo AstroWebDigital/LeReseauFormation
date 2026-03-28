@@ -1,0 +1,2 @@
+ALTER TABLE vehicle  ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(500);
+ALTER TABLE document ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(500);

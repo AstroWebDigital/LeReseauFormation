@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -20,6 +21,7 @@ public class VehicleService {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final String AVAILABLE_STATUS = "disponible";
+    private static final String PENDING_STATUS = "en_attente";
 
     private final VehicleRepository vehicleRepository;
 
@@ -29,8 +31,9 @@ public class VehicleService {
 
     @Transactional
     public Vehicle createVehicle(Vehicle vehicle, User owner) {
-        vehicle.setUser(owner);                          // ← setAlp(ownerAlp) → setUser(owner)
-        vehicle.setStatus(AVAILABLE_STATUS);
+        vehicle.setUser(owner);
+        boolean isAdmin = owner.getRoles() != null && owner.getRoles().contains("ADMIN");
+        vehicle.setStatus(isAdmin ? AVAILABLE_STATUS : PENDING_STATUS);
         vehicle.setListingDate(LocalDate.now());
         return vehicleRepository.save(vehicle);
     }
@@ -53,7 +56,9 @@ public class VehicleService {
         existingVehicle.setBaseDailyPrice(vehicleDetails.getBaseDailyPrice());
         existingVehicle.setMileage(vehicleDetails.getMileage());
         existingVehicle.setDefaultParkingLocation(vehicleDetails.getDefaultParkingLocation());
-        if (vehicleDetails.getStatus() != null) existingVehicle.setStatus(vehicleDetails.getStatus());
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().contains("ADMIN");
+        existingVehicle.setStatus(isAdmin ? AVAILABLE_STATUS : PENDING_STATUS);
+        existingVehicle.setRejectionReason(null);
         if (vehicleDetails.getLastMaintenanceDate() != null) existingVehicle.setLastMaintenanceDate(vehicleDetails.getLastMaintenanceDate());
 
         return vehicleRepository.save(existingVehicle);
@@ -84,6 +89,43 @@ public class VehicleService {
     }
 
     public Page<Vehicle> getVehiclesByUserId(UUID userId, int page, int size) {
-        return vehicleRepository.findByUserId(userId, PageRequest.of(page, size)); // ← findByAlpUserId → findByUserId
+        return vehicleRepository.findByUserId(userId, PageRequest.of(page, size));
+    }
+
+    @Transactional
+    public Vehicle addImages(UUID id, List<String> imageUrls) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Véhicule non trouvé."));
+        vehicle.getImages().addAll(imageUrls);
+        return vehicleRepository.save(vehicle);
+    }
+
+    // ─── Admin ────────────────────────────────────────────────────────────────
+
+    public Page<Vehicle> getPendingVehicles(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("listingDate").descending());
+        return vehicleRepository.findByStatus(PENDING_STATUS, pageable);
+    }
+
+    @Transactional
+    public Vehicle approveVehicle(UUID id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Véhicule non trouvé."));
+        vehicle.setStatus(AVAILABLE_STATUS);
+        return vehicleRepository.save(vehicle);
+    }
+
+    @Transactional
+    public Vehicle rejectVehicle(UUID id, String reason) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Véhicule non trouvé."));
+        vehicle.setStatus("rejete");
+        vehicle.setRejectionReason(reason);
+        return vehicleRepository.save(vehicle);
+    }
+
+    public Page<Vehicle> getAllVehicles(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("listingDate").descending());
+        return vehicleRepository.findAll(pageable);
     }
 }
