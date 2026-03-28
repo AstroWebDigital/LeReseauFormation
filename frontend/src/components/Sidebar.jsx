@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     HomeIcon, TruckIcon, CalendarDaysIcon, ChatBubbleLeftRightIcon,
@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
-import api from "@/services/auth/client";
+import { useNotifications } from "@/context/NotificationsContext";
 
 const DashboardSidebar = () => {
     const { pathname } = useLocation();
@@ -19,23 +19,7 @@ const DashboardSidebar = () => {
     const isAdmin = user?.roles?.includes("ADMIN");
     const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    const [pendingCount, setPendingCount] = useState(0);
-
-    // Récupère le compteur d'approbations en attente (admin seulement)
-    useEffect(() => {
-        if (!isAdmin) return;
-        const fetchCount = async () => {
-            try {
-                const { data } = await api.get("/api/admin/pending-count");
-                setPendingCount(data.total || 0);
-            } catch {
-                // silencieux
-            }
-        };
-        fetchCount();
-        const interval = setInterval(fetchCount, 30000); // rafraîchit toutes les 30s
-        return () => clearInterval(interval);
-    }, [isAdmin]);
+    const { unreadMessages, pendingAdminCount } = useNotifications();
 
     const resolvePhotoUrl = (url) => {
         if (!url) return null;
@@ -54,11 +38,11 @@ const DashboardSidebar = () => {
         { label: "Tableau de bord", icon: HomeIcon, to: "/" },
         { label: "Mes véhicules", icon: TruckIcon, to: "/vehicles" },
         { label: "Réservations", icon: CalendarDaysIcon, to: "/reservations" },
-        { label: "Messages", icon: ChatBubbleLeftRightIcon, to: "/messages" },
+        { label: "Messages", icon: ChatBubbleLeftRightIcon, to: "/messages", badge: unreadMessages },
         { label: "Documents", icon: DocumentTextIcon, to: "/documents" },
         { label: "Statistiques", icon: ChartBarIcon, to: "/statistiques" },
         { label: "Paramètres", icon: Cog6ToothIcon, to: "/settings" },
-        ...(isAdmin ? [{ label: "Administration", icon: ShieldCheckIcon, to: "/admin/vehicles", badge: pendingCount }] : []),
+        ...(isAdmin ? [{ label: "Administration", icon: ShieldCheckIcon, to: "/admin/vehicles", badge: pendingAdminCount }] : []),
     ];
 
     const guestNavItems = [

@@ -11,6 +11,7 @@ import {
     ChevronLeft, ChevronRight, AlertCircle
 } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
+import { useNotifications } from "@/context/NotificationsContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -198,6 +199,7 @@ function VehicleDetailModal({ vehicle, onClose, onApprove, onOpenReject, isDark 
 /* ─── Page principale ─── */
 export default function AdminVehiclesPage() {
     const { isDark } = useTheme();
+    const { decrementPending } = useNotifications();
     const [users, setUsers]               = useState([]);
     const [isLoading, setIsLoading]       = useState(true);
     const [error, setError]               = useState(null);
@@ -234,6 +236,7 @@ export default function AdminVehiclesPage() {
     const toggleUser = (id) => setOpenUsers(prev => ({ ...prev, [id]: !prev[id] }));
 
     const handleVehicleApprove = async (id) => {
+        decrementPending(1);
         await api.put(`/api/admin/vehicles/${id}/approve`);
         fetchOverview();
     };
@@ -241,6 +244,7 @@ export default function AdminVehiclesPage() {
     const handleRejectConfirm = async (reason) => {
         if (!rejectTarget) return;
         const { type, id } = rejectTarget;
+        decrementPending(1);
         if (type === "vehicle") {
             await api.put(`/api/admin/vehicles/${id}/reject`, { reason });
         } else {
@@ -251,6 +255,7 @@ export default function AdminVehiclesPage() {
     };
 
     const handleDocApprove = async (id) => {
+        decrementPending(1);
         await api.put(`/api/admin/documents/${id}/approve`);
         fetchOverview();
     };

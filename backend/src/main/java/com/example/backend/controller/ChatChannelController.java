@@ -2,12 +2,14 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.ChatChannelResponse;
 import com.example.backend.entity.User;
+import com.example.backend.repository.MessageRepository;
 import com.example.backend.service.AuthService;
 import com.example.backend.service.ChatChannelService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -19,12 +21,13 @@ import java.util.UUID;
 public class ChatChannelController {
 
     private final ChatChannelService channelService;
-    private final AuthService authService; // Service pour récupérer l'utilisateur connecté
+    private final AuthService authService;
+    private final MessageRepository messageRepository;
 
-    // Le constructeur doit prendre les deux services
-    public ChatChannelController(ChatChannelService channelService, AuthService authService) {
+    public ChatChannelController(ChatChannelService channelService, AuthService authService, MessageRepository messageRepository) {
         this.channelService = channelService;
         this.authService = authService;
+        this.messageRepository = messageRepository;
     }
 
     /**
@@ -49,5 +52,17 @@ public class ChatChannelController {
         return ResponseEntity.ok(
                 channelService.getChannelsForUser(userId)
         );
+    }
+
+    /**
+     * GET /api/channels/unread-count
+     * Retourne le nombre de messages non lus pour l'utilisateur connecté.
+     */
+    @GetMapping("/unread-count")
+    public ResponseEntity<Map<String, Long>> getUnreadCount() {
+        User currentUser = authService.getCurrentUser();
+        if (currentUser == null) return ResponseEntity.status(401).build();
+        long count = messageRepository.countUnreadForUser(currentUser.getId());
+        return ResponseEntity.ok(Map.of("unread", count));
     }
 }

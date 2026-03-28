@@ -3,6 +3,7 @@ import api from "@/services/auth/client";
 import { MessageSquare, User } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
+import { useNotifications } from "@/context/NotificationsContext";
 
 import ConversationSidebar from "./components/ConversationSidebar";
 import ChatHeader from "./components/ChatHeader";
@@ -25,6 +26,10 @@ const useMessageAuth = () => {
 export default function MessagesPage() {
     const { userId: CURRENT_USER_ID, userRole, isAuthenticated } = useMessageAuth();
     const { isDark } = useTheme();
+    const { resetUnreadMessages } = useNotifications();
+
+    // Réinitialise le badge non lu dès qu'on ouvre la page Messages
+    useEffect(() => { resetUnreadMessages(); }, [resetUnreadMessages]);
 
     const bg = isDark ? "#020617" : "#f8fafc";
     const sideBg = isDark ? "#0f172a" : "#ffffff";

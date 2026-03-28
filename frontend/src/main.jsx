@@ -20,6 +20,7 @@ import AdminVehiclesPage from "@/pages/admin/AdminVehiclesPage";
 
 import { HeroUIProvider } from "@heroui/react";
 import { AuthProvider } from "@/auth/AuthContext";
+import { NotificationsProvider } from "@/context/NotificationsContext";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -33,6 +34,7 @@ function ThemedApp() {
         <HeroUIProvider theme={theme}>
             <BrowserRouter>
                 <AuthProvider>
+                    <NotificationsProvider>
                     <Routes>
                         {/* Public Routes */}
                         <Route path="/login" element={<Login />} />
@@ -54,6 +56,7 @@ function ThemedApp() {
                             </Route>
                         </Route>
                     </Routes>
+                    </NotificationsProvider>
                 </AuthProvider>
             </BrowserRouter>
         </HeroUIProvider>
