@@ -57,6 +57,15 @@ public class User {
     @Column(name = "sector", length = 255)
     private String sector;
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = false;
+
+    @Column(name = "alp_id")
+    private java.util.UUID alpId;
+
+    @Column(name = "block_reason", columnDefinition = "TEXT")
+    private String blockReason;
+
     @NotNull
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

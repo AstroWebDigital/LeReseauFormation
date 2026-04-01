@@ -35,6 +35,10 @@ public class MessageService {
         return messageRepository.findByReservationOrderBySentAtAsc(channel.getReservation());
     }
 
+    public void markAsRead(UUID channelId, UUID currentUserId) {
+        messageRepository.markChannelMessagesAsRead(channelId, currentUserId);
+    }
+
     public Message sendMessage(UUID channelId, UUID senderUserId, String content) {
         ChatChannel channel = chatChannelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel introuvable: " + channelId));

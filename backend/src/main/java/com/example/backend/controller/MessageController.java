@@ -25,6 +25,10 @@ public class MessageController {
 
     @GetMapping("/{channelId}/messages")
     public ResponseEntity<List<MessageResponse>> getMessages(@PathVariable UUID channelId) {
+        User currentUser = authService.getCurrentUser();
+        if (currentUser != null) {
+            messageService.markAsRead(channelId, currentUser.getId());
+        }
         return ResponseEntity.ok(
                 messageService.getMessagesByChannel(channelId)
                         .stream()

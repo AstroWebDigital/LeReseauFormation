@@ -2,6 +2,7 @@
 package com.example.backend.config;
 
 import com.example.backend.dto.ApiError;
+import com.example.backend.exception.AccountSuspendedException;
 import com.example.backend.exception.EmailAlreadyUsedException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,23 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(AccountSuspendedException.class)
+    public ResponseEntity<ApiError> handleAccountSuspended(
+            AccountSuspendedException ex, HttpServletRequest req) {
+
+        ApiError body = ApiError.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
+                .message("Votre compte a été suspendu.")
+                .code("ACCOUNT_SUSPENDED")
+                .details(ex.getBlockReason())
+                .path(req.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     /**

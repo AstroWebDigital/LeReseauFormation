@@ -21,7 +21,7 @@ const statusLabels = {
     "bloque":         "Bloqué",
 };
 
-export const VehicleCard = ({ vehicle, onEdit, onDelete, statusColorMap }) => {
+export const VehicleCard = ({ vehicle, onEdit, onDelete, statusColorMap, canManage = true }) => {
     const { isDark } = useTheme();
 
     const cardClass = isDark
@@ -54,14 +54,16 @@ export const VehicleCard = ({ vehicle, onEdit, onDelete, statusColorMap }) => {
                     <h2 className={`text-xl font-bold ${textPrimary}`}>{vehicle.brand} {vehicle.model}</h2>
                     <code className={`text-xs font-mono px-2 py-0.5 rounded ${codeBg}`}>{vehicle.plateNumber}</code>
                 </div>
-                <div className="flex gap-1">
-                    <Button isIconOnly size="sm" variant="light" className={textMuted} onPress={() => onEdit(vehicle)}>
-                        <Edit size={14} />
-                    </Button>
-                    <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => onDelete(vehicle.id)}>
-                        <Trash2 size={14} />
-                    </Button>
-                </div>
+                {canManage && (
+                    <div className="flex gap-1">
+                        <Button isIconOnly size="sm" variant="light" className={textMuted} onPress={() => onEdit(vehicle)}>
+                            <Edit size={14} />
+                        </Button>
+                        <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => onDelete(vehicle.id)}>
+                            <Trash2 size={14} />
+                        </Button>
+                    </div>
+                )}
             </CardHeader>
             <CardBody className="px-5 py-4">
                 <div className={`grid grid-cols-2 gap-4 mb-4 ${textMuted}`}>

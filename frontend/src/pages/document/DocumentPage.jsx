@@ -19,15 +19,30 @@ export default function DocumentPage() {
     const { user } = useAuth();
     const { isDark } = useTheme();
 
+    // Vérifie si l'utilisateur a un rôle avancé (peut gérer véhicules/réservations)
+    const getUserRoles = () => {
+        if (!user?.roles) return [];
+        if (Array.isArray(user.roles)) return user.roles.map(r => r.toUpperCase());
+        return String(user.roles).toUpperCase().split(",").map(r => r.trim());
+    };
+    const userRoles = getUserRoles();
+    const isAdvancedUser = userRoles.some(role =>
+        ["ADMIN", "ALP", "PARTENAIRE"].includes(role)
+    );
+
     const [documents, setDocuments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [selectedDoc, setSelectedDoc] = useState(null);
 
+    // Scope par défaut selon le rôle
+    const defaultScope = isAdvancedUser ? "vehicule" : "utilisateur";
+    const defaultType = isAdvancedUser ? "assurance" : "permis";
+
     const [formData, setFormData] = useState({
-        scope: "vehicule",
-        type: "assurance",
+        scope: defaultScope,
+        type: defaultType,
         file: null,
         issueDate: "",
         expirationDate: "",
@@ -114,7 +129,15 @@ export default function DocumentPage() {
             setFormData({ ...doc, file: null, vehicleId: doc.vehicleId || "" });
         } else {
             setSelectedDoc(null);
-            setFormData({ scope: "vehicule", type: "assurance", file: null, issueDate: "", expirationDate: "", status: "en_attente", vehicleId: "" });
+            setFormData({
+                scope: defaultScope,
+                type: defaultType,
+                file: null,
+                issueDate: "",
+                expirationDate: "",
+                status: "en_attente",
+                vehicleId: ""
+            });
         }
         onOpen();
     };
@@ -173,6 +196,7 @@ export default function DocumentPage() {
                 setFormData={setFormData}
                 onSave={handleSave}
                 isEdit={!!selectedDoc}
+                isAdvancedUser={isAdvancedUser}
             />
         </div>
     );

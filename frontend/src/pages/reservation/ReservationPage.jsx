@@ -3,6 +3,7 @@ import api from "@/services/auth/client";
 import { Spinner, Input } from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
 import { useTheme } from "@/theme/ThemeProvider";
+import { useAuth } from "@/auth/AuthContext";
 
 import { VehicleGrid } from "./components/VehicleGrid";
 import { BookingModal } from "./components/BookingModal";
@@ -10,6 +11,14 @@ import { BookingModal } from "./components/BookingModal";
 export default function ReservationPage() {
     const { isDark } = useTheme();
     const isLight = !isDark;
+    const { user } = useAuth();
+
+    const getUserRoles = () => {
+        if (!user?.roles) return [];
+        if (Array.isArray(user.roles)) return user.roles.map(r => r.toUpperCase());
+        return String(user.roles).toUpperCase().split(",").map(r => r.trim());
+    };
+    const isLoueur = getUserRoles().some(r => ["ADMIN", "ALP", "PARTENAIRE"].includes(r));
 
     const [vehicles, setVehicles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +34,25 @@ export default function ReservationPage() {
         try {
             setIsLoading(true);
             const { data } = await api.get("/api/vehicles/available");
-            setVehicles(data.content || data || []);
+            const available = (data.content || data || []).map(v => ({ ...v, isOwned: false }));
+
+            if (isLoueur) {
+                // Récupère aussi sa propre flotte et la fusionne
+                try {
+                    const { data: myData } = await api.get("/api/vehicles/my-fleet");
+                    const myFleet = (myData.content || myData || []);
+                    const myIds = new Set(myFleet.map(v => v.id));
+
+                    // Marque les véhicules de la flotte disponibles comme possédés
+                    const merged = available.map(v => myIds.has(v.id) ? { ...v, isOwned: true } : v);
+
+                    setVehicles(merged);
+                } catch {
+                    setVehicles(available);
+                }
+            } else {
+                setVehicles(available);
+            }
         } catch (err) {
             console.error("Erreur API:", err);
             setError("Impossible de charger les véhicules disponibles.");
@@ -76,6 +103,9 @@ export default function ReservationPage() {
         );
     });
 
+    const availableCount = filtered.filter(v => !v.isOwned).length;
+    const ownedCount = filtered.filter(v => v.isOwned).length;
+
     if (isLoading) return (
         <div className="h-full flex items-center justify-center min-h-[400px]">
             <Spinner size="lg" color="warning" label="Chargement des véhicules..." />
@@ -90,7 +120,8 @@ export default function ReservationPage() {
                         Réserver un véhicule
                     </h1>
                     <p className={`text-sm mt-1 ${isLight ? "text-slate-500" : "text-default-500"}`}>
-                        {filtered.length} véhicule{filtered.length !== 1 ? "s" : ""} disponible{filtered.length !== 1 ? "s" : ""}
+                        {availableCount} disponible{availableCount !== 1 ? "s" : ""}
+                        {ownedCount > 0 && <span className={`ml-2 ${isLight ? "text-slate-400" : "text-slate-600"}`}>· {ownedCount} de votre flotte</span>}
                     </p>
                 </div>
                 <Input

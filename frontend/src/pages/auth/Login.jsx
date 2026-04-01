@@ -5,8 +5,9 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
 import { Sun, Moon, Loader2 } from "lucide-react";
-import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/services/auth/client";
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const GoogleIcon = () => (
     <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -16,6 +17,41 @@ const GoogleIcon = () => (
         <path fill="#34A853" d="M24 47c5.49 0 10.1-1.82 13.47-4.93l-7.1-5.51C28.57 38.25 26.42 39 24 39c-6.23 0-11.57-4.08-13.25-9.78l-8.21 6.46C6.07 43.5 14.47 47 24 47z"/>
     </svg>
 );
+
+// Composant séparé pour le bouton Google (n'est rendu que si le provider existe)
+const GoogleLoginButton = ({ onSuccess, onError, isDark, disabled }) => {
+    const { useGoogleLogin } = require("@react-oauth/google");
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setGoogleLoading(true);
+            try {
+                await onSuccess(tokenResponse);
+            } finally {
+                setGoogleLoading(false);
+            }
+        },
+        onError: onError,
+    });
+
+    return (
+        <Button
+            fullWidth
+            variant="bordered"
+            type="button"
+            startContent={googleLoading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
+            isDisabled={googleLoading || disabled}
+            onPress={() => googleLogin()}
+            className={`rounded-xl text-sm font-medium mb-4 transition-all ${isDark
+                ? "border-slate-600 text-slate-200 hover:border-slate-400 hover:bg-white/5"
+                : "border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+            }`}
+        >
+            {googleLoading ? "Connexion en cours..." : "Continuer avec Google"}
+        </Button>
+    );
+};
 
 const Login = () => {
     const { login, loginWithToken } = useAuth();
@@ -27,31 +63,30 @@ const Login = () => {
     const [error, setError] = useState("");
     const [accountNotFound, setAccountNotFound] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [googleLoading, setGoogleLoading] = useState(false);
+    const [suspendedReason, setSuspendedReason] = useState(null);
 
-    const googleLogin = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            setGoogleLoading(true);
-            setError("");
-            try {
-                const { data } = await api.post("/api/auth/google", {
-                    accessToken: tokenResponse.access_token,
-                });
-                loginWithToken(data.token, data.user);
-                navigate("/");
-            } catch (err) {
-                setError(err?.response?.data?.message || "Connexion Google échouée. Réessayez.");
-            } finally {
-                setGoogleLoading(false);
-            }
-        },
-        onError: () => setError("Connexion Google annulée ou échouée."),
-    });
+    const handleGoogleSuccess = async (tokenResponse) => {
+        setError("");
+        try {
+            const { data } = await api.post("/api/auth/google", {
+                accessToken: tokenResponse.access_token,
+            });
+            loginWithToken(data.token, data.user);
+            navigate("/");
+        } catch (err) {
+            setError(err?.response?.data?.message || "Connexion Google échouée. Réessayez.");
+        }
+    };
+
+    const handleGoogleError = () => {
+        setError("Connexion Google annulée ou échouée.");
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setAccountNotFound(false);
+        setSuspendedReason(null);
         setLoading(true);
 
         try {
@@ -74,7 +109,12 @@ const Login = () => {
                 apiMessage = "Identifiant incorrect.";
             }
 
-            if (
+            const code = err?.response?.data?.code;
+            const details = err?.response?.data?.details;
+
+            if (code === "ACCOUNT_SUSPENDED") {
+                setSuspendedReason(details || "Aucune raison précisée.");
+            } else if (
                 typeof apiMessage === "string" &&
                 apiMessage.startsWith("Aucun compte n'est associé")
             ) {
@@ -96,6 +136,37 @@ const Login = () => {
     const inputTextClass = isDark
         ? "text-slate-100 text-sm placeholder:text-slate-500"
         : "text-slate-800 text-sm placeholder:text-slate-400";
+
+    if (suspendedReason !== null) {
+        return (
+            <div className={`min-h-screen flex items-center justify-center px-4 py-8 transition-colors duration-300 ${isDark ? "bg-[#050721]" : "bg-slate-100"}`}>
+                <div className={`w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden ${isDark ? "bg-[#0d1130] border-red-500/20" : "bg-white border-red-200"}`}>
+                    <div className="h-28 bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+                        </div>
+                    </div>
+                    <div className="px-7 py-6 space-y-4">
+                        <div className="text-center">
+                            <h2 className={`text-xl font-black mb-1 ${isDark ? "text-white" : "text-slate-800"}`}>Compte suspendu</h2>
+                            <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Votre accès à la plateforme a été suspendu.</p>
+                        </div>
+                        <div className={`rounded-2xl border px-4 py-3.5 ${isDark ? "bg-red-500/8 border-red-500/20" : "bg-red-50 border-red-200"}`}>
+                            <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${isDark ? "text-red-400" : "text-red-500"}`}>Raison :</p>
+                            <p className={`text-sm leading-relaxed ${isDark ? "text-slate-200" : "text-slate-700"}`}>{suspendedReason}</p>
+                        </div>
+                        <p className={`text-sm text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            Contactez votre administrateur pour plus d'informations.
+                        </p>
+                        <button onClick={() => setSuspendedReason(null)}
+                            className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${isDark ? "text-slate-400 hover:text-white hover:bg-white/5 border border-white/10" : "text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200"}`}>
+                            Retour à la connexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`min-h-screen flex items-center justify-center px-4 py-8 relative transition-colors duration-300 ${isDark ? "bg-[#050721]" : "bg-slate-100"}`}>
@@ -133,29 +204,25 @@ const Login = () => {
                             </p>
                         </div>
 
-                        {/* Bouton Google */}
-                        <Button
-                            fullWidth
-                            variant="bordered"
-                            type="button"
-                            startContent={googleLoading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
-                            isDisabled={googleLoading || loading}
-                            onPress={() => googleLogin()}
-                            className={`rounded-xl text-sm font-medium mb-4 transition-all ${isDark
-                                ? "border-slate-600 text-slate-200 hover:border-slate-400 hover:bg-white/5"
-                                : "border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50"
-                            }`}
-                        >
-                            {googleLoading ? "Connexion en cours..." : "Continuer avec Google"}
-                        </Button>
+                        {/* Bouton Google - affiché seulement si configuré */}
+                        {googleClientId && (
+                            <GoogleLoginButton
+                                onSuccess={handleGoogleSuccess}
+                                onError={handleGoogleError}
+                                isDark={isDark}
+                                disabled={loading}
+                            />
+                        )}
 
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className={`flex-1 h-px ${isDark ? "bg-slate-700" : "bg-slate-200"}`} />
-                            <span className={`text-[0.65rem] uppercase tracking-[0.15em] whitespace-nowrap ${isDark ? "text-slate-400" : "text-slate-400"}`}>
-                                ou par e-mail
-                            </span>
-                            <div className={`flex-1 h-px ${isDark ? "bg-slate-700" : "bg-slate-200"}`} />
-                        </div>
+                        {googleClientId && (
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className={`flex-1 h-px ${isDark ? "bg-slate-700" : "bg-slate-200"}`} />
+                                <span className={`text-[0.65rem] uppercase tracking-[0.15em] whitespace-nowrap ${isDark ? "text-slate-400" : "text-slate-400"}`}>
+                                    ou par e-mail
+                                </span>
+                                <div className={`flex-1 h-px ${isDark ? "bg-slate-700" : "bg-slate-200"}`} />
+                            </div>
+                        )}
 
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <div>

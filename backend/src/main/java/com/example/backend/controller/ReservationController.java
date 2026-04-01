@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -31,6 +32,12 @@ public class ReservationController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<ReservationResponse>> getMyReservations(Authentication auth) {
+        List<ReservationResponse> history = reservationService.getMyReservations(auth.getName());
+        return ResponseEntity.ok(history);
     }
 
     @GetMapping("/history/{customerId}")

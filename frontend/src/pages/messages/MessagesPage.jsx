@@ -26,10 +26,10 @@ const useMessageAuth = () => {
 export default function MessagesPage() {
     const { userId: CURRENT_USER_ID, userRole, isAuthenticated } = useMessageAuth();
     const { isDark } = useTheme();
-    const { resetUnreadMessages } = useNotifications();
+    const { fetchUnreadMessages } = useNotifications();
 
-    // Réinitialise le badge non lu dès qu'on ouvre la page Messages
-    useEffect(() => { resetUnreadMessages(); }, [resetUnreadMessages]);
+    // Rafraîchit le vrai compteur depuis l'API après avoir lu les messages
+    useEffect(() => { fetchUnreadMessages(); }, [fetchUnreadMessages]);
 
     const bg = isDark ? "#020617" : "#f8fafc";
     const sideBg = isDark ? "#0f172a" : "#ffffff";
@@ -113,6 +113,8 @@ export default function MessagesPage() {
             try {
                 const { data } = await api.get(`/api/channels/${activeConversation.id}/messages`);
                 setMessages(data);
+                // Le GET marque les messages comme lus côté backend → on rafraîchit le compteur
+                fetchUnreadMessages();
             } catch (e) { console.error(e); setMessages([]); }
             finally { setIsLoadingMessages(false); }
         })();

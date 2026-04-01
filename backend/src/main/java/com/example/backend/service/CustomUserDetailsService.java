@@ -31,7 +31,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             authorities = Arrays.stream(user.getRoles().split(","))
                     .map(String::trim)
                     .filter(r -> !r.isEmpty())
-                    .map(SimpleGrantedAuthority::new)
+                    .map(r -> new SimpleGrantedAuthority(r.startsWith("ROLE_") ? r : "ROLE_" + r))
                     .collect(Collectors.toList());
         } else {
             authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));

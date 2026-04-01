@@ -30,6 +30,9 @@ public class UserMapper {
                 .providerId(u.getProviderId())
                 .createdAt(u.getCreatedAt() != null ? u.getCreatedAt().toString() : null)
                 .updatedAt(u.getUpdatedAt() != null ? u.getUpdatedAt().toString() : null)
+                .mustChangePassword(u.isMustChangePassword())
+                .alpId(u.getAlpId() != null ? u.getAlpId().toString() : null)
+                .blockReason(u.getBlockReason())
                 .build();
     }
 

@@ -5,13 +5,16 @@ import { login } from "./login";
 import {
     getProfile,
     uploadProfilePhoto,
-    updateProfile, // 👈 récupéré depuis profile.js
+    updateProfile,
 } from "./profile";
 import { verifyEmail, resendVerificationEmail } from "./verifyEmail";
 import { changePassword } from "./changePassword";
 import { forgotPassword, resetPassword } from "./password";
 
 export { TOKEN_KEY, api };
+
+const deleteAccount = () => api.delete("/api/profile");
+const getMyReservations = () => api.get("/api/reservations/my");
 
 export const AuthAPI = {
     register,
@@ -24,6 +27,8 @@ export const AuthAPI = {
     changePassword,
     forgotPassword,
     resetPassword,
+    deleteAccount,
+    getMyReservations,
 };
 
 export default api;

@@ -482,6 +482,116 @@ public class EmailService {
     /**
      * Méthode utilitaire pour envoyer un e-mail HTML.
      */
+    public void sendAlpWelcomeEmail(User user, String tempPassword) {
+        sendAlpWelcomeEmail(user, tempPassword, "ALP", null);
+    }
+
+    public void sendAlpWelcomeEmail(User user, String tempPassword, String role, User alpReferent) {
+        String roleLabel = "ARC".equalsIgnoreCase(role) ? "Apprenant ARC" : "Apprenant ALP";
+        String subject = "Bienvenue sur Le Réseau Formation — Vos accès " + role.toUpperCase();
+        String loginUrl = frontendBaseUrl + "/login";
+        String html = """
+            <html>
+              <body style="margin:0;padding:0;background-color:#050721;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                <table width="100%%" cellpadding="0" cellspacing="0" role="presentation">
+                  <tr>
+                    <td align="center" style="padding:24px 16px;">
+                      <table width="100%%" cellpadding="0" cellspacing="0" role="presentation"
+                             style="max-width:560px;background:linear-gradient(145deg,#171c42,#111632,#090d23);border-radius:24px;overflow:hidden;border:1px solid rgba(148,163,184,0.2);">
+
+                        <!-- Header -->
+                        <tr>
+                          <td style="padding:20px 24px 12px;border-bottom:1px solid rgba(148,163,184,0.2);">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                              <div style="width:32px;height:32px;border-radius:50%%;background:#ff922b;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;">R</div>
+                              <div>
+                                <div style="font-size:12px;font-weight:700;color:#e5e7eb;text-transform:uppercase;letter-spacing:.08em;">Le Réseau Formation</div>
+                                <div style="font-size:11px;color:#9ca3af;">Plateforme de formation & location</div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- Titre -->
+                        <tr>
+                          <td align="center" style="padding:28px 24px 8px;">
+                            <div style="width:60px;height:60px;border-radius:50%%;background:linear-gradient(135deg,#ff922b,#f59e0b);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="white"/></svg>
+                            </div>
+                            <h1 style="margin:0 0 8px;font-size:22px;color:#f9fafb;font-weight:800;">Bienvenue, %s !</h1>
+                            <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6;max-width:440px;">
+                              Votre compte <strong style="color:#ff922b;">%s</strong> a été créé par l'équipe Le Réseau Formation.
+                              Vous pouvez dès maintenant vous connecter avec les identifiants ci-dessous.
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Identifiants -->
+                        <tr>
+                          <td style="padding:20px 24px;">
+                            <div style="background:rgba(255,146,43,0.08);border:1px solid rgba(255,146,43,0.25);border-radius:16px;padding:20px;">
+                              <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#ff922b;text-transform:uppercase;letter-spacing:.08em;">Vos identifiants de connexion</p>
+                              <div style="margin-bottom:12px;">
+                                <p style="margin:0 0 4px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Email</p>
+                                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;">
+                                  <span style="font-size:14px;color:#f9fafb;font-weight:600;">%s</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p style="margin:0 0 4px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Mot de passe temporaire</p>
+                                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;">
+                                  <span style="font-size:14px;color:#f9fafb;font-family:monospace;font-weight:700;letter-spacing:.05em;">%s</span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- Avertissement -->
+                        <tr>
+                          <td style="padding:0 24px 20px;">
+                            <div style="background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z" fill="#eab308"/></svg>
+                              <p style="margin:0;font-size:12px;color:#fde68a;line-height:1.5;">
+                                <strong>Important :</strong> Modifiez votre mot de passe dès votre première connexion dans <em>Paramètres → Sécurité</em>.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- Bouton CTA -->
+                        <tr>
+                          <td align="center" style="padding:0 24px 28px;">
+                            <a href="%s" style="display:inline-block;padding:14px 36px;border-radius:999px;background:linear-gradient(135deg,#ff922b,#f59e0b);color:#fff;text-decoration:none;font-size:15px;font-weight:700;box-shadow:0 4px 20px rgba(255,146,43,0.35);">
+                              Accéder à la plateforme →
+                            </a>
+                          </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                          <td style="padding:14px 24px;border-top:1px solid rgba(148,163,184,0.15);">
+                            <p style="margin:0;font-size:11px;color:#6b7280;text-align:center;">
+                              Le Réseau Formation · Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+            """.formatted(
+                user.getFirstname() != null ? user.getFirstname() : "Apprenant",
+                roleLabel,
+                user.getEmail(),
+                tempPassword,
+                loginUrl
+        );
+        sendHtmlEmail(user.getEmail(), subject, html);
+    }
+
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();

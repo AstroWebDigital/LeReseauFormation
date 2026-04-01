@@ -10,6 +10,8 @@ export function NotificationsProvider({ children }) {
 
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [pendingAdminCount, setPendingAdminCount] = useState(0);
+    const [pendingDocuments, setPendingDocuments] = useState(0);
+    const [pendingVehicles, setPendingVehicles] = useState(0);
 
     const fetchUnreadMessages = useCallback(async () => {
         if (!token) return;
@@ -26,6 +28,8 @@ export function NotificationsProvider({ children }) {
         try {
             const { data } = await api.get("/api/admin/pending-count");
             setPendingAdminCount(data.total ?? 0);
+            setPendingDocuments(data.documents ?? 0);
+            setPendingVehicles(data.vehicles ?? 0);
         } catch {
             // silencieux
         }
@@ -45,6 +49,8 @@ export function NotificationsProvider({ children }) {
         if (!token) {
             setUnreadMessages(0);
             setPendingAdminCount(0);
+            setPendingDocuments(0);
+            setPendingVehicles(0);
             return;
         }
 
@@ -63,6 +69,8 @@ export function NotificationsProvider({ children }) {
         <NotificationsContext.Provider value={{
             unreadMessages,
             pendingAdminCount,
+            pendingDocuments,
+            pendingVehicles,
             fetchUnreadMessages,
             fetchPendingAdmin,
             decrementPending,

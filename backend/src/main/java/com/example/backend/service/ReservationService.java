@@ -86,10 +86,17 @@ public class ReservationService {
             chatService.createChannelForReservation(savedReservation);
         } catch (Exception e) {
             System.err.println("ERREUR LORS DE LA CRÉATION DU CANAL DE CHAT: " + e.getMessage());
-            throw e;
         }
 
         return savedReservation;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getMyReservations(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userEmail));
+        return reservationRepository.findByUserIdOrderByStartDateDesc(user.getId())
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

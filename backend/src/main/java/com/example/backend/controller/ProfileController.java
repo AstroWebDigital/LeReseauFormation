@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.ChangePasswordRequest;
+import com.example.backend.dto.ForceChangePasswordRequest;
 import com.example.backend.dto.UpdateProfileRequest;
 import com.example.backend.dto.UserDto;
 import com.example.backend.entity.User;
@@ -75,6 +76,18 @@ public class ProfileController {
         return ResponseEntity.noContent().build();
     }
 
+    /* ─────────────── Changement forcé première connexion ALP ─────────────── */
+
+    @PostMapping("/password/force")
+    public ResponseEntity<Void> forceChangePassword(
+            Authentication auth,
+            @Valid @RequestBody ForceChangePasswordRequest request
+    ) {
+        User u = getCurrentUser(auth);
+        profileService.forceChangePassword(u, request.getNewPassword());
+        return ResponseEntity.noContent().build();
+    }
+
     /* ─────────────── Photo de profil ─────────────── */
 
     @PostMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -90,11 +103,18 @@ public class ProfileController {
     }
 
     @DeleteMapping("/photo")
-    public ResponseEntity<UserDto> delete(Authentication auth) throws Exception {
+    public ResponseEntity<UserDto> deletePhoto(Authentication auth) throws Exception {
         User u = getCurrentUser(auth);
         ensureVerified(u);
 
         User saved = profileService.deleteProfilePhoto(u);
         return ResponseEntity.ok(userMapper.toDto(saved));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAccount(Authentication auth) {
+        User u = getCurrentUser(auth);
+        profileService.deleteAccount(u);
+        return ResponseEntity.noContent().build();
     }
 }

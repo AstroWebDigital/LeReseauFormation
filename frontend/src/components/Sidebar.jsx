@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     HomeIcon, TruckIcon, CalendarDaysIcon, ChatBubbleLeftRightIcon,
     DocumentTextIcon, ChartBarIcon, Cog6ToothIcon,
-    ArrowRightOnRectangleIcon, ShieldCheckIcon,
+    ArrowRightOnRectangleIcon, ShieldCheckIcon, UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -16,8 +16,18 @@ const DashboardSidebar = () => {
     const { isDark } = useTheme();
 
     const isAuthenticated = !!token && !!user;
-    const isAdmin = user?.roles?.includes("ADMIN");
     const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    // Gestion des rôles (peut être un tableau ou une string)
+    const getUserRoles = () => {
+        if (!user?.roles) return [];
+        if (Array.isArray(user.roles)) return user.roles.map(r => r.toUpperCase());
+        return String(user.roles).toUpperCase().split(",").map(r => r.trim());
+    };
+    const userRoles = getUserRoles();
+    const isAdmin = userRoles.includes("ADMIN");
+    const isAlp = userRoles.includes("ALP");
+    const canManageVehicles = userRoles.some(role => ["ADMIN", "ALP", "PARTENAIRE"].includes(role));
 
     const { unreadMessages, pendingAdminCount } = useNotifications();
 
@@ -36,12 +46,13 @@ const DashboardSidebar = () => {
 
     const authNavItems = [
         { label: "Tableau de bord", icon: HomeIcon, to: "/" },
-        { label: "Mes véhicules", icon: TruckIcon, to: "/vehicles" },
+        ...(canManageVehicles ? [{ label: "Mes véhicules", icon: TruckIcon, to: "/vehicles" }] : []),
         { label: "Réservations", icon: CalendarDaysIcon, to: "/reservations" },
         { label: "Messages", icon: ChatBubbleLeftRightIcon, to: "/messages", badge: unreadMessages },
         { label: "Documents", icon: DocumentTextIcon, to: "/documents" },
-        { label: "Statistiques", icon: ChartBarIcon, to: "/statistiques" },
+        ...(canManageVehicles ? [{ label: "Statistiques", icon: ChartBarIcon, to: "/statistiques" }] : []),
         { label: "Paramètres", icon: Cog6ToothIcon, to: "/settings" },
+        ...(isAlp ? [{ label: "Mon équipe", icon: UserGroupIcon, to: "/equipe" }] : []),
         ...(isAdmin ? [{ label: "Administration", icon: ShieldCheckIcon, to: "/admin/vehicles", badge: pendingAdminCount }] : []),
     ];
 

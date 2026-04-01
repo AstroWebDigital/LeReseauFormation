@@ -83,9 +83,20 @@ export function AuthProvider({ children }) {
   };
 
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#050721]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-slate-400 text-sm">Chargement...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
       <AuthContext.Provider value={value}>
-        {!loading && children}
+        {children}
       </AuthContext.Provider>
   );
 }

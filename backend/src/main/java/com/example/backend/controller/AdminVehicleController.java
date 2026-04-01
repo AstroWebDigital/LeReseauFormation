@@ -45,7 +45,7 @@ public class AdminVehicleController {
      * GET /api/admin/pending-count — nb total de véhicules + documents en attente
      */
     @GetMapping("/pending-count")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<java.util.Map<String, Long>> getPendingCount() {
         long vehicles  = vehicleRepository.findByStatus("en_attente", org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
         long documents = documentRepository.findByStatus("en_attente").size();
@@ -62,7 +62,7 @@ public class AdminVehicleController {
      * GET /api/admin/overview — tous les users avec leurs véhicules et documents
      */
     @GetMapping("/overview")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AdminOverviewDTO>> getOverview() {
         List<User> users = userRepository.findAll();
 
@@ -125,7 +125,7 @@ public class AdminVehicleController {
     // ─── Véhicules ───────────────────────────────────────────────────────────
 
     @GetMapping("/vehicles")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<Vehicle>> getAllVehicles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -133,7 +133,7 @@ public class AdminVehicleController {
     }
 
     @GetMapping("/vehicles/pending")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<Vehicle>> getPendingVehicles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -141,13 +141,13 @@ public class AdminVehicleController {
     }
 
     @PutMapping("/vehicles/{id}/approve")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Vehicle> approveVehicle(@PathVariable UUID id) {
         return ResponseEntity.ok(vehicleService.approveVehicle(id));
     }
 
     @PutMapping("/vehicles/{id}/reject")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Vehicle> rejectVehicle(
             @PathVariable UUID id,
             @RequestBody(required = false) java.util.Map<String, String> body) {
@@ -158,7 +158,7 @@ public class AdminVehicleController {
     // ─── Documents ───────────────────────────────────────────────────────────
 
     @PutMapping("/documents/{id}/approve")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> approveDocument(@PathVariable UUID id) {
         Document doc = documentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document non trouvé."));
@@ -169,7 +169,7 @@ public class AdminVehicleController {
     }
 
     @PutMapping("/documents/{id}/reject")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> rejectDocument(
             @PathVariable UUID id,
             @RequestBody(required = false) java.util.Map<String, String> body) {

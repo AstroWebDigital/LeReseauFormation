@@ -84,6 +84,12 @@ public class ProfileService {
         return userRepository.save(current);
     }
 
+    /* ─────────── Suppression de compte ─────────── */
+
+    public void deleteAccount(User current) {
+        userRepository.delete(current);
+    }
+
     /* ─────────── Changement de mot de passe ─────────── */
 
     public void changePassword(User current, String currentPassword, String newPassword) {
@@ -96,6 +102,18 @@ public class ProfileService {
         }
 
         current.setPassword(passwordEncoder.encode(newPassword));
+        current.setMustChangePassword(false);
+        userRepository.save(current);
+    }
+
+    /* ─────────── Changement forcé (première connexion ALP) ─────────── */
+
+    public void forceChangePassword(User current, String newPassword) {
+        if (!current.isMustChangePassword()) {
+            throw new IllegalStateException("Ce compte n'est pas en attente de changement de mot de passe.");
+        }
+        current.setPassword(passwordEncoder.encode(newPassword));
+        current.setMustChangePassword(false);
         userRepository.save(current);
     }
 }

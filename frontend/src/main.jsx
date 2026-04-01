@@ -13,10 +13,12 @@ import Settings from "@/pages/settings/settings";
 import Vehicle from "@/pages/vehicle/Vehicle";
 import DocumentPage from "./pages/document/DocumentPage";
 import ProtectedRoute from "@/auth/ProtectedRoute";
+import RoleRoute from "@/auth/RoleRoute";
 import ReservationPage from "./pages/reservation/ReservationPage";
 import MessagesPage from "./pages/messages/MessagesPage";
 import StatisticsPage from "./pages/Statistics/StatisticsPage";
 import AdminVehiclesPage from "@/pages/admin/AdminVehiclesPage";
+import MyTeamPage from "@/pages/alp/MyTeamPage";
 
 import { HeroUIProvider } from "@heroui/react";
 import { AuthProvider } from "@/auth/AuthContext";
@@ -47,12 +49,29 @@ function ThemedApp() {
                             <Route element={<RootLayout />}>
                                 <Route index element={<Dashboard />} />
                                 <Route path="messages" element={<MessagesPage />} />
-                                <Route path="vehicles" element={<Vehicle />} />
+                                <Route path="vehicles" element={
+                                    <RoleRoute allowedRoles={["ADMIN", "ALP", "PARTENAIRE"]}>
+                                        <Vehicle />
+                                    </RoleRoute>
+                                } />
                                 <Route path="documents" element={<DocumentPage />} />
                                 <Route path="settings" element={<Settings />} />
                                 <Route path="reservations" element={<ReservationPage />} />
-                                <Route path="statistiques" element={<StatisticsPage />} />
-                                <Route path="admin/vehicles" element={<AdminVehiclesPage />} />
+                                <Route path="statistiques" element={
+                                    <RoleRoute allowedRoles={["ADMIN", "ALP", "PARTENAIRE"]}>
+                                        <StatisticsPage />
+                                    </RoleRoute>
+                                } />
+                                <Route path="admin/vehicles" element={
+                                    <RoleRoute allowedRoles={["ADMIN"]}>
+                                        <AdminVehiclesPage />
+                                    </RoleRoute>
+                                } />
+                                <Route path="equipe" element={
+                                    <RoleRoute allowedRoles={["ALP"]}>
+                                        <MyTeamPage />
+                                    </RoleRoute>
+                                } />
                             </Route>
                         </Route>
                     </Routes>
@@ -63,12 +82,29 @@ function ThemedApp() {
     );
 }
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+const AppWithProviders = () => {
+    const content = (
+        <ThemeProvider>
+            <ThemedApp />
+        </ThemeProvider>
+    );
+
+    // Si pas de clientId Google, on rend l'app sans GoogleOAuthProvider
+    if (!googleClientId) {
+        return content;
+    }
+
+    return (
+        <GoogleOAuthProvider clientId={googleClientId}>
+            {content}
+        </GoogleOAuthProvider>
+    );
+};
+
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
-        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-            <ThemeProvider>
-                <ThemedApp />
-            </ThemeProvider>
-        </GoogleOAuthProvider>
+        <AppWithProviders />
     </React.StrictMode>
 );

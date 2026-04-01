@@ -2,6 +2,10 @@
 FROM gradle:8.10.2-jdk21-alpine AS build
 WORKDIR /app
 
+# Cache dependencies separately from source
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon || true
+
 COPY . .
 RUN gradle bootJar --no-daemon
 

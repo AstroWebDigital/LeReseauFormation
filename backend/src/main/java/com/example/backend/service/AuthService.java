@@ -11,6 +11,7 @@ import com.example.backend.dto.UserDto;
 import com.example.backend.entity.PasswordResetToken;
 import com.example.backend.entity.User;
 import com.example.backend.entity.VerificationToken;
+import com.example.backend.exception.AccountSuspendedException;
 import com.example.backend.exception.EmailAlreadyUsedException;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.repository.PasswordResetTokenRepository;
@@ -102,6 +103,9 @@ public class AuthService {
         if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.SUSPENDU || user.getStatus() == User.Status.EN_CREATION) {
             if (user.getStatus() == User.Status.EN_CREATION) {
                 throw new IllegalStateException("Votre compte n'est pas encore vérifié.");
+            }
+            if (user.getStatus() == User.Status.SUSPENDU) {
+                throw new AccountSuspendedException(user.getBlockReason());
             }
             throw new IllegalStateException("Email ou mot de passe incorrect.");
         }

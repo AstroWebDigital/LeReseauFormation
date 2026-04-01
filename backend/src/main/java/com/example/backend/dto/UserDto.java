@@ -20,4 +20,7 @@ public class UserDto {
     private String createdAt;
     private String updatedAt;
     private CustomerDto customer;
+    private boolean mustChangePassword;
+    private String alpId;
+    private String blockReason;
 }

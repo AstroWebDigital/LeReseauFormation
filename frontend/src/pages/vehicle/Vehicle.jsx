@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import api from "@/services/auth/client";
 import { Button, Spinner, useDisclosure } from "@heroui/react";
-import { Car } from "lucide-react";
+import { Car, AlertCircle } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
+import { useAuth } from "@/auth/AuthContext";
 
 import { VehicleGrid } from "./components/VehicleGrid";
 import { VehicleModal } from "./components/VehicleModal";
@@ -20,12 +21,24 @@ const statusColorMap = {
 
 export default function Vehicle() {
     const { isDark } = useTheme();
+    const { user } = useAuth();
     const [vehicles, setVehicles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [selectedImages, setSelectedImages] = useState([]);
+
+    // Vérifie si l'utilisateur peut gérer les véhicules (ALP, ADMIN ou PARTENAIRE)
+    const getUserRoles = () => {
+        if (!user?.roles) return [];
+        if (Array.isArray(user.roles)) return user.roles.map(r => r.toUpperCase());
+        return String(user.roles).toUpperCase().split(",").map(r => r.trim());
+    };
+    const userRoles = getUserRoles();
+    const canManageVehicles = userRoles.some(role =>
+        ["ADMIN", "ALP", "PARTENAIRE"].includes(role)
+    );
 
     const [formData, setFormData] = useState({
         brand: "", model: "", plateNumber: "", type: "Compact",
@@ -125,22 +138,30 @@ export default function Vehicle() {
                     </h1>
                     <p className="text-default-500">{vehicles.length} véhicule(s) enregistré(s)</p>
                 </div>
-                <Button
-                    className="bg-[#ff922b] text-white font-bold shadow-lg shadow-orange-500/20"
-                    onPress={() => openModal()}
-                    startContent={<Car size={18} />}
-                >
-                    Ajouter un véhicule
-                </Button>
+                {canManageVehicles ? (
+                    <Button
+                        className="bg-[#ff922b] text-white font-bold shadow-lg shadow-orange-500/20"
+                        onPress={() => openModal()}
+                        startContent={<Car size={18} />}
+                    >
+                        Ajouter un véhicule
+                    </Button>
+                ) : (
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDark ? "bg-slate-800/50 text-slate-400" : "bg-slate-100 text-slate-500"}`}>
+                        <AlertCircle size={16} />
+                        <span className="text-sm">Accès en lecture seule</span>
+                    </div>
+                )}
             </div>
 
             {error && <div className="text-danger mb-4">{error}</div>}
 
             <VehicleGrid
                 vehicles={vehicles}
-                onEdit={openModal}
-                onDelete={handleDelete}
+                onEdit={canManageVehicles ? openModal : null}
+                onDelete={canManageVehicles ? handleDelete : null}
                 statusColorMap={statusColorMap}
+                canManage={canManageVehicles}
             />
 
             <VehicleModal

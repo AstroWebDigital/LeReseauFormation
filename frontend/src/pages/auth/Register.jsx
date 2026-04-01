@@ -3,12 +3,13 @@ import React, { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { Card, CardBody, Button, Checkbox, Divider } from "@heroui/react";
 import { Sun, Moon, Loader2 } from "lucide-react";
-import { useGoogleLogin } from "@react-oauth/google";
 import { AuthAPI } from "../../services/auth";
 import FormInput from "../../components/FormInput";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useAuth } from "@/auth/AuthContext";
 import api from "@/services/auth/client";
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const GoogleIcon = () => (
     <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -18,6 +19,41 @@ const GoogleIcon = () => (
         <path fill="#34A853" d="M24 47c5.49 0 10.1-1.82 13.47-4.93l-7.1-5.51C28.57 38.25 26.42 39 24 39c-6.23 0-11.57-4.08-13.25-9.78l-8.21 6.46C6.07 43.5 14.47 47 24 47z"/>
     </svg>
 );
+
+// Composant séparé pour le bouton Google (n'est rendu que si le provider existe)
+const GoogleLoginButton = ({ onSuccess, onError, isDark, disabled }) => {
+    const { useGoogleLogin } = require("@react-oauth/google");
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setGoogleLoading(true);
+            try {
+                await onSuccess(tokenResponse);
+            } finally {
+                setGoogleLoading(false);
+            }
+        },
+        onError: onError,
+    });
+
+    return (
+        <Button
+            fullWidth
+            variant="bordered"
+            type="button"
+            startContent={googleLoading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
+            isDisabled={googleLoading || disabled}
+            onPress={() => googleLogin()}
+            className={`rounded-xl text-sm font-medium transition-all ${isDark
+                ? "border-slate-600 text-slate-200 hover:border-slate-400 hover:bg-white/5"
+                : "border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+            }`}
+        >
+            {googleLoading ? "Connexion en cours..." : "Continuer avec Google"}
+        </Button>
+    );
+};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -38,12 +74,10 @@ const Register = () => {
     const [fieldErrors, setFieldErrors] = useState({});
     const [globalError, setGlobalError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [googleLoading, setGoogleLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
-        // Effacer l'erreur du champ modifié
         if (fieldErrors[name]) {
             setFieldErrors(prev => ({ ...prev, [name]: undefined }));
         }
@@ -102,27 +136,24 @@ const Register = () => {
         }
     };
 
-    // ── Google OAuth ───────────────────────────────────────────────────────────
-    const googleLogin = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            setGoogleLoading(true);
-            setGlobalError("");
-            try {
-                const { data } = await api.post("/api/auth/google", {
-                    accessToken: tokenResponse.access_token,
-                });
-                loginWithToken(data.token, data.user);
-                navigate("/");
-            } catch (err) {
-                setGlobalError(
-                    err?.response?.data?.message || "Connexion Google échouée. Réessayez."
-                );
-            } finally {
-                setGoogleLoading(false);
-            }
-        },
-        onError: () => setGlobalError("Connexion Google annulée ou échouée."),
-    });
+    const handleGoogleSuccess = async (tokenResponse) => {
+        setGlobalError("");
+        try {
+            const { data } = await api.post("/api/auth/google", {
+                accessToken: tokenResponse.access_token,
+            });
+            loginWithToken(data.token, data.user);
+            navigate("/");
+        } catch (err) {
+            setGlobalError(
+                err?.response?.data?.message || "Connexion Google échouée. Réessayez."
+            );
+        }
+    };
+
+    const handleGoogleError = () => {
+        setGlobalError("Connexion Google annulée ou échouée.");
+    };
 
     // ── styles dynamiques ──────────────────────────────────────────────────────
     const inputStyles = {
@@ -180,30 +211,26 @@ const Register = () => {
                                     </p>
                                 </div>
 
-                                {/* Bouton Google */}
-                                <Button
-                                    fullWidth
-                                    variant="bordered"
-                                    type="button"
-                                    startContent={googleLoading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
-                                    isDisabled={googleLoading || loading}
-                                    onPress={() => googleLogin()}
-                                    className={`rounded-xl text-sm font-medium transition-all ${isDark
-                                        ? "border-slate-600 text-slate-200 hover:border-slate-400 hover:bg-white/5"
-                                        : "border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50"
-                                    }`}
-                                >
-                                    {googleLoading ? "Connexion en cours..." : "Continuer avec Google"}
-                                </Button>
+                                {/* Bouton Google - affiché seulement si configuré */}
+                                {googleClientId && (
+                                    <GoogleLoginButton
+                                        onSuccess={handleGoogleSuccess}
+                                        onError={handleGoogleError}
+                                        isDark={isDark}
+                                        disabled={loading}
+                                    />
+                                )}
 
-                                {/* Séparateur */}
-                                <div className="flex items-center gap-4">
-                                    <Divider className={isDark ? "flex-1 bg-slate-700" : "flex-1 bg-slate-200"} />
-                                    <span className={`text-[0.65rem] uppercase tracking-[0.15em] whitespace-nowrap ${isDark ? "text-slate-400" : "text-slate-400"}`}>
-                                        ou par e-mail
-                                    </span>
-                                    <Divider className={isDark ? "flex-1 bg-slate-700" : "flex-1 bg-slate-200"} />
-                                </div>
+                                {/* Séparateur - affiché seulement si Google est configuré */}
+                                {googleClientId && (
+                                    <div className="flex items-center gap-4">
+                                        <Divider className={isDark ? "flex-1 bg-slate-700" : "flex-1 bg-slate-200"} />
+                                        <span className={`text-[0.65rem] uppercase tracking-[0.15em] whitespace-nowrap ${isDark ? "text-slate-400" : "text-slate-400"}`}>
+                                            ou par e-mail
+                                        </span>
+                                        <Divider className={isDark ? "flex-1 bg-slate-700" : "flex-1 bg-slate-200"} />
+                                    </div>
+                                )}
 
                                 {/* Formulaire */}
                                 <form onSubmit={handleSubmit} className="space-y-3" noValidate>
@@ -323,7 +350,7 @@ const Register = () => {
                                         type="submit"
                                         fullWidth
                                         radius="full"
-                                        isDisabled={loading || googleLoading}
+                                        isDisabled={loading}
                                         isLoading={loading}
                                         className="mt-1 bg-[#ff922b] text-white text-sm font-semibold hover:bg-[#ffa94d] transition-colors"
                                     >

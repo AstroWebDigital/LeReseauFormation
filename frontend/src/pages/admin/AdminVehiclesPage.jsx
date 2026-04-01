@@ -8,7 +8,9 @@ import {
 import {
     CheckCircle, XCircle, Car, Fuel, Settings2, Gauge,
     MapPin, ChevronDown, ChevronUp, FileText,
-    ChevronLeft, ChevronRight, AlertCircle
+    ChevronLeft, ChevronRight, AlertCircle,
+    UserPlus, Users, Mail, Phone, Briefcase, User,
+    CheckCircle2, Shield, X, Lock, Unlock
 } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNotifications } from "@/context/NotificationsContext";
@@ -196,16 +198,193 @@ function VehicleDetailModal({ vehicle, onClose, onApprove, onOpenReject, isDark 
     );
 }
 
+/* ─── Formulaire création ALP / ARC ─── */
+function CreateAlpForm({ isDark, onCreated }) {
+    const isLight = !isDark;
+    const [role, setRole]     = useState("ALP"); // "ALP" | "ARC"
+    const [form, setForm]     = useState({ firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" });
+    const [alpList, setAlpList] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(null);
+    const [error, setError]   = useState(null);
+
+    // Charger les ALPs quand on passe en mode ARC
+    useEffect(() => {
+        if (role === "ARC") {
+            api.get("/api/admin/users/alp-only")
+                .then(r => setAlpList(r.data))
+                .catch(() => setAlpList([]));
+        }
+    }, [role]);
+
+    const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (role === "ARC" && !form.alpId) { setError("Sélectionnez un ALP référent."); return; }
+        setLoading(true); setError(null); setSuccess(null);
+        try {
+            await api.post("/api/admin/users", { ...form, role });
+            setSuccess(`Compte ${role} créé pour ${form.firstname} ${form.lastname}. Un email a été envoyé à ${form.email}.`);
+            setForm({ firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" });
+            onCreated?.();
+        } catch (err) {
+            setError(err?.response?.data || "Erreur lors de la création.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fieldCls = (hasError) => `flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all overflow-hidden
+        ${hasError ? "border-red-500" : isLight ? "border-slate-200 focus-within:border-orange-400 bg-white" : "border-white/10 focus-within:border-orange-400 bg-white/3"}`;
+    const inputCls = `flex-1 min-w-0 bg-transparent text-sm focus:outline-none ${isLight ? "text-slate-800 placeholder:text-slate-400" : "text-white placeholder:text-slate-500"}`;
+    const iconCls  = `h-4 w-4 shrink-0 ${isLight ? "text-slate-400" : "text-slate-500"}`;
+    const labelCls = `text-[11px] font-semibold uppercase tracking-wider mb-1.5 block ${isLight ? "text-slate-500" : "text-slate-400"}`;
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* ── Toggle ALP / ARC ── */}
+            <div className={`flex rounded-xl p-1 gap-1 ${isLight ? "bg-slate-100" : "bg-white/5"}`}>
+                {["ALP", "ARC"].map(r => (
+                    <button
+                        key={r} type="button"
+                        onClick={() => { setRole(r); setError(null); setSuccess(null); }}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                            role === r
+                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/25"
+                                : isLight ? "text-slate-500 hover:text-slate-700" : "text-slate-500 hover:text-slate-300"
+                        }`}
+                    >
+                        {r === "ALP" ? "👤 Apprenant ALP" : "🔗 Apprenant ARC"}
+                    </button>
+                ))}
+            </div>
+
+            {/* Description du rôle */}
+            <div className={`px-4 py-2.5 rounded-xl text-xs border ${
+                role === "ALP"
+                    ? isLight ? "bg-blue-50 border-blue-100 text-blue-600" : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                    : isLight ? "bg-purple-50 border-purple-100 text-purple-600" : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+            }`}>
+                {role === "ALP"
+                    ? "L'ALP est un apprenant autonome avec accès complet à la plateforme."
+                    : "L'ARC est rattaché à un ALP et hérite de sa structure de suivi."}
+            </div>
+
+            {success && (
+                <div className={`flex items-start gap-3 p-4 rounded-2xl border text-sm ${isLight ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"}`}>
+                    <CheckCircle2 size={17} className="shrink-0 mt-0.5" /><span>{success}</span>
+                </div>
+            )}
+            {error && (
+                <div className={`flex items-center gap-3 p-4 rounded-2xl border text-sm ${isLight ? "bg-red-50 border-red-200 text-red-700" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+                    <AlertCircle size={17} className="shrink-0" /><span>{error}</span>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                    <label className={labelCls}>Prénom *</label>
+                    <div className={fieldCls(false)}>
+                        <User className={iconCls} />
+                        <input value={form.firstname} onChange={set("firstname")} required placeholder="Jean" className={inputCls} />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <label className={labelCls}>Nom *</label>
+                    <div className={fieldCls(false)}>
+                        <User className={iconCls} />
+                        <input value={form.lastname} onChange={set("lastname")} required placeholder="Dupont" className={inputCls} />
+                    </div>
+                </div>
+                <div className="sm:col-span-2 flex flex-col gap-1.5">
+                    <label className={labelCls}>Email *</label>
+                    <div className={fieldCls(false)}>
+                        <Mail className={iconCls} />
+                        <input type="email" value={form.email} onChange={set("email")} required placeholder="jean.dupont@exemple.fr" className={inputCls} />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <label className={labelCls}>Téléphone</label>
+                    <div className={fieldCls(false)}>
+                        <Phone className={iconCls} />
+                        <input value={form.phone} onChange={set("phone")} placeholder="06 00 00 00 00" className={inputCls} />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <label className={labelCls}>Secteur / Agence</label>
+                    <div className={fieldCls(false)}>
+                        <Briefcase className={iconCls} />
+                        <input value={form.sector} onChange={set("sector")} placeholder="Niort - Agence Nord" className={inputCls} />
+                    </div>
+                </div>
+
+                {/* ALP référent — uniquement en mode ARC */}
+                {role === "ARC" && (
+                    <div className="sm:col-span-2 flex flex-col gap-1.5">
+                        <label className={labelCls}>ALP référent *</label>
+                        <div className={fieldCls(!form.alpId && !!error)}>
+                            <Users className={iconCls} />
+                            <select
+                                value={form.alpId}
+                                onChange={set("alpId")}
+                                className={`flex-1 min-w-0 bg-transparent text-sm focus:outline-none appearance-none cursor-pointer
+                                    ${!form.alpId ? (isLight ? "text-slate-400" : "text-slate-500") : (isLight ? "text-slate-800" : "text-white")}`}
+                            >
+                                <option value="">{alpList.length === 0 ? "Aucun ALP disponible" : "Choisir un ALP..."}</option>
+                                {alpList.map(alp => (
+                                    <option key={alp.id} value={alp.id}
+                                        className={isLight ? "bg-white text-slate-800" : "bg-[#0e1535] text-white"}>
+                                        {alp.firstname} {alp.lastname}{alp.sector ? ` — ${alp.sector}` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        {alpList.length === 0 && (
+                            <p className={`text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+                                Créez d'abord un ALP avant d'ajouter un ARC.
+                            </p>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            <button type="submit" disabled={loading}
+                className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:brightness-110 transition-all disabled:opacity-60">
+                {loading
+                    ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <UserPlus size={16} />}
+                {loading ? "Création en cours..." : `Créer le compte ${role} et envoyer l'email`}
+            </button>
+
+            <p className={`text-xs text-center ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+                Un mot de passe temporaire sera généré et envoyé par email à l'apprenant.
+            </p>
+        </form>
+    );
+}
+
 /* ─── Page principale ─── */
 export default function AdminVehiclesPage() {
     const { isDark } = useTheme();
     const { decrementPending } = useNotifications();
+    const [adminTab, setAdminTab]         = useState("overview");
     const [users, setUsers]               = useState([]);
     const [isLoading, setIsLoading]       = useState(true);
     const [error, setError]               = useState(null);
     const [openUsers, setOpenUsers]       = useState({});
     const [filter, setFilter]             = useState("pending");
     const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+    // ALP users
+    const [alpUsers, setAlpUsers]         = useState([]);
+    const [alpLoading, setAlpLoading]     = useState(false);
+
+    // Block modal
+    const [blockTarget, setBlockTarget]   = useState(null); // { id, name }
+    const [blockReason, setBlockReason]   = useState("");
+    const [blockLoading, setBlockLoading] = useState(false);
 
     // Modale de rejet
     const [rejectTarget, setRejectTarget] = useState(null); // { type: "vehicle"|"document", id, title }
@@ -231,7 +410,34 @@ export default function AdminVehiclesPage() {
         }
     };
 
+    const fetchAlpUsers = async () => {
+        setAlpLoading(true);
+        try { const { data } = await api.get("/api/admin/users/alp"); setAlpUsers(data); }
+        catch { /* silently fail */ }
+        finally { setAlpLoading(false); }
+    };
+
+    const handleBlockConfirm = async () => {
+        if (!blockTarget) return;
+        setBlockLoading(true);
+        try {
+            await api.put(`/api/admin/users/${blockTarget.id}/block`, { reason: blockReason });
+            setBlockTarget(null);
+            setBlockReason("");
+            fetchAlpUsers();
+        } catch { /* ignore */ }
+        finally { setBlockLoading(false); }
+    };
+
+    const handleUnblock = async (userId) => {
+        try {
+            await api.put(`/api/admin/users/${userId}/unblock`);
+            fetchAlpUsers();
+        } catch { /* ignore */ }
+    };
+
     useEffect(() => { fetchOverview(); }, []);
+    useEffect(() => { if (adminTab === "alp") fetchAlpUsers(); }, [adminTab]);
 
     const toggleUser = (id) => setOpenUsers(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -276,22 +482,232 @@ export default function AdminVehiclesPage() {
         <div className={`p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
 
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className={`text-2xl font-bold ${textPrimary}`}>Administration</h1>
-                    <p className={textMuted}>Véhicules et documents par utilisateur</p>
-                </div>
-                <div className="flex gap-2">
-                    {["pending","all"].map(f => (
-                        <Button key={f} size="sm"
-                            variant={filter===f ? "solid" : "bordered"}
-                            className={filter===f ? "bg-[#ff922b] text-white font-semibold" : isDark ? "border-slate-600 text-slate-300" : "border-slate-300 text-slate-600"}
-                            onPress={() => setFilter(f)}>
-                            {f==="pending" ? "En attente" : "Tout voir"}
-                        </Button>
-                    ))}
+                    <p className={textMuted}>Gestion des utilisateurs et des validations</p>
                 </div>
             </div>
+
+            {/* Tabs */}
+            <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl mb-6 w-fit ${isDark ? "bg-white/5" : "bg-slate-200/60"}`}>
+                {[
+                    { key: "overview", label: "Véhicules & Docs", icon: Car },
+                    { key: "alp",      label: "Apprenants ALP/ARC", icon: Users },
+                ].map(({ key, label, icon: Icon }) => (
+                    <button key={key} onClick={() => setAdminTab(key)}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
+                            ${adminTab === key
+                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30"
+                                : isDark ? "text-slate-500 hover:text-slate-300 hover:bg-white/5" : "text-slate-500 hover:text-slate-700 hover:bg-white/70"}`}>
+                        <Icon size={15} />{label}
+                    </button>
+                ))}
+            </div>
+
+            {/* ── Onglet Overview : filtres ── */}
+            {adminTab === "overview" && (
+            <div className="flex gap-2 mb-6">
+                {["pending","all"].map(f => (
+                    <Button key={f} size="sm"
+                        variant={filter===f ? "solid" : "bordered"}
+                        className={filter===f ? "bg-[#ff922b] text-white font-semibold" : isDark ? "border-slate-600 text-slate-300" : "border-slate-300 text-slate-600"}
+                        onPress={() => setFilter(f)}>
+                        {f==="pending" ? "En attente" : "Tout voir"}
+                    </Button>
+                ))}
+            </div>
+            )}
+
+            {/* ── Modal blocage ── */}
+            {blockTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter: "blur(6px)", backgroundColor: "rgba(0,0,0,0.6)" }}>
+                    <div className={`w-full max-w-sm rounded-2xl border shadow-xl overflow-hidden ${isDark ? "bg-[#0f1129] border-slate-700" : "bg-white border-slate-200"}`}>
+                        <div className={`px-5 py-4 border-b flex items-center gap-3 ${isDark ? "border-slate-700" : "border-slate-100"}`}>
+                            <Lock size={16} className="text-red-500" />
+                            <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"}`}>Bloquer {blockTarget.name}</p>
+                        </div>
+                        <div className="p-5 space-y-3">
+                            <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Précisez la raison du blocage (visible par l'utilisateur) :</p>
+                            <textarea
+                                value={blockReason}
+                                onChange={e => setBlockReason(e.target.value)}
+                                rows={3}
+                                placeholder="Ex : Non-respect des conditions d'utilisation..."
+                                className={`w-full rounded-xl border px-3 py-2.5 text-sm resize-none focus:outline-none transition-all ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-red-500/50" : "bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-red-400"}`}
+                            />
+                            <div className="flex gap-2 pt-1">
+                                <button onClick={() => { setBlockTarget(null); setBlockReason(""); }}
+                                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${isDark ? "border-slate-700 text-slate-400 hover:bg-white/5" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                                    Annuler
+                                </button>
+                                <button onClick={handleBlockConfirm} disabled={blockLoading || !blockReason.trim()}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 transition-all disabled:opacity-50">
+                                    {blockLoading ? "..." : "Bloquer"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Onglet ALP ── */}
+            {adminTab === "alp" && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
+                    {/* Formulaire création */}
+                    <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-[#0f1129] border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                        <div className={`px-6 py-4 border-b ${isDark ? "border-slate-800 bg-white/2" : "border-slate-100 bg-slate-50/50"}`}>
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-xl ${isDark ? "bg-orange-500/10" : "bg-orange-50"}`}>
+                                    <UserPlus size={18} className="text-orange-500" />
+                                </div>
+                                <div>
+                                    <p className={`font-black text-base ${textPrimary}`}>Créer un apprenant</p>
+                                    <p className={`text-xs mt-0.5 ${textMuted}`}>ALP autonome ou ARC rattaché à un ALP</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            <CreateAlpForm isDark={isDark} onCreated={fetchAlpUsers} />
+                        </div>
+                    </div>
+
+                    {/* Liste des ALP */}
+                    <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-[#0f1129] border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                        <div className={`px-6 py-4 border-b ${isDark ? "border-slate-800 bg-white/2" : "border-slate-100 bg-slate-50/50"}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl ${isDark ? "bg-blue-500/10" : "bg-blue-50"}`}>
+                                        <Users size={18} className="text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <p className={`font-black text-base ${textPrimary}`}>Apprenants</p>
+                                        <p className={`text-xs mt-0.5 ${textMuted}`}>
+                                            {alpUsers.filter(u => u.roles === "ALP").length} ALP · {alpUsers.filter(u => u.roles === "ARC").length} ARC
+                                        </p>
+                                    </div>
+                                </div>
+                                <button onClick={fetchAlpUsers} className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${isDark ? "bg-white/5 text-slate-400 hover:bg-white/10" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                                    Actualiser
+                                </button>
+                            </div>
+                        </div>
+                        <div className="divide-y overflow-y-auto max-h-[480px]">
+                            {alpLoading ? (
+                                <div className="flex justify-center py-10"><Spinner size="sm" color="warning" /></div>
+                            ) : alpUsers.length === 0 ? (
+                                <div className={`flex flex-col items-center justify-center py-12 gap-2 ${textMuted}`}>
+                                    <Users size={32} className="opacity-30" />
+                                    <p className="text-sm">Aucun apprenant créé</p>
+                                </div>
+                            ) : (() => {
+                                const alps = alpUsers.filter(u => u.roles === "ALP");
+                                const arcs = alpUsers.filter(u => u.roles === "ARC");
+                                const standalone = arcs.filter(a => !a.alpId);
+                                return (
+                                    <>
+                                        {alps.map(alp => {
+                                            const myArcs = arcs.filter(a => a.alpId === alp.id);
+                                            return (
+                                                <div key={alp.id}>
+                                                    {/* Ligne ALP */}
+                                                    <div className={`flex items-center gap-3 px-5 py-3.5 ${isDark ? "border-slate-800/80" : "border-slate-100"}`}>
+                                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-black text-sm shrink-0">
+                                                            {((alp.firstname?.[0]||"")+(alp.lastname?.[0]||"")).toUpperCase()||"?"}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={`font-bold text-sm truncate ${textPrimary}`}>{alp.firstname} {alp.lastname}</p>
+                                                            <p className={`text-xs truncate ${textMuted}`}>{alp.email}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-600 border border-orange-200"}`}>ALP</span>
+                                                            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${alp.status === "ACTIF" ? isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-200" : isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                                                                {alp.status === "ACTIF" ? "Actif" : "Bloqué"}
+                                                            </span>
+                                                            {alp.status === "SUSPENDU" ? (
+                                                                <button onClick={() => handleUnblock(alp.id)} title="Débloquer"
+                                                                    className={`p-1.5 rounded-lg transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
+                                                                    <Unlock size={14} />
+                                                                </button>
+                                                            ) : (
+                                                                <button onClick={() => setBlockTarget({ id: alp.id, name: `${alp.firstname} ${alp.lastname}` })} title="Bloquer"
+                                                                    className={`p-1.5 rounded-lg transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+                                                                    <Lock size={14} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {/* ARCs rattachés */}
+                                                    {myArcs.map(arc => (
+                                                        <div key={arc.id} className={`flex items-center gap-3 pl-10 pr-5 py-3 ${isDark ? "bg-purple-500/3 border-slate-800/60" : "bg-purple-50/60 border-slate-100"}`}>
+                                                            <div className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+                                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center text-white font-black text-xs shrink-0">
+                                                                {((arc.firstname?.[0]||"")+(arc.lastname?.[0]||"")).toUpperCase()||"?"}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={`font-semibold text-sm truncate ${textPrimary}`}>{arc.firstname} {arc.lastname}</p>
+                                                                <p className={`text-xs truncate ${textMuted}`}>{arc.email}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-600 border border-purple-200"}`}>ARC</span>
+                                                                {arc.status === "SUSPENDU" ? (
+                                                                    <>
+                                                                        <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>Bloqué</span>
+                                                                        <button onClick={() => handleUnblock(arc.id)} title="Débloquer"
+                                                                            className={`p-1.5 rounded-lg transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
+                                                                            <Unlock size={14} />
+                                                                        </button>
+                                                                    </>
+                                                                ) : (
+                                                                    <button onClick={() => setBlockTarget({ id: arc.id, name: `${arc.firstname} ${arc.lastname}` })} title="Bloquer"
+                                                                        className={`p-1.5 rounded-lg transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+                                                                        <Lock size={14} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
+                                        {/* ARCs sans ALP */}
+                                        {standalone.map(arc => (
+                                            <div key={arc.id} className={`flex items-center gap-3 px-5 py-3.5 ${isDark ? "border-slate-800/80" : "border-slate-100"}`}>
+                                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center text-white font-black text-sm shrink-0">
+                                                    {((arc.firstname?.[0]||"")+(arc.lastname?.[0]||"")).toUpperCase()||"?"}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`font-bold text-sm truncate ${textPrimary}`}>{arc.firstname} {arc.lastname}</p>
+                                                    <p className={`text-xs truncate ${textMuted}`}>{arc.email}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-600 border border-purple-200"}`}>ARC</span>
+                                                    {arc.status === "SUSPENDU" ? (
+                                                        <>
+                                                            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>Bloqué</span>
+                                                            <button onClick={() => handleUnblock(arc.id)} title="Débloquer"
+                                                                className={`p-1.5 rounded-lg transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
+                                                                <Unlock size={14} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button onClick={() => setBlockTarget({ id: arc.id, name: `${arc.firstname} ${arc.lastname}` })} title="Bloquer"
+                                                            className={`p-1.5 rounded-lg transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+                                                            <Lock size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {adminTab === "overview" && (<>
 
             {error && <p className="text-danger mb-4">{error}</p>}
 
@@ -485,6 +901,7 @@ export default function AdminVehiclesPage() {
                 onClose={() => setRejectTarget(null)}
                 onConfirm={handleRejectConfirm}
             />
+            </>)}
         </div>
     );
 }

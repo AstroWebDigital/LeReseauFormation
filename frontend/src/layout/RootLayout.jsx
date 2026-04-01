@@ -4,6 +4,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import AppNavbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
+import BlockedAccountModal from "@/components/BlockedAccountModal";
 import { useTheme } from "@/theme/ThemeProvider";
 
 const RootLayout = () => {
@@ -20,7 +22,7 @@ const RootLayout = () => {
             className={`w-full transition-colors duration-200 ${
                 isDark
                     ? "bg-[#05071a] text-slate-100"
-                    : "bg-slate-100 text-slate-800"
+                    : "bg-[#f8fafc] text-slate-800"
             }`}
         >
             {/* Sidebar */}
@@ -46,6 +48,11 @@ const RootLayout = () => {
                 {/* Footer */}
                 {!hideFooter && <Footer />}
             </div>
+
+            {/* Popup première connexion ALP */}
+            <ForcePasswordChangeModal />
+            {/* Overlay compte suspendu */}
+            <BlockedAccountModal />
         </div>
     );
 };
