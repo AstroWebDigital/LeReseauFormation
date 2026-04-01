@@ -80,7 +80,7 @@ public class SupportService {
                 .content(msg.getContent())
                 .sentAt(msg.getSentAt().toString())
                 .isRead(false)
-                .isAdmin(isAdmin)
+                .fromAdmin(isAdmin)
                 .build();
     }
 
@@ -92,6 +92,11 @@ public class SupportService {
         return messageRepo.findByChannelIdOrderBySentAtAsc(channelId).stream()
                 .map(m -> toMsgDto(m, user.getId()))
                 .collect(Collectors.toList());
+    }
+
+    /** Admin : nombre total de messages non lus envoyés par des utilisateurs */
+    public long adminUnreadCount() {
+        return messageRepo.countAllUnreadFromUsers();
     }
 
     /** Admin : liste tous les canaux de support */
@@ -150,7 +155,7 @@ public class SupportService {
                 .content(m.getContent())
                 .sentAt(m.getSentAt().toString())
                 .isRead(m.isRead())
-                .isAdmin(isAdmin)
+                .fromAdmin(isAdmin)
                 .build();
     }
 }

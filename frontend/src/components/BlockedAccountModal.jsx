@@ -123,8 +123,8 @@ export default function BlockedAccountModal() {
                 </div>
 
                 {/* ── Body scrollable ── */}
-                <div className="flex-1 overflow-y-auto">
-                    <div className="px-6 py-5 space-y-4">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <div className="px-6 py-5 space-y-4 min-w-0">
 
                         {/* Raison */}
                         <div className={`rounded-2xl border p-4 ${isDark ? "bg-red-500/6 border-red-500/15" : "bg-red-50 border-red-100"}`}>
@@ -134,7 +134,7 @@ export default function BlockedAccountModal() {
                                     Motif du blocage
                                 </p>
                             </div>
-                            <p className={`text-sm leading-relaxed ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+                            <p className={`text-sm leading-relaxed break-words overflow-wrap-anywhere ${isDark ? "text-slate-200" : "text-slate-700"}`}>
                                 {user.blockReason || "Aucune raison précisée par l'administrateur."}
                             </p>
                         </div>
@@ -173,25 +173,25 @@ export default function BlockedAccountModal() {
                             {chatOpen && (
                                 <div className={`border-t ${isDark ? "border-white/8" : "border-slate-200"}`}>
                                     {/* Messages */}
-                                    <div className="px-4 py-3 h-52 overflow-y-auto flex flex-col gap-2.5 scroll-smooth">
+                                    <div className="px-4 py-3 h-52 overflow-y-auto overflow-x-hidden flex flex-col gap-2.5 scroll-smooth">
                                         {messages.length === 0 ? (
                                             <div className={`flex flex-col items-center justify-center h-full gap-2 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
                                                 <MessageSquare size={24} className="opacity-40" />
                                                 <p className="text-xs">Envoyez un message à l'administrateur</p>
                                             </div>
                                         ) : messages.map((msg) => {
-                                            const isMe = !msg.isAdmin;
-                                            const senderName = msg.isAdmin
+                                            const isMe = !msg.fromAdmin;
+                                            const senderName = msg.fromAdmin
                                                 ? adminName
                                                 : `${user.firstname || ""} ${user.lastname || ""}`.trim() || "Vous";
                                             return (
                                                 <div key={msg.id} className={`flex gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                                    <Avatar name={senderName} isAdmin={msg.isAdmin} />
+                                                    <Avatar name={senderName} isAdmin={msg.fromAdmin} />
                                                     <div className={`max-w-[75%] flex flex-col gap-0.5 ${isMe ? "items-end" : "items-start"}`}>
                                                         <p className={`text-[10px] font-semibold ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                                                             {isMe ? "Vous" : senderName}
                                                         </p>
-                                                        <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                                                        <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words min-w-0 ${
                                                             isMe
                                                                 ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm"
                                                                 : isDark

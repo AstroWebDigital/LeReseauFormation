@@ -29,7 +29,7 @@ const DashboardSidebar = () => {
     const isAlp = userRoles.includes("ALP");
     const canManageVehicles = userRoles.some(role => ["ADMIN", "ALP", "PARTENAIRE"].includes(role));
 
-    const { unreadMessages, pendingAdminCount } = useNotifications();
+    const { unreadMessages, pendingAdminCount, unreadSupport } = useNotifications();
 
     const resolvePhotoUrl = (url) => {
         if (!url) return null;
@@ -53,7 +53,7 @@ const DashboardSidebar = () => {
         ...(canManageVehicles ? [{ label: "Statistiques", icon: ChartBarIcon, to: "/statistiques" }] : []),
         { label: "Paramètres", icon: Cog6ToothIcon, to: "/settings" },
         ...(isAlp ? [{ label: "Mon équipe", icon: UserGroupIcon, to: "/equipe" }] : []),
-        ...(isAdmin ? [{ label: "Administration", icon: ShieldCheckIcon, to: "/admin/vehicles", badge: pendingAdminCount }] : []),
+        ...(isAdmin ? [{ label: "Administration", icon: ShieldCheckIcon, to: "/admin/vehicles", badge: (pendingAdminCount || 0) + (unreadSupport || 0) }] : []),
     ];
 
     const guestNavItems = [

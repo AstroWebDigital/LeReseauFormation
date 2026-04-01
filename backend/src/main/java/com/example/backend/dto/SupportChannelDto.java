@@ -31,6 +31,6 @@ public class SupportChannelDto {
         private String content;
         private String sentAt;
         private boolean isRead;
-        private boolean isAdmin;
+        private boolean fromAdmin;
     }
 }

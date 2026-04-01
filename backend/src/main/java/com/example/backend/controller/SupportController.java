@@ -50,4 +50,11 @@ public class SupportController {
     public ResponseEntity<List<SupportChannelDto.SupportMessageDto>> adminMessages(@PathVariable UUID channelId) {
         return ResponseEntity.ok(supportService.adminGetMessages(channelId));
     }
+
+    /** Admin : nombre total de messages non lus dans tous les canaux support */
+    @GetMapping("/api/admin/support/unread-count")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Long> adminUnreadCount() {
+        return ResponseEntity.ok(supportService.adminUnreadCount());
+    }
 }

@@ -100,15 +100,13 @@ public class AuthService {
             throw new IllegalArgumentException("Email ou mot de passe incorrect.");
         }
 
-        if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.SUSPENDU || user.getStatus() == User.Status.EN_CREATION) {
+        if (user.getStatus() == User.Status.SUPPRIME || user.getStatus() == User.Status.EN_CREATION) {
             if (user.getStatus() == User.Status.EN_CREATION) {
                 throw new IllegalStateException("Votre compte n'est pas encore vérifié.");
             }
-            if (user.getStatus() == User.Status.SUSPENDU) {
-                throw new AccountSuspendedException(user.getBlockReason());
-            }
             throw new IllegalStateException("Email ou mot de passe incorrect.");
         }
+        // SUSPENDU : on laisse la connexion réussir, le frontend affiche le modal de blocage avec le chat
 
         String token = jwtService.generateToken(user.getEmail());
         return AuthResponse.builder()

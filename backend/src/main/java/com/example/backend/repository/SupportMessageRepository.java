@@ -20,6 +20,9 @@ public interface SupportMessageRepository extends JpaRepository<SupportMessage, 
 
     long countByChannelIdAndIsReadFalseAndSenderIdNot(UUID channelId, UUID senderId);
 
+    @Query("SELECT COUNT(m) FROM SupportMessage m WHERE m.isRead = false AND m.sender.roles <> 'ADMIN'")
+    long countAllUnreadFromUsers();
+
     @Modifying
     @Transactional
     @Query("UPDATE SupportMessage m SET m.isRead = true WHERE m.channel.id = :channelId AND m.sender.id <> :userId AND m.isRead = false")

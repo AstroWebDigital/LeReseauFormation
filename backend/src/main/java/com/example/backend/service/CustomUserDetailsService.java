@@ -24,7 +24,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
 
-        boolean enabled = user.getStatus() == User.Status.ACTIF;
+        // SUSPENDU : on laisse passer (le frontend gère le blocage via BlockedAccountModal + chat support)
+        boolean enabled = user.getStatus() != User.Status.SUPPRIME && user.getStatus() != User.Status.EN_CREATION;
 
         List<SimpleGrantedAuthority> authorities;
         if (user.getRoles() != null && !user.getRoles().isBlank()) {

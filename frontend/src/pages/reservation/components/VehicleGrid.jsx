@@ -18,7 +18,7 @@ export function VehicleGrid({ vehicles, onBook, isDark }) {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {vehicles.map((v) => (
-                <VehicleCard key={v.id} vehicle={v} onBook={onBook} isDark={isDark} isOwned={v.isOwned} />
+                <VehicleCard key={v.id} vehicle={v} onBook={onBook} isOwned={v.isOwned} />
             ))}
         </div>
     );

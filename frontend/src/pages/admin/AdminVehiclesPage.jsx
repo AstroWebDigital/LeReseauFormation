@@ -368,7 +368,7 @@ function CreateAlpForm({ isDark, onCreated }) {
 /* ─── Page principale ─── */
 export default function AdminVehiclesPage() {
     const { isDark } = useTheme();
-    const { decrementPending } = useNotifications();
+    const { decrementPending, fetchUnreadSupport, unreadSupport } = useNotifications();
     const [adminTab, setAdminTab]         = useState("overview");
     const [users, setUsers]               = useState([]);
     const [isLoading, setIsLoading]       = useState(true);
@@ -457,6 +457,7 @@ export default function AdminVehiclesPage() {
         try {
             const { data } = await api.get(`/api/admin/support/channels/${ch.id}/messages`);
             setSupportMessages(data);
+            fetchUnreadSupport();
             setTimeout(() => supportEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         } catch { /* ignore */ }
     };
@@ -466,7 +467,7 @@ export default function AdminVehiclesPage() {
         if (!text || !activeSupport) return;
         setSupportSending(true);
         setSupportInput("");
-        const temp = { id: Date.now(), content: text, isAdmin: true, sentAt: new Date().toISOString(), isTemp: true };
+        const temp = { id: Date.now(), content: text, fromAdmin: true, sentAt: new Date().toISOString(), isTemp: true };
         setSupportMessages(prev => [...prev, temp]);
         try {
             const { data } = await api.post(`/api/support/channel/${activeSupport.id}/messages`, { content: text });
@@ -482,7 +483,16 @@ export default function AdminVehiclesPage() {
 
     useEffect(() => { fetchOverview(); }, []);
     useEffect(() => { if (adminTab === "alp") fetchAlpUsers(); }, [adminTab]);
-    useEffect(() => { if (adminTab === "support") fetchSupportChannels(); }, [adminTab]);
+    useEffect(() => { if (adminTab === "support") { fetchSupportChannels(); fetchUnreadSupport(); } }, [adminTab]);
+
+    useEffect(() => {
+        if (unreadSupport > 0) {
+            document.title = `(${unreadSupport}) Demande${unreadSupport > 1 ? "s" : ""} de support — Administration`;
+        } else {
+            document.title = "Administration — Le Réseau Formation";
+        }
+        return () => { document.title = "Le Réseau Formation"; };
+    }, [unreadSupport]);
 
     const toggleUser = (id) => setOpenUsers(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -539,14 +549,19 @@ export default function AdminVehiclesPage() {
                 {[
                     { key: "overview", label: "Véhicules & Docs", icon: Car },
                     { key: "alp",      label: "Apprenants ALP/ARC", icon: Users },
-                    { key: "support",  label: "Support", icon: MessageSquare },
-                ].map(({ key, label, icon: Icon }) => (
+                    { key: "support",  label: "Support", icon: MessageSquare, badge: unreadSupport },
+                ].map(({ key, label, icon: Icon, badge }) => (
                     <button key={key} onClick={() => setAdminTab(key)}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
                             ${adminTab === key
                                 ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30"
                                 : isDark ? "text-slate-500 hover:text-slate-300 hover:bg-white/5" : "text-slate-500 hover:text-slate-700 hover:bg-white/70"}`}>
                         <Icon size={15} />{label}
+                        {badge > 0 && (
+                            <span className={`text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none ${
+                                adminTab === key ? "bg-white/30 text-white" : "bg-red-500 text-white"
+                            }`}>{badge > 99 ? "99+" : badge}</span>
+                        )}
                     </button>
                 ))}
             </div>
@@ -759,7 +774,14 @@ export default function AdminVehiclesPage() {
                     {/* Sidebar conversations */}
                     <div className={`w-64 shrink-0 border-r flex flex-col ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                         <div className={`px-4 py-3.5 border-b flex items-center justify-between ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-                            <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-800"}`}>Demandes de support</p>
+                            <div className="flex items-center gap-2">
+                                <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-800"}`}>Demandes de support</p>
+                                {unreadSupport > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none">
+                                        {unreadSupport > 99 ? "99+" : unreadSupport}
+                                    </span>
+                                )}
+                            </div>
                             <button onClick={fetchSupportChannels} className={`text-xs px-2.5 py-1 rounded-lg ${isDark ? "bg-white/5 text-slate-400 hover:bg-white/10" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>↻</button>
                         </div>
                         <div className="flex-1 overflow-y-auto divide-y">
@@ -813,12 +835,12 @@ export default function AdminVehiclesPage() {
                                         <p className="text-xs">Aucun message</p>
                                     </div>
                                 ) : supportMessages.map(msg => (
-                                    <div key={msg.id} className={`flex gap-2 ${msg.isAdmin ? "flex-row-reverse" : "flex-row"}`}>
-                                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-[10px] shrink-0 ${msg.isAdmin ? "bg-gradient-to-br from-orange-500 to-amber-500" : "bg-gradient-to-br from-red-500 to-rose-600"}`}>
-                                            {msg.isAdmin ? "A" : ((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
+                                    <div key={msg.id} className={`flex gap-2 ${msg.fromAdmin ? "flex-row-reverse" : "flex-row"}`}>
+                                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-[10px] shrink-0 ${msg.fromAdmin ? "bg-gradient-to-br from-orange-500 to-amber-500" : "bg-gradient-to-br from-red-500 to-rose-600"}`}>
+                                            {msg.fromAdmin ? "A" : ((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
                                         </div>
-                                        <div className={`max-w-[70%] flex flex-col gap-0.5 ${msg.isAdmin ? "items-end" : "items-start"}`}>
-                                            <div className={`px-3.5 py-2.5 rounded-2xl text-sm ${msg.isAdmin ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm" : isDark ? "bg-white/8 text-slate-200 border border-white/8 rounded-tl-sm" : "bg-slate-100 text-slate-700 rounded-tl-sm"}`}>
+                                        <div className={`max-w-[70%] flex flex-col gap-0.5 ${msg.fromAdmin ? "items-end" : "items-start"}`}>
+                                            <div className={`px-3.5 py-2.5 rounded-2xl text-sm ${msg.fromAdmin ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm" : isDark ? "bg-white/8 text-slate-200 border border-white/8 rounded-tl-sm" : "bg-slate-100 text-slate-700 rounded-tl-sm"}`}>
                                                 {msg.content}
                                             </div>
                                             <p className={`text-[10px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>{msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : ""}</p>

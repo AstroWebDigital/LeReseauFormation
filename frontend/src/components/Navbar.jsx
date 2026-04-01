@@ -78,7 +78,7 @@ const AppNavbar = ({
     const { isDark } = useTheme();
     const isLight = !isDark;
     const isAuthenticated = !!token && !!user;
-    const { unreadMessages, pendingDocuments } = useNotifications();
+    const { unreadMessages, pendingDocuments, unreadSupport } = useNotifications();
 
     const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -398,8 +398,9 @@ const AppNavbar = ({
                                 const visibleDocs = docNotifs.filter(d => !dismissed.has(`doc_${d.id}`));
                                 const showMsg = unreadMessages > 0 && !dismissed.has("messages");
                                 const showAdmin = isAdmin && pendingDocuments > 0 && !dismissed.has("admin_docs");
-                                const badge = (showMsg ? unreadMessages : 0) + visibleDocs.length + (showAdmin ? 1 : 0);
-                                const hasAny = showMsg || visibleDocs.length > 0 || showAdmin;
+                                const showSupport = isAdmin && unreadSupport > 0 && !dismissed.has("support");
+                                const badge = (showMsg ? unreadMessages : 0) + visibleDocs.length + (showAdmin ? 1 : 0) + (showSupport ? unreadSupport : 0);
+                                const hasAny = showMsg || visibleDocs.length > 0 || showAdmin || showSupport;
 
                                 return (
                                     <>
@@ -469,6 +470,21 @@ const AppNavbar = ({
                                                             badgeColor="orange"
                                                             onDismiss={() => dismiss("admin_docs")}
                                                             onClick={() => dismiss("admin_docs", "/admin/vehicles")}
+                                                            isLight={isLight}
+                                                        />
+                                                    )}
+
+                                                    {/* Support admin */}
+                                                    {showSupport && (
+                                                        <NotifItem
+                                                            accentColor="red"
+                                                            icon={<MessageSquare size={15} className="text-red-500" />}
+                                                            title={`${unreadSupport} message${unreadSupport > 1 ? "s" : ""} de support`}
+                                                            desc="Compte(s) suspendu(s) vous ont écrit"
+                                                            badge={unreadSupport}
+                                                            badgeColor="red"
+                                                            onDismiss={() => dismiss("support")}
+                                                            onClick={() => dismiss("support", "/admin/vehicles")}
                                                             isLight={isLight}
                                                         />
                                                     )}
