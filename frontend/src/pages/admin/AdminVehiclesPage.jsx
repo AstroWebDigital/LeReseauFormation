@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "@/services/auth/client";
 import {
     Button, Spinner, Chip,
@@ -10,7 +10,7 @@ import {
     MapPin, ChevronDown, ChevronUp, FileText,
     ChevronLeft, ChevronRight, AlertCircle,
     UserPlus, Users, Mail, Phone, Briefcase, User,
-    CheckCircle2, Shield, X, Lock, Unlock
+    CheckCircle2, Shield, X, Lock, Unlock, MessageSquare, Send
 } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNotifications } from "@/context/NotificationsContext";
@@ -386,6 +386,15 @@ export default function AdminVehiclesPage() {
     const [blockReason, setBlockReason]   = useState("");
     const [blockLoading, setBlockLoading] = useState(false);
 
+    // Support chat (admin)
+    const [supportChannels, setSupportChannels] = useState([]);
+    const [supportLoading, setSupportLoading]   = useState(false);
+    const [activeSupport, setActiveSupport]     = useState(null);
+    const [supportMessages, setSupportMessages] = useState([]);
+    const [supportInput, setSupportInput]       = useState("");
+    const [supportSending, setSupportSending]   = useState(false);
+    const supportEndRef = useRef(null);
+
     // Modale de rejet
     const [rejectTarget, setRejectTarget] = useState(null); // { type: "vehicle"|"document", id, title }
 
@@ -436,8 +445,44 @@ export default function AdminVehiclesPage() {
         } catch { /* ignore */ }
     };
 
+    const fetchSupportChannels = async () => {
+        setSupportLoading(true);
+        try { const { data } = await api.get("/api/admin/support/channels"); setSupportChannels(data); }
+        catch { /* ignore */ }
+        finally { setSupportLoading(false); }
+    };
+
+    const openSupportChannel = async (ch) => {
+        setActiveSupport(ch);
+        try {
+            const { data } = await api.get(`/api/admin/support/channels/${ch.id}/messages`);
+            setSupportMessages(data);
+            setTimeout(() => supportEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+        } catch { /* ignore */ }
+    };
+
+    const sendSupportMessage = async () => {
+        const text = supportInput.trim();
+        if (!text || !activeSupport) return;
+        setSupportSending(true);
+        setSupportInput("");
+        const temp = { id: Date.now(), content: text, isAdmin: true, sentAt: new Date().toISOString(), isTemp: true };
+        setSupportMessages(prev => [...prev, temp]);
+        try {
+            const { data } = await api.post(`/api/support/channel/${activeSupport.id}/messages`, { content: text });
+            setSupportMessages(prev => prev.map(m => m.id === temp.id ? data : m));
+            setSupportChannels(prev => prev.map(c => c.id === activeSupport.id ? { ...c, lastMessage: text } : c));
+        } catch {
+            setSupportMessages(prev => prev.filter(m => m.id !== temp.id));
+            setSupportInput(text);
+        } finally { setSupportSending(false); }
+    };
+
+    useEffect(() => { supportEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [supportMessages]);
+
     useEffect(() => { fetchOverview(); }, []);
     useEffect(() => { if (adminTab === "alp") fetchAlpUsers(); }, [adminTab]);
+    useEffect(() => { if (adminTab === "support") fetchSupportChannels(); }, [adminTab]);
 
     const toggleUser = (id) => setOpenUsers(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -494,6 +539,7 @@ export default function AdminVehiclesPage() {
                 {[
                     { key: "overview", label: "Véhicules & Docs", icon: Car },
                     { key: "alp",      label: "Apprenants ALP/ARC", icon: Users },
+                    { key: "support",  label: "Support", icon: MessageSquare },
                 ].map(({ key, label, icon: Icon }) => (
                     <button key={key} onClick={() => setAdminTab(key)}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
@@ -704,6 +750,106 @@ export default function AdminVehiclesPage() {
                             })()}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* ── Onglet Support ── */}
+            {adminTab === "support" && (
+                <div className={`rounded-2xl border overflow-hidden flex ${isDark ? "bg-[#0f1129] border-slate-800" : "bg-white border-slate-200 shadow-sm"}`} style={{ height: 520 }}>
+                    {/* Sidebar conversations */}
+                    <div className={`w-64 shrink-0 border-r flex flex-col ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+                        <div className={`px-4 py-3.5 border-b flex items-center justify-between ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                            <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-800"}`}>Demandes de support</p>
+                            <button onClick={fetchSupportChannels} className={`text-xs px-2.5 py-1 rounded-lg ${isDark ? "bg-white/5 text-slate-400 hover:bg-white/10" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>↻</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto divide-y">
+                            {supportLoading ? (
+                                <div className="flex justify-center py-8"><Spinner size="sm" color="warning" /></div>
+                            ) : supportChannels.length === 0 ? (
+                                <div className={`flex flex-col items-center justify-center py-12 gap-2 ${textMuted}`}>
+                                    <MessageSquare size={28} className="opacity-25" />
+                                    <p className="text-xs">Aucune demande</p>
+                                </div>
+                            ) : supportChannels.map(ch => (
+                                <button key={ch.id} onClick={() => openSupportChannel(ch)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+                                        activeSupport?.id === ch.id
+                                            ? isDark ? "bg-orange-500/10 border-l-2 border-orange-500" : "bg-orange-50 border-l-2 border-orange-500"
+                                            : isDark ? "hover:bg-white/3 border-slate-800" : "hover:bg-slate-50 border-slate-100"
+                                    }`}>
+                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-xs shrink-0">
+                                        {((ch.userFirstname?.[0]||"")+(ch.userLastname?.[0]||"")).toUpperCase()||"?"}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`font-bold text-xs truncate ${isDark ? "text-white" : "text-slate-800"}`}>{ch.userFirstname} {ch.userLastname}</p>
+                                        <p className={`text-[11px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>{ch.lastMessage || "Nouveau"}</p>
+                                    </div>
+                                    {ch.unreadCount > 0 && (
+                                        <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">{ch.unreadCount}</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Zone messages */}
+                    {activeSupport ? (
+                        <div className="flex-1 flex flex-col min-w-0">
+                            {/* Header */}
+                            <div className={`px-5 py-3.5 border-b flex items-center gap-3 shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-xs shrink-0">
+                                    {((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
+                                </div>
+                                <div>
+                                    <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"}`}>{activeSupport.userFirstname} {activeSupport.userLastname}</p>
+                                    <p className={`text-[11px] ${isDark ? "text-red-400" : "text-red-500"}`}>Compte suspendu · {activeSupport.userEmail}</p>
+                                </div>
+                            </div>
+                            {/* Messages */}
+                            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+                                {supportMessages.length === 0 ? (
+                                    <div className={`flex flex-col items-center justify-center h-full gap-2 ${textMuted}`}>
+                                        <MessageSquare size={24} className="opacity-25" />
+                                        <p className="text-xs">Aucun message</p>
+                                    </div>
+                                ) : supportMessages.map(msg => (
+                                    <div key={msg.id} className={`flex gap-2 ${msg.isAdmin ? "flex-row-reverse" : "flex-row"}`}>
+                                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-[10px] shrink-0 ${msg.isAdmin ? "bg-gradient-to-br from-orange-500 to-amber-500" : "bg-gradient-to-br from-red-500 to-rose-600"}`}>
+                                            {msg.isAdmin ? "A" : ((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
+                                        </div>
+                                        <div className={`max-w-[70%] flex flex-col gap-0.5 ${msg.isAdmin ? "items-end" : "items-start"}`}>
+                                            <div className={`px-3.5 py-2.5 rounded-2xl text-sm ${msg.isAdmin ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm" : isDark ? "bg-white/8 text-slate-200 border border-white/8 rounded-tl-sm" : "bg-slate-100 text-slate-700 rounded-tl-sm"}`}>
+                                                {msg.content}
+                                            </div>
+                                            <p className={`text-[10px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>{msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : ""}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={supportEndRef} />
+                            </div>
+                            {/* Input */}
+                            <div className={`flex items-end gap-2 px-5 py-3.5 border-t shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                                <textarea
+                                    value={supportInput}
+                                    onChange={e => setSupportInput(e.target.value)}
+                                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendSupportMessage(); } }}
+                                    rows={1}
+                                    placeholder="Répondre..."
+                                    className={`flex-1 resize-none rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all ${isDark ? "bg-white/8 border border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/40" : "bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-orange-400"}`}
+                                    style={{ fieldSizing: "content", minHeight: 40, maxHeight: 80 }}
+                                />
+                                <button onClick={sendSupportMessage} disabled={supportSending || !supportInput.trim()}
+                                    className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white disabled:opacity-40 hover:brightness-110 transition-all">
+                                    {supportSending ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={14} />}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className={`flex-1 flex flex-col items-center justify-center gap-3 ${textMuted}`}>
+                            <MessageSquare size={36} className="opacity-20" />
+                            <p className="text-sm">Sélectionnez une conversation</p>
+                        </div>
+                    )}
                 </div>
             )}
 

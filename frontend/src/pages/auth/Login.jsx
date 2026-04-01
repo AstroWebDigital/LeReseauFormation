@@ -139,28 +139,38 @@ const Login = () => {
 
     if (suspendedReason !== null) {
         return (
-            <div className={`min-h-screen flex items-center justify-center px-4 py-8 transition-colors duration-300 ${isDark ? "bg-[#050721]" : "bg-slate-100"}`}>
-                <div className={`w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden ${isDark ? "bg-[#0d1130] border-red-500/20" : "bg-white border-red-200"}`}>
-                    <div className="h-28 bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
-                        <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+            <div className={`min-h-screen flex items-center justify-center px-4 py-8 transition-colors duration-300 ${isDark ? "bg-[#050721]" : "bg-[#f8fafc]"}`}>
+                <div className={`w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden ${isDark ? "bg-gradient-to-b from-[#0d1130] to-[#080d20] border border-white/8" : "bg-white border border-slate-200"}`}>
+                    {/* Header */}
+                    <div className="relative overflow-hidden" style={{ minHeight: 130 }}>
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-700 via-red-600 to-rose-700" />
+                        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-red-400/20 blur-2xl" />
+                        <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-rose-400/20 blur-xl" />
+                        <div className="relative px-7 pt-7 pb-6 flex items-start gap-4">
+                            <div className="w-13 h-13 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0 p-3">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </div>
+                            <div className="pt-1">
+                                <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mb-0.5">Accès restreint</p>
+                                <h2 className="text-white text-xl font-black">Compte bloqué</h2>
+                            </div>
                         </div>
                     </div>
-                    <div className="px-7 py-6 space-y-4">
-                        <div className="text-center">
-                            <h2 className={`text-xl font-black mb-1 ${isDark ? "text-white" : "text-slate-800"}`}>Compte suspendu</h2>
-                            <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Votre accès à la plateforme a été suspendu.</p>
-                        </div>
-                        <div className={`rounded-2xl border px-4 py-3.5 ${isDark ? "bg-red-500/8 border-red-500/20" : "bg-red-50 border-red-200"}`}>
-                            <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${isDark ? "text-red-400" : "text-red-500"}`}>Raison :</p>
+                    {/* Body */}
+                    <div className="px-6 py-5 space-y-4">
+                        <div className={`rounded-2xl border p-4 ${isDark ? "bg-red-500/6 border-red-500/15" : "bg-red-50 border-red-100"}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-red-400" : "bg-red-500"}`} />
+                                <p className={`text-[11px] font-bold uppercase tracking-widest ${isDark ? "text-red-400" : "text-red-500"}`}>Motif</p>
+                            </div>
                             <p className={`text-sm leading-relaxed ${isDark ? "text-slate-200" : "text-slate-700"}`}>{suspendedReason}</p>
                         </div>
-                        <p className={`text-sm text-center ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                            Contactez votre administrateur pour plus d'informations.
+                        <p className={`text-xs text-center leading-relaxed ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                            Pour contester ce blocage, connectez-vous et utilisez le chat de support intégré.
                         </p>
                         <button onClick={() => setSuspendedReason(null)}
-                            className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${isDark ? "text-slate-400 hover:text-white hover:bg-white/5 border border-white/10" : "text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200"}`}>
-                            Retour à la connexion
+                            className={`w-full py-3 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20 hover:brightness-110`}>
+                            Se connecter quand même
                         </button>
                     </div>
                 </div>
