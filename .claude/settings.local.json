@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(xargs grep:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(npm install *)",
+      "Bash(npx vite *)",
+      "Bash(./gradlew compileJava)",
+      "Bash(where java *)"
     ]
   }
 }

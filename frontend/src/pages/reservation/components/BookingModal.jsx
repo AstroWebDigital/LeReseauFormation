@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Modal, ModalContent, Button } from "@heroui/react";
 import {
     MapPinIcon, CalendarDaysIcon, ClockIcon,
-    CheckCircleIcon, XMarkIcon, TruckIcon
+    CreditCardIcon, XMarkIcon, TruckIcon
 } from "@heroicons/react/24/outline";
 import { Fuel, Gauge } from "lucide-react";
 
@@ -88,7 +88,7 @@ function LocationInput({ label, icon: Icon, value, onChange, placeholder, isDark
     );
 }
 
-export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmitting, isDark }) {
+export function BookingModal({ isOpen, onOpenChange, vehicle, onProceedToPayment, isSubmitting, isDark }) {
     const isLight = !isDark;
     const todayStr = new Date().toISOString().slice(0, 10);
     const photo = resolvePhoto(vehicle?.profilPhoto || vehicle?.photo);
@@ -143,7 +143,14 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
     const handleConfirm = () => {
         const e = validate();
         if (Object.keys(e).length > 0) { setErrors(e); return; }
-        onConfirm({ startDate: startISO, endDate: endISO, pickupLocation: form.pickupLocation, returnLocation: form.returnLocation });
+        onProceedToPayment({
+            startDate: startISO,
+            endDate: endISO,
+            pickupLocation: form.pickupLocation,
+            returnLocation: form.returnLocation,
+            totalAmount: parseFloat(totalAmount),
+            nbDays,
+        });
     };
 
     return (
@@ -288,10 +295,10 @@ export function BookingModal({ isOpen, onOpenChange, vehicle, onConfirm, isSubmi
                                     onPress={handleConfirm}
                                     isLoading={isSubmitting}
                                     isDisabled={nbDays === 0}
-                                    startContent={!isSubmitting && <CheckCircleIcon className="h-4 w-4" />}
+                                    startContent={!isSubmitting && <CreditCardIcon className="h-4 w-4" />}
                                     className="flex-1 rounded-xl font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 disabled:opacity-40"
                                 >
-                                    Confirmer la réservation
+                                    Procéder au paiement
                                 </Button>
                             </div>
                         </div>

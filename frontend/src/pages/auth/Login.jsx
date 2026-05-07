@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
 import { Sun, Moon, Loader2 } from "lucide-react";
 import api from "@/services/auth/client";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -20,7 +21,6 @@ const GoogleIcon = () => (
 
 // Composant séparé pour le bouton Google (n'est rendu que si le provider existe)
 const GoogleLoginButton = ({ onSuccess, onError, isDark, disabled }) => {
-    const { useGoogleLogin } = require("@react-oauth/google");
     const [googleLoading, setGoogleLoading] = useState(false);
 
     const googleLogin = useGoogleLogin({

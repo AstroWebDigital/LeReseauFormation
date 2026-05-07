@@ -72,4 +72,9 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
 }

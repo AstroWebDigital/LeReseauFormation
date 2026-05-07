@@ -15,6 +15,7 @@ import com.example.backend.entity.Vehicle;
 import com.example.backend.repository.ReservationRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VehicleRepository;
+import com.stripe.exception.StripeException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,12 +29,27 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final VehicleRepository vehicleRepository;
-    private final UserRepository userRepository;          // ← CustomerRepository → UserRepository
+    private final UserRepository userRepository;
     private final ChatService chatService;
     private final NotificationService notificationService;
+    private final StripePaymentService stripePaymentService;
 
     @Transactional
     public Reservation createReservation(ReservationRequest request, String userEmail) {
+
+        // Vérifie que le paiement Stripe a bien été effectué
+        if (request.getPaymentIntentId() != null && !request.getPaymentIntentId().isBlank()) {
+            try {
+                boolean paid = stripePaymentService.isPaymentSucceeded(request.getPaymentIntentId());
+                if (!paid) {
+                    throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Le paiement n'a pas été validé.");
+                }
+            } catch (StripeException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Erreur de vérification du paiement : " + e.getMessage());
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Un paiement est requis pour confirmer la réservation.");
+        }
 
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with ID: " + request.getVehicleId()));

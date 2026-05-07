@@ -14,4 +14,5 @@ public class ReservationRequest {
     private String returnLocation;
     private BigDecimal depositAmount;
     private BigDecimal securityDeposit;
+    private String paymentIntentId;
 }

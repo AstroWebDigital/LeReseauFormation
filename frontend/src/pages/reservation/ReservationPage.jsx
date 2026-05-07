@@ -7,6 +7,7 @@ import { useAuth } from "@/auth/AuthContext";
 
 import { VehicleGrid } from "./components/VehicleGrid";
 import { BookingModal } from "./components/BookingModal";
+import { PaymentModal } from "./components/PaymentModal";
 
 export default function ReservationPage() {
     const { isDark } = useTheme();
@@ -24,11 +25,17 @@ export default function ReservationPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [successMsg, setSuccessMsg] = useState(null);
     const [search, setSearch] = useState("");
 
-    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    // Données de réservation en attente de paiement
+    const [pendingBooking, setPendingBooking] = useState(null); // { startDate, endDate, pickupLocation, returnLocation, totalAmount }
+    const [clientSecret, setClientSecret] = useState(null);
+    const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successMsg, setSuccessMsg] = useState(null);
+
+    const bookingDisclosure = useDisclosure();
+    const paymentDisclosure = useDisclosure();
 
     const fetchVehicles = async () => {
         try {
@@ -37,16 +44,11 @@ export default function ReservationPage() {
             const available = (data.content || data || []).map(v => ({ ...v, isOwned: false }));
 
             if (isLoueur) {
-                // Récupère aussi sa propre flotte et la fusionne
                 try {
                     const { data: myData } = await api.get("/api/vehicles/my-fleet");
                     const myFleet = (myData.content || myData || []);
                     const myIds = new Set(myFleet.map(v => v.id));
-
-                    // Marque les véhicules de la flotte disponibles comme possédés
-                    const merged = available.map(v => myIds.has(v.id) ? { ...v, isOwned: true } : v);
-
-                    setVehicles(merged);
+                    setVehicles(available.map(v => myIds.has(v.id) ? { ...v, isOwned: true } : v));
                 } catch {
                     setVehicles(available);
                 }
@@ -66,21 +68,49 @@ export default function ReservationPage() {
     const handleBook = (vehicle) => {
         setSelectedVehicle(vehicle);
         setSuccessMsg(null);
-        onOpen();
+        setPendingBooking(null);
+        setClientSecret(null);
+        bookingDisclosure.onOpen();
     };
 
-    const handleConfirm = async (form) => {
+    // Étape 1 : l'utilisateur valide les dates → on crée le PaymentIntent
+    const handleProceedToPayment = async (bookingForm) => {
         if (!selectedVehicle) return;
+        setIsCreatingIntent(true);
+
+        try {
+            const { data } = await api.post("/api/payments/create-intent", {
+                amount: bookingForm.totalAmount,
+                currency: "eur",
+            });
+
+            setPendingBooking({ ...bookingForm, paymentIntentId: data.paymentIntentId });
+            setClientSecret(data.clientSecret);
+            bookingDisclosure.onClose();
+            paymentDisclosure.onOpen();
+        } catch (err) {
+            const msg = err.response?.data?.message || err.response?.data || "Erreur lors de la création du paiement.";
+            alert(msg);
+        } finally {
+            setIsCreatingIntent(false);
+        }
+    };
+
+    // Étape 2 : Stripe confirme le paiement → on crée la réservation
+    const handlePaymentSuccess = async (paymentIntentId) => {
+        if (!selectedVehicle || !pendingBooking) return;
         setIsSubmitting(true);
+
         try {
             await api.post("/api/reservations", {
                 vehicleId: selectedVehicle.id,
-                startDate: new Date(form.startDate).toISOString(),
-                endDate: new Date(form.endDate).toISOString(),
-                pickupLocation: form.pickupLocation,
-                returnLocation: form.returnLocation,
+                startDate: new Date(pendingBooking.startDate).toISOString(),
+                endDate: new Date(pendingBooking.endDate).toISOString(),
+                pickupLocation: pendingBooking.pickupLocation,
+                returnLocation: pendingBooking.returnLocation,
+                paymentIntentId,
             });
-            onOpenChange(false);
+            paymentDisclosure.onClose();
             setSuccessMsg(`Réservation confirmée pour ${selectedVehicle.brand} ${selectedVehicle.model} !`);
             fetchVehicles();
         } catch (err) {
@@ -156,12 +186,24 @@ export default function ReservationPage() {
 
             <VehicleGrid vehicles={filtered} onBook={handleBook} isDark={isDark} />
 
+            {/* Modal 1 : sélection des dates */}
             <BookingModal
-                isOpen={isOpen}
-                onOpenChange={onOpenChange}
+                isOpen={bookingDisclosure.isOpen}
+                onOpenChange={bookingDisclosure.onOpenChange}
                 vehicle={selectedVehicle}
-                onConfirm={handleConfirm}
-                isSubmitting={isSubmitting}
+                onProceedToPayment={handleProceedToPayment}
+                isSubmitting={isCreatingIntent}
+                isDark={isDark}
+            />
+
+            {/* Modal 2 : paiement Stripe */}
+            <PaymentModal
+                isOpen={paymentDisclosure.isOpen}
+                onOpenChange={paymentDisclosure.onOpenChange}
+                clientSecret={clientSecret}
+                amountEuros={pendingBooking?.totalAmount ?? 0}
+                vehicleName={selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model}` : ""}
+                onPaymentSuccess={handlePaymentSuccess}
                 isDark={isDark}
             />
         </div>
