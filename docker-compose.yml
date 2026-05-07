@@ -42,22 +42,27 @@ services:
       SMTP_PORT: "${SMTP_PORT}"
       SMTP_USERNAME: "${SMTP_USERNAME}"
       SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
     volumes:
       - ./backend/uploads:/app/uploads
     ports:
       - "8080:8080"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # Ces vars sont injectées au moment du "npm run build" (Vite les bake dans le bundle)
+        VITE_API_URL: "http://localhost:8080"
+        VITE_APP_BASE_URL: "http://localhost:3000"
+        VITE_STRIPE_PUBLIC_KEY: "${VITE_STRIPE_PUBLIC_KEY}"
     container_name: lr-frontend
     depends_on:
       - backend
     env_file:
       - .env
     environment:
-      # URL du backend vue par le frontend (Vite)
       VITE_API_URL: "http://localhost:8080"
-      # Optionnel, si tu veux que le front connaisse aussi sa propre base URL
       VITE_APP_BASE_URL: "http://localhost:3000"
     ports:
       - "3000:3000"

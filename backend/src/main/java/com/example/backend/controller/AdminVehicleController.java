@@ -1,12 +1,17 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.AdminOverviewDTO;
+import com.example.backend.dto.ReservationResponse;
 import com.example.backend.entity.Document;
 import com.example.backend.entity.User;
 import com.example.backend.entity.Vehicle;
 import com.example.backend.repository.DocumentRepository;
+import com.example.backend.repository.ReservationRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VehicleRepository;
+import com.example.backend.service.EmailService;
+import com.example.backend.service.NotificationService;
+import com.example.backend.service.ReservationService;
 import com.example.backend.service.VehicleService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -28,15 +33,27 @@ public class AdminVehicleController {
     private final VehicleRepository vehicleRepository;
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
+    private final ReservationService reservationService;
+    private final ReservationRepository reservationRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
 
     public AdminVehicleController(VehicleService vehicleService,
                                   VehicleRepository vehicleRepository,
                                   DocumentRepository documentRepository,
-                                  UserRepository userRepository) {
+                                  UserRepository userRepository,
+                                  ReservationService reservationService,
+                                  ReservationRepository reservationRepository,
+                                  EmailService emailService,
+                                  NotificationService notificationService) {
         this.vehicleService = vehicleService;
         this.vehicleRepository = vehicleRepository;
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
+        this.reservationService = reservationService;
+        this.reservationRepository = reservationRepository;
+        this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     // ─── Compteur en attente ─────────────────────────────────────────────────
@@ -47,13 +64,45 @@ public class AdminVehicleController {
     @GetMapping("/pending-count")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<java.util.Map<String, Long>> getPendingCount() {
-        long vehicles  = vehicleRepository.findByStatus("en_attente", org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
-        long documents = documentRepository.findByStatus("en_attente").size();
+        long vehicles     = vehicleRepository.findByStatus("en_attente", org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
+        long documents    = documentRepository.findByStatus("en_attente").size();
+        long reservations = reservationRepository.findAllByStatusOrderByCreatedAtDesc("en_attente").size();
         return ResponseEntity.ok(java.util.Map.of(
-                "vehicles",  vehicles,
-                "documents", documents,
-                "total",     vehicles + documents
+                "vehicles",     vehicles,
+                "documents",    documents,
+                "reservations", reservations,
+                "total",        vehicles + documents + reservations
         ));
+    }
+
+    // ─── Réservations (admin) ────────────────────────────────────────────────
+
+    @GetMapping("/reservations/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ReservationResponse>> getPendingReservations() {
+        return ResponseEntity.ok(reservationService.getAllPendingReservations());
+    }
+
+    @PutMapping("/reservations/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> adminApproveReservation(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(reservationService.adminApproveReservation(id));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
+    }
+
+    @PutMapping("/reservations/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> adminRejectReservation(@PathVariable UUID id,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        try {
+            String reason = body != null ? body.get("reason") : null;
+            return ResponseEntity.ok(reservationService.adminRejectReservation(id, reason));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
     }
 
     // ─── Vue d'ensemble par utilisateur ──────────────────────────────────────
@@ -165,6 +214,18 @@ public class AdminVehicleController {
         doc.setStatus("valide");
         doc.setUpdatedAt(OffsetDateTime.now());
         documentRepository.save(doc);
+        try {
+            User owner = doc.getUser();
+            if (owner != null) emailService.sendDocumentApprovedEmail(owner, doc.getType(), doc.getScope());
+        } catch (Exception e) {
+            System.err.println("Email document approuvé : " + e.getMessage());
+        }
+        try {
+            User owner = doc.getUser();
+            if (owner != null) notificationService.sendDocumentApprovedNotification(owner, doc.getType(), doc.getScope());
+        } catch (Exception e) {
+            System.err.println("Notif document approuvé : " + e.getMessage());
+        }
         return ResponseEntity.ok().build();
     }
 
@@ -175,10 +236,23 @@ public class AdminVehicleController {
             @RequestBody(required = false) java.util.Map<String, String> body) {
         Document doc = documentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document non trouvé."));
+        String reason = body != null ? body.get("reason") : null;
         doc.setStatus("rejete");
-        doc.setRejectionReason(body != null ? body.get("reason") : null);
+        doc.setRejectionReason(reason);
         doc.setUpdatedAt(OffsetDateTime.now());
         documentRepository.save(doc);
+        try {
+            User owner = doc.getUser();
+            if (owner != null) emailService.sendDocumentRejectedEmail(owner, doc.getType(), doc.getScope(), reason);
+        } catch (Exception e) {
+            System.err.println("Email document rejeté : " + e.getMessage());
+        }
+        try {
+            User owner = doc.getUser();
+            if (owner != null) notificationService.sendDocumentRejectedNotification(owner, doc.getType(), doc.getScope(), reason);
+        } catch (Exception e) {
+            System.err.println("Notif document rejeté : " + e.getMessage());
+        }
         return ResponseEntity.ok().build();
     }
 }

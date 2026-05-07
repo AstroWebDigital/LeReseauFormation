@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.ReservedDateRangeDto;
 import com.example.backend.entity.Vehicle;
 import com.example.backend.service.VehicleService;
 import com.example.backend.entity.User;
@@ -56,6 +57,16 @@ public class VehicleController {
     }
 
     /**
+     * GET /api/vehicles/bookable — disponible + réservé (pour la page de réservation)
+     */
+    @GetMapping("/bookable")
+    public ResponseEntity<Page<Vehicle>> getBookableVehicles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(vehicleService.getBookableVehicles(page, size));
+    }
+
+    /**
      * GET /api/vehicles/my-fleet
      */
     @GetMapping("/my-fleet")
@@ -75,6 +86,14 @@ public class VehicleController {
     @GetMapping("/{id}")
     public ResponseEntity<Vehicle> getVehicleById(@PathVariable UUID id) {
         return ResponseEntity.ok(vehicleService.getVehicleById(id));
+    }
+
+    /**
+     * GET /api/vehicles/{id}/reserved-dates — plages de réservation actives (pour le calendrier)
+     */
+    @GetMapping("/{id}/reserved-dates")
+    public ResponseEntity<List<ReservedDateRangeDto>> getReservedDates(@PathVariable UUID id) {
+        return ResponseEntity.ok(vehicleService.getReservedDates(id));
     }
 
     /**

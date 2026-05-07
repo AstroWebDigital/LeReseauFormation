@@ -23,7 +23,15 @@ RUN echo "===> [STEP 2] Vérification des dépendances clés" \
 # 3) On copie le reste du code
 COPY . .
 
-# 4) Build Vite
+# 4) Injection des variables Vite (baked dans le bundle au build time)
+ARG VITE_API_URL
+ARG VITE_APP_BASE_URL
+ARG VITE_STRIPE_PUBLIC_KEY
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_APP_BASE_URL=$VITE_APP_BASE_URL
+ENV VITE_STRIPE_PUBLIC_KEY=$VITE_STRIPE_PUBLIC_KEY
+
+# 5) Build Vite
 RUN echo '===> [STEP 3] Build Vite' \
  && npm run build \
  && echo '[OK] Build Vite terminé' \

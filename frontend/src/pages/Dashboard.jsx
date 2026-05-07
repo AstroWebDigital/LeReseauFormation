@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Spinner, Avatar } from "@heroui/react";
 import {
     Car, FileText, CalendarCheck, TrendingUp, AlertTriangle,
-    RefreshCw, MapPin, ChevronRight, Clock, Star,
+    RefreshCw, MapPin, ChevronRight, ChevronLeft, Clock, Star,
     BarChart2, CheckCircle, XCircle, AlertCircle, Calendar,
     CreditCard, History, UserCircle, Zap, ArrowUpRight, ArrowRight
 } from "lucide-react";
@@ -34,17 +34,24 @@ const statusColor = (s, isLight) => {
 };
 
 const resStatusLabel = (s) => {
-    const map = { EN_COURS: "En cours", EN_ATTENTE: "En attente", CONFIRME: "Confirmée", ANNULE: "Annulée", TERMINE: "Terminée", accepte: "Confirmée" };
+    const map = {
+        en_attente: "En attente", EN_ATTENTE: "En attente",
+        accepte: "Approuvée",    CONFIRME: "Confirmée",
+        refuse:  "Refusée",      ANNULE: "Annulée",
+        EN_COURS: "En cours",    TERMINE: "Terminée",
+    };
     return map[s] || s;
 };
 const resStatusColor = (s) => {
     const map = {
-        EN_COURS: "text-blue-400 bg-blue-400/10 border border-blue-400/20",
+        en_attente: "text-orange-400 bg-orange-400/10 border border-orange-400/20",
         EN_ATTENTE: "text-orange-400 bg-orange-400/10 border border-orange-400/20",
-        CONFIRME: "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20",
-        accepte: "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20",
-        ANNULE: "text-red-400 bg-red-400/10 border border-red-400/20",
-        TERMINE: "text-slate-400 bg-slate-400/10 border border-slate-400/20"
+        accepte:    "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20",
+        CONFIRME:   "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20",
+        refuse:     "text-red-400 bg-red-400/10 border border-red-400/20",
+        ANNULE:     "text-red-400 bg-red-400/10 border border-red-400/20",
+        EN_COURS:   "text-blue-400 bg-blue-400/10 border border-blue-400/20",
+        TERMINE:    "text-slate-400 bg-slate-400/10 border border-slate-400/20",
     };
     return map[s] || "text-slate-400 bg-slate-400/10 border border-slate-400/20";
 };
@@ -230,6 +237,203 @@ function AlertRow({ alert, isLight }) {
             <span className={`text-[11px] font-bold px-2 py-1 rounded-lg shrink-0 ${colorMap[alert.severity]} ${alert.severity === "high" ? "bg-red-400/10" : "bg-orange-400/10"}`}>
                 {alert.severity === "high" ? "Urgent" : "Bientôt"}
             </span>
+        </div>
+    );
+}
+
+// ── Fleet Planning (Gantt) ────────────────────────────────────────────────────
+const GANTT_DAYS = 35;
+const GANTT_COL_W = 32;
+
+function FleetPlanning({ reservations, vehicles, isLight }) {
+    const [windowStart, setWindowStart] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    });
+
+    const days = useMemo(() => Array.from({ length: GANTT_DAYS }, (_, i) => {
+        const d = new Date(windowStart);
+        d.setDate(windowStart.getDate() + i);
+        return d;
+    }), [windowStart]);
+
+    const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+    const todayMs = today.getTime();
+    const windowStartMs = windowStart.getTime();
+    const windowEndMs = useMemo(() => {
+        const e = new Date(windowStart); e.setDate(windowStart.getDate() + GANTT_DAYS); return e.getTime();
+    }, [windowStart]);
+
+    const shiftWindow = (weeks) => setWindowStart(prev => {
+        const d = new Date(prev); d.setDate(d.getDate() + weeks * 7); return d;
+    });
+    const resetToday = () => setWindowStart(() => {
+        const d = new Date(); d.setDate(d.getDate() - 7); d.setHours(0,0,0,0); return d;
+    });
+
+    const monthGroups = useMemo(() => {
+        const groups = [];
+        days.forEach(d => {
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            const last = groups[groups.length - 1];
+            if (last && last.key === key) { last.count++; }
+            else groups.push({ key, label: d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }), count: 1 });
+        });
+        return groups;
+    }, [days]);
+
+    const resByVehicle = useMemo(() => {
+        const map = {};
+        (reservations || []).forEach(r => {
+            const k = `${r.vehicleBrand}|${r.vehicleModel}`;
+            if (!map[k]) map[k] = [];
+            map[k].push(r);
+        });
+        return map;
+    }, [reservations]);
+
+    const barColor = (s) => ({
+        en_attente: "bg-orange-500", EN_ATTENTE: "bg-orange-500",
+        accepte: "bg-emerald-500",   CONFIRME: "bg-emerald-500",
+        refuse:  "bg-red-400",       ANNULE: "bg-red-400",
+        EN_COURS: "bg-blue-500",     TERMINE: "bg-slate-400",
+    }[s] || "bg-slate-500");
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h3 className={`text-base font-black ${isLight ? "text-slate-800" : "text-white"}`}>Planning flotte</h3>
+                    <p className={`text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>Vue Gantt · {GANTT_DAYS} jours</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <button onClick={() => shiftWindow(-1)} className={`p-1.5 rounded-lg transition-colors ${isLight ? "hover:bg-slate-100 text-slate-500" : "hover:bg-white/10 text-slate-400"}`}>
+                        <ChevronLeft size={16} />
+                    </button>
+                    <button onClick={resetToday} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${isLight ? "bg-slate-100 hover:bg-slate-200 text-slate-600" : "bg-white/5 hover:bg-white/10 text-slate-300"}`}>
+                        Aujourd'hui
+                    </button>
+                    <button onClick={() => shiftWindow(1)} className={`p-1.5 rounded-lg transition-colors ${isLight ? "hover:bg-slate-100 text-slate-500" : "hover:bg-white/10 text-slate-400"}`}>
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            </div>
+
+            <div className={`rounded-2xl border overflow-hidden ${isLight ? "bg-white border-slate-100 shadow-sm" : "bg-[#0d1533] border-white/5"}`}>
+                <div className="overflow-x-auto">
+                    <div style={{ minWidth: `${200 + GANTT_DAYS * GANTT_COL_W}px` }}>
+                        {/* Month row */}
+                        <div className={`flex border-b ${isLight ? "border-slate-100" : "border-white/5"}`}>
+                            <div style={{ width: 200 }} className="shrink-0" />
+                            {monthGroups.map(g => (
+                                <div key={g.key} style={{ width: g.count * GANTT_COL_W }}
+                                    className={`text-center text-[10px] font-bold uppercase tracking-wider py-1.5 border-r last:border-r-0 capitalize
+                                        ${isLight ? "text-slate-500 border-slate-100" : "text-slate-400 border-white/5"}`}>
+                                    {g.label}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Day headers */}
+                        <div className={`flex border-b ${isLight ? "border-slate-100" : "border-white/5"}`}>
+                            <div style={{ width: 200 }} className={`shrink-0 px-4 py-2 text-[10px] font-bold uppercase tracking-wider ${isLight ? "text-slate-400" : "text-slate-600"}`}>
+                                Véhicule
+                            </div>
+                            {days.map((d, i) => {
+                                const isToday = d.getTime() === todayMs;
+                                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                                return (
+                                    <div key={i} style={{ width: GANTT_COL_W }}
+                                        className={`shrink-0 text-center text-[9px] py-1.5 border-r last:border-r-0
+                                            ${isToday ? "bg-orange-500/10 font-black text-orange-400" : isWeekend ? (isLight ? "text-slate-300 bg-slate-50" : "text-slate-600 bg-white/[0.015]") : (isLight ? "text-slate-400" : "text-slate-500")}
+                                            ${isLight ? "border-slate-100" : "border-white/5"}`}>
+                                        <div className="font-semibold">{d.getDate()}</div>
+                                        <div className="text-[7px] uppercase opacity-70">{d.toLocaleDateString("fr-FR", { weekday: "short" }).slice(0, 2)}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Vehicle rows */}
+                        {(vehicles || []).map((v, vi) => {
+                            const key = `${v.brand}|${v.model}`;
+                            const vRes = (resByVehicle[key] || []).filter(r => {
+                                const s = new Date(r.startDate).getTime();
+                                const e = new Date(r.endDate).getTime();
+                                return e >= windowStartMs && s < windowEndMs;
+                            });
+                            return (
+                                <div key={v.id || vi}
+                                    className={`flex items-center border-b last:border-b-0 relative
+                                        ${isLight ? "border-slate-50 hover:bg-orange-50/30" : "border-white/[0.03] hover:bg-white/[0.02]"}`}
+                                    style={{ height: 40 }}>
+                                    <div style={{ width: 200 }} className="shrink-0 px-4 flex items-center gap-2">
+                                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${v.status === "AVAILABLE" ? "bg-emerald-400" : v.status === "RENTED" ? "bg-orange-400" : "bg-slate-400"}`} />
+                                        <span className={`text-xs font-semibold truncate ${isLight ? "text-slate-700" : "text-slate-300"}`}>
+                                            {v.brand} {v.model}
+                                        </span>
+                                    </div>
+
+                                    <div className="relative flex" style={{ flex: 1, height: 40 }}>
+                                        {days.map((d, i) => {
+                                            const isToday = d.getTime() === todayMs;
+                                            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                                            return (
+                                                <div key={i} style={{ width: GANTT_COL_W }}
+                                                    className={`h-full border-r last:border-r-0
+                                                        ${isToday ? (isLight ? "bg-orange-50" : "bg-orange-500/[0.06]") : isWeekend ? (isLight ? "bg-slate-50/60" : "bg-white/[0.01]") : ""}
+                                                        ${isLight ? "border-slate-100" : "border-white/[0.04]"}`} />
+                                            );
+                                        })}
+
+                                        {vRes.map((r, ri) => {
+                                            const rStartMs = Math.max(new Date(r.startDate).getTime(), windowStartMs);
+                                            const rEndMs = Math.min(new Date(r.endDate).getTime(), windowEndMs);
+                                            const startCol = (rStartMs - windowStartMs) / (24 * 60 * 60 * 1000);
+                                            const durCols = (rEndMs - rStartMs) / (24 * 60 * 60 * 1000);
+                                            if (durCols <= 0) return null;
+                                            return (
+                                                <div key={ri}
+                                                    title={`${r.customerName || "Client"} · ${fmtDate(r.startDate)} → ${fmtDate(r.endDate)}`}
+                                                    className={`absolute top-2 bottom-2 rounded-md ${barColor(r.status)} opacity-80 hover:opacity-100 transition-opacity cursor-default flex items-center overflow-hidden`}
+                                                    style={{ left: startCol * GANTT_COL_W + 1, width: Math.max(durCols * GANTT_COL_W - 2, 4) }}>
+                                                    <span className="text-[9px] text-white font-bold px-1.5 truncate leading-none">
+                                                        {r.customerName?.split(" ")[0] || ""}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {(!vehicles || vehicles.length === 0) && (
+                            <div className={`py-10 text-center text-sm ${isLight ? "text-slate-400" : "text-slate-600"}`}>
+                                Aucun véhicule enregistré
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Legend */}
+                <div className={`flex flex-wrap gap-4 px-4 py-3 border-t text-[11px] ${isLight ? "border-slate-100 text-slate-400" : "border-white/5 text-slate-500"}`}>
+                    {[
+                        { color: "bg-blue-500", label: "En cours" },
+                        { color: "bg-orange-500", label: "En attente" },
+                        { color: "bg-emerald-500", label: "Confirmée" },
+                        { color: "bg-red-400", label: "Annulée" },
+                        { color: "bg-slate-400", label: "Terminée" },
+                    ].map(({ color, label }) => (
+                        <div key={label} className="flex items-center gap-1.5">
+                            <div className={`w-2.5 h-2.5 rounded-sm ${color}`} />
+                            {label}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
@@ -615,6 +819,24 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {data.recentReservations.map((r, i) => <ReservationRow key={i} r={r} isLight={isLight} />)}
                     </div>
+                </div>
+            )}
+
+            {/* ── Planning flotte ──────────────────────────────────────────── */}
+            {data.myVehicles?.length > 0 && (
+                <div>
+                    <SectionHeader
+                        title="Planning flotte"
+                        sub="Vue Gantt des réservations"
+                        href="/reservations"
+                        icon={CalendarCheck}
+                        isLight={isLight}
+                    />
+                    <FleetPlanning
+                        reservations={data.recentReservations || []}
+                        vehicles={data.myVehicles || []}
+                        isLight={isLight}
+                    />
                 </div>
             )}
 

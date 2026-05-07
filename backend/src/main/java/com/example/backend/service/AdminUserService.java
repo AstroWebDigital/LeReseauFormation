@@ -99,6 +99,23 @@ public class AdminUserService {
     }
 
     @Transactional
+    public UserDto transferArc(UUID arcId, UUID newAlpId) {
+        User arc = userRepository.findById(arcId)
+                .orElseThrow(() -> new IllegalArgumentException("ARC introuvable."));
+        if (!"ARC".equals(arc.getRoles())) {
+            throw new IllegalArgumentException("Cet utilisateur n'est pas un ARC.");
+        }
+        User newAlp = userRepository.findById(newAlpId)
+                .orElseThrow(() -> new IllegalArgumentException("ALP introuvable."));
+        if (!"ALP".equals(newAlp.getRoles())) {
+            throw new IllegalArgumentException("L'utilisateur cible n'est pas un ALP.");
+        }
+        arc.setAlpId(newAlpId);
+        arc.setUpdatedAt(java.time.LocalDateTime.now());
+        return userMapper.toDto(userRepository.save(arc));
+    }
+
+    @Transactional
     public UserDto blockUser(UUID userId, String reason) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));

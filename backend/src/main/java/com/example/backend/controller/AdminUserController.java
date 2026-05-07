@@ -69,4 +69,17 @@ public class AdminUserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /** Transférer un ARC vers un autre ALP */
+    @PutMapping("/{arcId}/transfer")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> transferArc(@PathVariable UUID arcId, @RequestBody Map<String, String> body) {
+        try {
+            UUID newAlpId = UUID.fromString(body.get("newAlpId"));
+            UserDto dto = adminUserService.transferArc(arcId, newAlpId);
+            return ResponseEntity.ok(dto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

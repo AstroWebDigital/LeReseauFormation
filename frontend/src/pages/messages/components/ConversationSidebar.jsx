@@ -1,6 +1,6 @@
 import React from "react";
 import { Input } from "@heroui/react";
-import { Search, MessageSquare } from "lucide-react";
+import { Search, MessageSquare, Archive } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 
 export default function ConversationSidebar({ conversations, activeConversation, onSelect, searchQuery, onSearch, activeTab, onTabChange, isLoading, userRole, formatTime, isDark }) {
@@ -18,7 +18,7 @@ export default function ConversationSidebar({ conversations, activeConversation,
                     </div>
                     <div>
                         <h1 className={`text-lg font-bold ${textMain}`}>Messagerie</h1>
-                        <p className={`text-xs ${textSub}`}>{userRole === "alp" ? "Agent ALP" : "Client"} • {conversations.length} conversation(s)</p>
+                        <p className={`text-xs ${textSub}`}>{userRole === "alp" ? "Agent ALP" : "Client"} • {conversations.length} {activeTab === "archives" ? "archivée(s)" : "conversation(s)"}</p>
                     </div>
                 </div>
             </div>
@@ -38,15 +38,21 @@ export default function ConversationSidebar({ conversations, activeConversation,
                 />
             </div>
 
-            <div style={{ flexShrink: 0, display: "flex", gap: "8px", padding: "0 16px 8px" }}>
-                {["all", "active"].map(tab => (
-                    <button key={tab} onClick={() => onTabChange(tab)}
+            <div style={{ flexShrink: 0, display: "flex", gap: "6px", padding: "0 16px 8px" }}>
+                {[
+                    { key: "all", label: "Toutes" },
+                    { key: "active", label: "Actives" },
+                    { key: "archives", label: "Archives", icon: <Archive size={10} className="inline-block mr-0.5 -mt-0.5" /> },
+                ].map(({ key, label, icon }) => (
+                    <button key={key} onClick={() => onTabChange(key)}
                             className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                activeTab === tab
-                                    ? "bg-orange-500/15 text-[#ff922b] border border-orange-500/30"
+                                activeTab === key
+                                    ? key === "archives"
+                                        ? "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                                        : "bg-orange-500/15 text-[#ff922b] border border-orange-500/30"
                                     : isDark ? "text-slate-500 hover:text-slate-300 border border-transparent" : "text-slate-400 hover:text-slate-600 border border-transparent"
                             }`}>
-                        {tab === "all" ? "Toutes" : "Actives"}
+                        {icon}{label}
                     </button>
                 ))}
             </div>

@@ -1,7 +1,9 @@
 package com.example.backend.service;
 
+import com.example.backend.dto.ReservedDateRangeDto;
 import com.example.backend.entity.Vehicle;
 import com.example.backend.entity.User;
+import com.example.backend.repository.ReservationRepository;
 import com.example.backend.repository.VehicleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,8 +15,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class VehicleService {
@@ -24,9 +28,15 @@ public class VehicleService {
     private static final String PENDING_STATUS = "en_attente";
 
     private final VehicleRepository vehicleRepository;
+    private final ReservationRepository reservationRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
 
-    public VehicleService(VehicleRepository vehicleRepository) {
+    public VehicleService(VehicleRepository vehicleRepository, ReservationRepository reservationRepository, EmailService emailService, NotificationService notificationService) {
         this.vehicleRepository = vehicleRepository;
+        this.reservationRepository = reservationRepository;
+        this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -112,7 +122,18 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Véhicule non trouvé."));
         vehicle.setStatus(AVAILABLE_STATUS);
-        return vehicleRepository.save(vehicle);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        try {
+            emailService.sendVehicleApprovedEmail(saved.getUser(), saved.getBrand(), saved.getModel(), saved.getPlateNumber());
+        } catch (Exception e) {
+            System.err.println("Email véhicule approuvé : " + e.getMessage());
+        }
+        try {
+            notificationService.sendVehicleApprovedNotification(saved.getUser(), saved.getBrand(), saved.getModel(), saved.getPlateNumber());
+        } catch (Exception e) {
+            System.err.println("Notif véhicule approuvé : " + e.getMessage());
+        }
+        return saved;
     }
 
     @Transactional
@@ -121,11 +142,40 @@ public class VehicleService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Véhicule non trouvé."));
         vehicle.setStatus("rejete");
         vehicle.setRejectionReason(reason);
-        return vehicleRepository.save(vehicle);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        try {
+            emailService.sendVehicleRejectedEmail(saved.getUser(), saved.getBrand(), saved.getModel(), saved.getPlateNumber(), reason);
+        } catch (Exception e) {
+            System.err.println("Email véhicule rejeté : " + e.getMessage());
+        }
+        try {
+            notificationService.sendVehicleRejectedNotification(saved.getUser(), saved.getBrand(), saved.getModel(), saved.getPlateNumber(), reason);
+        } catch (Exception e) {
+            System.err.println("Notif véhicule rejeté : " + e.getMessage());
+        }
+        return saved;
     }
 
     public Page<Vehicle> getAllVehicles(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("listingDate").descending());
         return vehicleRepository.findAll(pageable);
+    }
+
+    /** Véhicules réservables : disponible + déjà réservé (pas bloqué ni en attente d'approbation) */
+    public Page<Vehicle> getBookableVehicles(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("listingDate").descending());
+        return vehicleRepository.findByStatusIn(List.of("disponible", "reserve"), pageable);
+    }
+
+    /** Plages de dates des réservations actives d'un véhicule (pour le calendrier) */
+    public List<ReservedDateRangeDto> getReservedDates(UUID vehicleId) {
+        return reservationRepository.findActiveByVehicleId(vehicleId, OffsetDateTime.now())
+                .stream()
+                .map(r -> new ReservedDateRangeDto(
+                        r.getStartDate().toLocalDate().toString(),
+                        r.getEndDate().toLocalDate().toString(),
+                        r.getStatus()
+                ))
+                .collect(Collectors.toList());
     }
 }

@@ -149,9 +149,18 @@ export default function MessagesPage() {
     const handlePin = (msg) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, pinned: !m.pinned } : m));
     const handleCopy = (msg) => navigator.clipboard.writeText(msg.content).catch(console.error);
 
+    const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+    const isArchived = (c) => {
+        const time = c.last_message_time;
+        const isOld = time && (Date.now() - new Date(time).getTime()) > ONE_YEAR_MS;
+        return c.status === "ARCHIVED" || isOld;
+    };
+
     const filteredConvs = conversations.filter(c =>
         c.conversation_name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (activeTab === "all" || (activeTab === "active" && c.status === "ACTIVE"))
+        (activeTab === "archives"
+            ? isArchived(c)
+            : !isArchived(c) && (activeTab === "all" || (activeTab === "active" && c.status === "ACTIVE")))
     );
 
     if (hasAuthError) return (

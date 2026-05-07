@@ -592,6 +592,315 @@ public class EmailService {
         sendHtmlEmail(user.getEmail(), subject, html);
     }
 
+    public void sendReservationRejectedEmail(User customer, String vehicleName,
+                                              String startDate, String endDate, String reason) {
+        if (customer.getEmail() == null || customer.getEmail().isEmpty()) return;
+
+        String reasonBlock = (reason != null && !reason.isBlank())
+                ? "<tr><td style=\"padding:0 24px 12px 24px;\"><div style=\"background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:12px 16px;\">"
+                  + "<p style=\"margin:0;font-size:12px;color:#fca5a5;\"><strong style=\"color:#f87171;\">Motif :</strong> " + reason + "</p></div></td></tr>"
+                : "";
+
+        String subject = "Demande de réservation refusée — Le Réseau Formation";
+        String html = """
+            <html>
+              <body style="margin:0;padding:0;background-color:#050721;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                <table width="100%%" cellpadding="0" cellspacing="0">
+                  <tr><td align="center" style="padding:24px 16px;">
+                    <table width="100%%" cellpadding="0" cellspacing="0"
+                           style="max-width:560px;background:linear-gradient(145deg,#171c42,#111632,#090d23);border-radius:24px;overflow:hidden;border:1px solid rgba(148,163,184,0.25);">
+                      <tr>
+                        <td style="padding:20px 24px 12px 24px;border-bottom:1px solid rgba(148,163,184,0.25);">
+                          <div style="font-size:12px;font-weight:600;color:#e5e7eb;text-transform:uppercase;letter-spacing:0.08em;">Le Réseau Formation</div>
+                          <div style="font-size:11px;color:#9ca3af;">Plateforme de location &amp; formation</div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:20px 24px 4px 24px;">
+                          <h1 style="margin:0 0 8px 0;font-size:19px;color:#f9fafb;">Réservation refusée</h1>
+                          <p style="margin:0;font-size:13px;line-height:1.6;color:#cbd5f5;">
+                            Bonjour <strong style="color:#ffffff;">%s</strong>, votre demande de réservation
+                            pour le véhicule <strong style="color:#ff922b;">%s</strong> du <strong style="color:#e5e7eb;">%s</strong>
+                            au <strong style="color:#e5e7eb;">%s</strong> a malheureusement été refusée.
+                          </p>
+                        </td>
+                      </tr>
+                      %s
+                      <tr>
+                        <td style="padding:12px 24px 20px 24px;">
+                          <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">
+                            Vous pouvez effectuer une nouvelle demande de réservation pour d'autres dates ou un autre véhicule depuis la plateforme.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:14px 24px 18px 24px;border-top:1px solid rgba(148,163,184,0.25);">
+                          <p style="margin:0;font-size:11px;color:#6b7280;">© %d Le Réseau Formation</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td></tr>
+                </table>
+              </body>
+            </html>
+            """.formatted(
+                customer.getFirstname() != null ? customer.getFirstname() : "Client",
+                vehicleName, startDate, endDate,
+                reasonBlock,
+                java.time.Year.now().getValue()
+        );
+        sendHtmlEmail(customer.getEmail(), subject, html);
+    }
+
+    // ─── Gabarit commun ──────────────────────────────────────────────────────────
+
+    private String emailWrapper(String accentColor, String iconEmoji, String bodyHtml) {
+        return """
+            <html>
+              <body style="margin:0;padding:0;background:#050721;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                <table width="100%%" cellpadding="0" cellspacing="0">
+                  <tr><td align="center" style="padding:28px 16px;">
+                    <table width="100%%" cellpadding="0" cellspacing="0"
+                           style="max-width:560px;background:linear-gradient(150deg,#181e48 0%%,#0e1330 60%%,#07091f 100%%);border-radius:24px;overflow:hidden;border:1px solid rgba(148,163,184,0.18);">
+
+                      <!-- Header -->
+                      <tr>
+                        <td style="padding:18px 24px 14px 24px;border-bottom:1px solid rgba(148,163,184,0.12);">
+                          <table cellpadding="0" cellspacing="0"><tr>
+                            <td style="vertical-align:middle;padding-right:10px;">
+                              <div style="width:36px;height:36px;border-radius:10px;background:%s;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:36px;text-align:center;">%s</div>
+                            </td>
+                            <td style="vertical-align:middle;">
+                              <div style="font-size:13px;font-weight:700;color:#f1f5f9;letter-spacing:0.04em;">Le Réseau Formation</div>
+                              <div style="font-size:11px;color:#94a3b8;margin-top:1px;">Plateforme de location &amp; formation</div>
+                            </td>
+                          </tr></table>
+                        </td>
+                      </tr>
+
+                      <!-- Corps -->
+                      %s
+
+                      <!-- Footer -->
+                      <tr>
+                        <td style="padding:14px 24px 18px 24px;border-top:1px solid rgba(148,163,184,0.10);">
+                          <p style="margin:0;font-size:11px;color:#475569;">© %d Le Réseau Formation · Plateforme de mise en relation et de formation</p>
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td></tr>
+                </table>
+              </body>
+            </html>
+            """.formatted(accentColor, iconEmoji, bodyHtml, java.time.Year.now().getValue());
+    }
+
+    private String reasonBlock(String reason, boolean danger) {
+        if (reason == null || reason.isBlank()) return "";
+        String bg    = danger ? "rgba(239,68,68,0.10)" : "rgba(251,146,60,0.10)";
+        String border= danger ? "rgba(239,68,68,0.22)" : "rgba(251,146,60,0.22)";
+        String label = danger ? "#f87171" : "#fb923c";
+        String text  = danger ? "#fca5a5" : "#fdba74";
+        return "<tr><td style=\"padding:0 24px 16px 24px;\">"
+             + "<div style=\"background:" + bg + ";border:1px solid " + border + ";border-radius:12px;padding:12px 16px;\">"
+             + "<p style=\"margin:0;font-size:12px;color:" + text + ";\"><strong style=\"color:" + label + ";\">Motif :</strong> " + reason + "</p>"
+             + "</div></td></tr>";
+    }
+
+    private String ctaButton(String href, String label, String color) {
+        return "<tr><td align=\"center\" style=\"padding:6px 24px 18px 24px;\">"
+             + "<a href=\"" + href + "\" style=\"display:inline-block;padding:12px 28px;border-radius:999px;"
+             + "background:" + color + ";color:#fff;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:0.01em;\">"
+             + label + "</a></td></tr>";
+    }
+
+    // ─── Véhicule approuvé ────────────────────────────────────────────────────────
+
+    public void sendVehicleApprovedEmail(User owner, String brand, String model, String plateNumber) {
+        if (owner.getEmail() == null || owner.getEmail().isEmpty()) return;
+        String name = owner.getFirstname() != null ? owner.getFirstname() : "Propriétaire";
+        String body = """
+            <tr><td style="padding:22px 24px 6px 24px;">
+              <h1 style="margin:0 0 10px 0;font-size:20px;color:#f1f5f9;">Véhicule approuvé !</h1>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#94a3b8;">
+                Bonjour <strong style="color:#fff;">%s</strong>, votre véhicule a été <strong style="color:#34d399;">validé</strong>
+                par l'équipe Le Réseau Formation et est désormais visible sur la plateforme.
+              </p>
+            </td></tr>
+            <tr><td style="padding:14px 24px 6px 24px;">
+              <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:14px;padding:14px 18px;">
+                <p style="margin:0 0 4px 0;font-size:15px;font-weight:700;color:#f1f5f9;">%s %s</p>
+                <p style="margin:0;font-size:12px;color:#94a3b8;font-family:monospace;">%s</p>
+              </div>
+            </td></tr>
+            <tr><td style="padding:14px 24px 4px 24px;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;">
+                Les locataires peuvent désormais effectuer des demandes de réservation pour votre véhicule.
+                Vous recevrez une notification dès qu'une demande sera soumise.
+              </p>
+            </td></tr>
+            %s
+            """.formatted(name, brand, model, plateNumber,
+                ctaButton(frontendBaseUrl + "/vehicles", "Voir mes véhicules", "#34d399"));
+        sendHtmlEmail(owner.getEmail(), "Votre véhicule " + brand + " " + model + " est approuvé — Le Réseau Formation",
+                emailWrapper("#34d399", "✅", body));
+    }
+
+    // ─── Véhicule rejeté ──────────────────────────────────────────────────────────
+
+    public void sendVehicleRejectedEmail(User owner, String brand, String model, String plateNumber, String reason) {
+        if (owner.getEmail() == null || owner.getEmail().isEmpty()) return;
+        String name = owner.getFirstname() != null ? owner.getFirstname() : "Propriétaire";
+        String body = """
+            <tr><td style="padding:22px 24px 6px 24px;">
+              <h1 style="margin:0 0 10px 0;font-size:20px;color:#f1f5f9;">Véhicule non validé</h1>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#94a3b8;">
+                Bonjour <strong style="color:#fff;">%s</strong>, votre demande d'ajout de véhicule a été
+                <strong style="color:#f87171;">refusée</strong> par l'équipe Le Réseau Formation.
+              </p>
+            </td></tr>
+            <tr><td style="padding:14px 24px 6px 24px;">
+              <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:14px 18px;">
+                <p style="margin:0 0 4px 0;font-size:15px;font-weight:700;color:#f1f5f9;">%s %s</p>
+                <p style="margin:0;font-size:12px;color:#94a3b8;font-family:monospace;">%s</p>
+              </div>
+            </td></tr>
+            %s
+            <tr><td style="padding:4px 24px 4px 24px;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;">
+                Vous pouvez corriger les informations manquantes et soumettre à nouveau votre véhicule depuis la plateforme.
+              </p>
+            </td></tr>
+            %s
+            """.formatted(name, brand, model, plateNumber,
+                reasonBlock(reason, true),
+                ctaButton(frontendBaseUrl + "/vehicles", "Modifier et resoumettre", "#f87171"));
+        sendHtmlEmail(owner.getEmail(), "Votre véhicule " + brand + " " + model + " n'a pas été validé — Le Réseau Formation",
+                emailWrapper("#f87171", "❌", body));
+    }
+
+    // ─── Document approuvé ────────────────────────────────────────────────────────
+
+    public void sendDocumentApprovedEmail(User owner, String docType, String scope) {
+        if (owner.getEmail() == null || owner.getEmail().isEmpty()) return;
+        String name  = owner.getFirstname() != null ? owner.getFirstname() : "Utilisateur";
+        String label = docType.replace("_", " ");
+        String body = """
+            <tr><td style="padding:22px 24px 6px 24px;">
+              <h1 style="margin:0 0 10px 0;font-size:20px;color:#f1f5f9;">Document validé !</h1>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#94a3b8;">
+                Bonjour <strong style="color:#fff;">%s</strong>, votre document a été
+                <strong style="color:#34d399;">validé</strong> par l'équipe Le Réseau Formation.
+              </p>
+            </td></tr>
+            <tr><td style="padding:14px 24px 6px 24px;">
+              <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:14px;padding:14px 18px;">
+                <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#f1f5f9;text-transform:capitalize;">%s</p>
+                <p style="margin:0;font-size:12px;color:#94a3b8;">%s</p>
+              </div>
+            </td></tr>
+            <tr><td style="padding:14px 24px 4px 24px;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;">
+                Votre espace documentaire est à jour. Retrouvez tous vos documents validés dans votre espace personnel.
+              </p>
+            </td></tr>
+            %s
+            """.formatted(name, label, scope != null ? scope : "",
+                ctaButton(frontendBaseUrl + "/documents", "Voir mes documents", "#34d399"));
+        sendHtmlEmail(owner.getEmail(), "Document validé — Le Réseau Formation",
+                emailWrapper("#34d399", "📄", body));
+    }
+
+    // ─── Document rejeté ──────────────────────────────────────────────────────────
+
+    public void sendDocumentRejectedEmail(User owner, String docType, String scope, String reason) {
+        if (owner.getEmail() == null || owner.getEmail().isEmpty()) return;
+        String name  = owner.getFirstname() != null ? owner.getFirstname() : "Utilisateur";
+        String label = docType.replace("_", " ");
+        String body = """
+            <tr><td style="padding:22px 24px 6px 24px;">
+              <h1 style="margin:0 0 10px 0;font-size:20px;color:#f1f5f9;">Document refusé</h1>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#94a3b8;">
+                Bonjour <strong style="color:#fff;">%s</strong>, votre document a été
+                <strong style="color:#f87171;">refusé</strong> par l'équipe Le Réseau Formation.
+              </p>
+            </td></tr>
+            <tr><td style="padding:14px 24px 6px 24px;">
+              <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:14px 18px;">
+                <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#f1f5f9;text-transform:capitalize;">%s</p>
+                <p style="margin:0;font-size:12px;color:#94a3b8;">%s</p>
+              </div>
+            </td></tr>
+            %s
+            <tr><td style="padding:4px 24px 4px 24px;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;">
+                Veuillez soumettre à nouveau un document conforme depuis votre espace personnel.
+              </p>
+            </td></tr>
+            %s
+            """.formatted(name, label, scope != null ? scope : "",
+                reasonBlock(reason, true),
+                ctaButton(frontendBaseUrl + "/documents", "Gérer mes documents", "#f87171"));
+        sendHtmlEmail(owner.getEmail(), "Document refusé — Le Réseau Formation",
+                emailWrapper("#f87171", "📋", body));
+    }
+
+    // ─── Réservation confirmée (par loueur ou admin) ──────────────────────────────
+
+    public void sendReservationApprovedEmail(Reservation reservation) {
+        User customer = reservation.getUser();
+        if (customer.getEmail() == null || customer.getEmail().isEmpty()) return;
+        String name    = customer.getFirstname() != null ? customer.getFirstname() : "Client";
+        String ref     = reservation.getId().toString().substring(0, 8).toUpperCase();
+        String vehicle = reservation.getVehicle().getBrand() + " " + reservation.getVehicle().getModel();
+        String start   = reservation.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String end     = reservation.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        long nights    = java.time.Duration.between(reservation.getStartDate(), reservation.getEndDate()).toDays();
+        String total   = reservation.getTotalAmount() != null
+                ? String.format("%.0f €", reservation.getTotalAmount()) : "";
+        String body = """
+            <tr><td style="padding:22px 24px 6px 24px;">
+              <h1 style="margin:0 0 10px 0;font-size:20px;color:#f1f5f9;">Réservation confirmée ! 🎉</h1>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#94a3b8;">
+                Bonjour <strong style="color:#fff;">%s</strong>, votre réservation
+                n°&nbsp;<strong style="color:#fb923c;">%s</strong> a été
+                <strong style="color:#34d399;">confirmée</strong> par le loueur.
+              </p>
+            </td></tr>
+            <tr><td style="padding:14px 24px 6px 24px;">
+              <div style="background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.2);border-radius:14px;padding:16px 18px;">
+                <p style="margin:0 0 10px 0;font-size:15px;font-weight:700;color:#f1f5f9;">%s</p>
+                <table cellpadding="0" cellspacing="0" style="width:100%%;font-size:12px;color:#94a3b8;">
+                  <tr>
+                    <td style="padding-bottom:6px;"><span style="color:#64748b;">📅 Début</span></td>
+                    <td style="text-align:right;color:#f1f5f9;font-weight:600;">%s</td>
+                  </tr>
+                  <tr>
+                    <td style="padding-bottom:6px;"><span style="color:#64748b;">🏁 Fin</span></td>
+                    <td style="text-align:right;color:#f1f5f9;font-weight:600;">%s</td>
+                  </tr>
+                  <tr>
+                    <td style="padding-bottom:6px;"><span style="color:#64748b;">🌙 Durée</span></td>
+                    <td style="text-align:right;color:#f1f5f9;font-weight:600;">%d nuit%s</td>
+                  </tr>
+                  %s
+                </table>
+              </div>
+            </td></tr>
+            <tr><td style="padding:14px 24px 4px 24px;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;">
+                Préparez vos documents avant la date de prise en charge. En cas de question, contactez-nous via la messagerie de la plateforme.
+              </p>
+            </td></tr>
+            %s
+            """.formatted(name, ref, vehicle, start, end, nights, nights > 1 ? "s" : "",
+                total.isEmpty() ? "" : "<tr><td><span style=\"color:#64748b;\">💰 Total</span></td><td style=\"text-align:right;color:#fb923c;font-weight:700;\">" + total + "</td></tr>",
+                ctaButton(frontendBaseUrl + "/reservations", "Voir ma réservation", "#fb923c"));
+        sendHtmlEmail(customer.getEmail(), "Réservation confirmée n° " + ref + " — Le Réseau Formation",
+                emailWrapper("#fb923c", "🚗", body));
+    }
+
     private void sendHtmlEmail(String toEmail, String subject, String htmlContent) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();

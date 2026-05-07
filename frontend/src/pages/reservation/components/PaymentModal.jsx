@@ -4,7 +4,9 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { LockClosedIcon, CreditCardIcon, XMarkIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+if (!stripeKey) console.error("[Stripe] VITE_STRIPE_PUBLIC_KEY manquant – vérifier frontend/.env ou envDir dans vite.config.js");
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 function CardForm({ clientSecret, amountEuros, vehicleName, onPaymentSuccess, onClose, isDark }) {
     const stripe = useStripe();
@@ -173,23 +175,23 @@ export function PaymentModal({ isOpen, onOpenChange, clientSecret, amountEuros, 
     const isLight = !isDark;
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            size="md"
-            hideCloseButton
-            classNames={{
-                base: `${isLight ? "bg-white" : "bg-[#080f28]"} shadow-2xl`,
-                wrapper: "items-center",
-            }}
-        >
-            <ModalContent>
-                {(onClose) => (
-                    <div className="rounded-2xl overflow-hidden">
-                        <div className="h-1.5 bg-gradient-to-r from-orange-500 to-amber-400" />
+        <Elements stripe={stripePromise}>
+            <Modal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                size="md"
+                hideCloseButton
+                classNames={{
+                    base: `${isLight ? "bg-white" : "bg-[#080f28]"} shadow-2xl`,
+                    wrapper: "items-center",
+                }}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <div className="rounded-2xl overflow-hidden">
+                            <div className="h-1.5 bg-gradient-to-r from-orange-500 to-amber-400" />
 
-                        {clientSecret ? (
-                            <Elements stripe={stripePromise}>
+                            {clientSecret ? (
                                 <CardForm
                                     clientSecret={clientSecret}
                                     amountEuros={amountEuros}
@@ -198,16 +200,16 @@ export function PaymentModal({ isOpen, onOpenChange, clientSecret, amountEuros, 
                                     onClose={onClose}
                                     isDark={isDark}
                                 />
-                            </Elements>
-                        ) : (
-                            <div className="p-8 text-center">
-                                <div className="animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full mx-auto mb-3" />
-                                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Préparation du paiement…</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </ModalContent>
-        </Modal>
+                            ) : (
+                                <div className="p-8 text-center">
+                                    <div className="animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full mx-auto mb-3" />
+                                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Préparation du paiement…</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </ModalContent>
+            </Modal>
+        </Elements>
     );
 }

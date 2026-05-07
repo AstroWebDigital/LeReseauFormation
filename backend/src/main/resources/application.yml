@@ -37,7 +37,7 @@ server:
   port: 8080
 
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY:sk_test_placeholder}
+  secret-key: ${STRIPE_SECRET_KEY}
 
 springdoc:
   api-docs:

@@ -10,7 +10,8 @@ import {
     MapPin, ChevronDown, ChevronUp, FileText,
     ChevronLeft, ChevronRight, AlertCircle,
     UserPlus, Users, Mail, Phone, Briefcase, User,
-    CheckCircle2, Shield, X, Lock, Unlock, MessageSquare, Send
+    CheckCircle2, Shield, X, Lock, Unlock, MessageSquare, Send,
+    ArrowRightLeft, CalendarCheck,
 } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNotifications } from "@/context/NotificationsContext";
@@ -58,7 +59,7 @@ function RejectModal({ isOpen, title, onClose, onConfirm, isDark }) {
                         </ModalHeader>
                         <ModalBody>
                             <p className={`text-sm mb-3 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                                Vous pouvez indiquer une raison (optionnel). Elle sera visible par le propriétaire.
+                                Vous pouvez indiquer une raison (optionnel).
                             </p>
                             <Textarea
                                 placeholder="Ex : Documents manquants, photos insuffisantes..."
@@ -198,170 +199,167 @@ function VehicleDetailModal({ vehicle, onClose, onApprove, onOpenReject, isDark 
     );
 }
 
-/* ─── Formulaire création ALP / ARC ─── */
+/* ─── Formulaire création ALP / ARC (deux sections empilées) ─── */
 function CreateAlpForm({ isDark, onCreated }) {
     const isLight = !isDark;
-    const [role, setRole]     = useState("ALP"); // "ALP" | "ARC"
-    const [form, setForm]     = useState({ firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" });
-    const [alpList, setAlpList] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(null);
-    const [error, setError]   = useState(null);
 
-    // Charger les ALPs quand on passe en mode ARC
-    useEffect(() => {
-        if (role === "ARC") {
-            api.get("/api/admin/users/alp-only")
-                .then(r => setAlpList(r.data))
-                .catch(() => setAlpList([]));
-        }
-    }, [role]);
+    const emptyForm = { firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" };
+    const [alpForm,  setAlpForm]  = useState(emptyForm);
+    const [arcForm,  setArcForm]  = useState(emptyForm);
+    const [alpList,  setAlpList]  = useState([]);
+    const [alpLoad,  setAlpLoad]  = useState(false);
+    const [arcLoad,  setArcLoad]  = useState(false);
+    const [alpMsg,   setAlpMsg]   = useState(null); // { type: "ok"|"err", text }
+    const [arcMsg,   setArcMsg]   = useState(null);
 
-    const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+    // Charger la liste des ALP pour le select ARC
+    const loadAlpList = () => {
+        api.get("/api/admin/users/alp-only")
+            .then(r => setAlpList(r.data))
+            .catch(() => setAlpList([]));
+    };
+    useEffect(() => { loadAlpList(); }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (role === "ARC" && !form.alpId) { setError("Sélectionnez un ALP référent."); return; }
-        setLoading(true); setError(null); setSuccess(null);
+    const setA = (form, setForm) => (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+    const setAlp = setA(alpForm, setAlpForm);
+    const setArc = setA(arcForm, setArcForm);
+
+    const fieldCls = (err) => `flex items-center gap-2 rounded-xl border px-3 py-2.5 transition-all ${
+        err ? "border-red-500" : isLight ? "border-slate-200 focus-within:border-orange-400 bg-white" : "border-white/10 focus-within:border-orange-400 bg-white/3"
+    }`;
+    const inputCls = `flex-1 min-w-0 bg-transparent text-sm focus:outline-none ${isLight ? "text-slate-800 placeholder:text-slate-400" : "text-white placeholder:text-slate-500"}`;
+    const iconCls  = `h-4 w-4 shrink-0 ${isLight ? "text-slate-400" : "text-slate-500"}`;
+    const labelCls = `text-[10px] font-bold uppercase tracking-wider mb-1 block ${isLight ? "text-slate-500" : "text-slate-400"}`;
+
+    const submit = async (role, form, setForm, setMsg, setLoad) => {
+        if (role === "ARC" && !form.alpId) { setMsg({ type:"err", text:"Sélectionnez un ALP référent." }); return; }
+        setLoad(true); setMsg(null);
         try {
             await api.post("/api/admin/users", { ...form, role });
-            setSuccess(`Compte ${role} créé pour ${form.firstname} ${form.lastname}. Un email a été envoyé à ${form.email}.`);
-            setForm({ firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" });
+            setMsg({ type:"ok", text:`Compte ${role} créé · email envoyé à ${form.email}` });
+            setForm(emptyForm);
             onCreated?.();
+            if (role === "ALP") loadAlpList();
         } catch (err) {
-            setError(err?.response?.data || "Erreur lors de la création.");
+            setMsg({ type:"err", text: err?.response?.data || "Erreur lors de la création." });
         } finally {
-            setLoading(false);
+            setLoad(false);
         }
     };
 
-    const fieldCls = (hasError) => `flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all overflow-hidden
-        ${hasError ? "border-red-500" : isLight ? "border-slate-200 focus-within:border-orange-400 bg-white" : "border-white/10 focus-within:border-orange-400 bg-white/3"}`;
-    const inputCls = `flex-1 min-w-0 bg-transparent text-sm focus:outline-none ${isLight ? "text-slate-800 placeholder:text-slate-400" : "text-white placeholder:text-slate-500"}`;
-    const iconCls  = `h-4 w-4 shrink-0 ${isLight ? "text-slate-400" : "text-slate-500"}`;
-    const labelCls = `text-[11px] font-semibold uppercase tracking-wider mb-1.5 block ${isLight ? "text-slate-500" : "text-slate-400"}`;
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* ── Toggle ALP / ARC ── */}
-            <div className={`flex rounded-xl p-1 gap-1 ${isLight ? "bg-slate-100" : "bg-white/5"}`}>
-                {["ALP", "ARC"].map(r => (
-                    <button
-                        key={r} type="button"
-                        onClick={() => { setRole(r); setError(null); setSuccess(null); }}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-                            role === r
-                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/25"
-                                : isLight ? "text-slate-500 hover:text-slate-700" : "text-slate-500 hover:text-slate-300"
-                        }`}
-                    >
-                        {r === "ALP" ? "👤 Apprenant ALP" : "🔗 Apprenant ARC"}
-                    </button>
-                ))}
-            </div>
-
-            {/* Description du rôle */}
-            <div className={`px-4 py-2.5 rounded-xl text-xs border ${
-                role === "ALP"
-                    ? isLight ? "bg-blue-50 border-blue-100 text-blue-600" : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                    : isLight ? "bg-purple-50 border-purple-100 text-purple-600" : "bg-purple-500/10 border-purple-500/20 text-purple-400"
+    const MiniForm = ({ role, form, setField, msg, loading, onSubmit }) => (
+        <div className={`rounded-2xl border overflow-hidden ${isLight ? "border-slate-200" : "border-white/8"}`}>
+            {/* En-tête section */}
+            <div className={`flex items-center gap-3 px-4 py-3 border-b ${
+                isLight ? "border-slate-100 bg-slate-50" : "border-white/8 bg-white/3"
             }`}>
-                {role === "ALP"
-                    ? "L'ALP est un apprenant autonome avec accès complet à la plateforme."
-                    : "L'ARC est rattaché à un ALP et hérite de sa structure de suivi."}
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black ${
+                    role === "ALP" ? "bg-gradient-to-br from-orange-500 to-amber-500" : "bg-gradient-to-br from-purple-500 to-violet-500"
+                }`}>{role}</div>
+                <div>
+                    <p className={`font-bold text-sm ${isLight ? "text-slate-800" : "text-white"}`}>
+                        {role === "ALP" ? "Apprenant ALP" : "Apprenant ARC"}
+                    </p>
+                    <p className={`text-[10px] ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+                        {role === "ALP" ? "Autonome · accès complet à la plateforme" : "Rattaché à un ALP · hérite de sa structure"}
+                    </p>
+                </div>
             </div>
 
-            {success && (
-                <div className={`flex items-start gap-3 p-4 rounded-2xl border text-sm ${isLight ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"}`}>
-                    <CheckCircle2 size={17} className="shrink-0 mt-0.5" /><span>{success}</span>
-                </div>
-            )}
-            {error && (
-                <div className={`flex items-center gap-3 p-4 rounded-2xl border text-sm ${isLight ? "bg-red-50 border-red-200 text-red-700" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
-                    <AlertCircle size={17} className="shrink-0" /><span>{error}</span>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                    <label className={labelCls}>Prénom *</label>
-                    <div className={fieldCls(false)}>
-                        <User className={iconCls} />
-                        <input value={form.firstname} onChange={set("firstname")} required placeholder="Jean" className={inputCls} />
-                    </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                    <label className={labelCls}>Nom *</label>
-                    <div className={fieldCls(false)}>
-                        <User className={iconCls} />
-                        <input value={form.lastname} onChange={set("lastname")} required placeholder="Dupont" className={inputCls} />
-                    </div>
-                </div>
-                <div className="sm:col-span-2 flex flex-col gap-1.5">
-                    <label className={labelCls}>Email *</label>
-                    <div className={fieldCls(false)}>
-                        <Mail className={iconCls} />
-                        <input type="email" value={form.email} onChange={set("email")} required placeholder="jean.dupont@exemple.fr" className={inputCls} />
-                    </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                    <label className={labelCls}>Téléphone</label>
-                    <div className={fieldCls(false)}>
-                        <Phone className={iconCls} />
-                        <input value={form.phone} onChange={set("phone")} placeholder="06 00 00 00 00" className={inputCls} />
-                    </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                    <label className={labelCls}>Secteur / Agence</label>
-                    <div className={fieldCls(false)}>
-                        <Briefcase className={iconCls} />
-                        <input value={form.sector} onChange={set("sector")} placeholder="Niort - Agence Nord" className={inputCls} />
-                    </div>
-                </div>
-
-                {/* ALP référent — uniquement en mode ARC */}
-                {role === "ARC" && (
-                    <div className="sm:col-span-2 flex flex-col gap-1.5">
-                        <label className={labelCls}>ALP référent *</label>
-                        <div className={fieldCls(!form.alpId && !!error)}>
-                            <Users className={iconCls} />
-                            <select
-                                value={form.alpId}
-                                onChange={set("alpId")}
-                                className={`flex-1 min-w-0 bg-transparent text-sm focus:outline-none appearance-none cursor-pointer
-                                    ${!form.alpId ? (isLight ? "text-slate-400" : "text-slate-500") : (isLight ? "text-slate-800" : "text-white")}`}
-                            >
-                                <option value="">{alpList.length === 0 ? "Aucun ALP disponible" : "Choisir un ALP..."}</option>
-                                {alpList.map(alp => (
-                                    <option key={alp.id} value={alp.id}
-                                        className={isLight ? "bg-white text-slate-800" : "bg-[#0e1535] text-white"}>
-                                        {alp.firstname} {alp.lastname}{alp.sector ? ` — ${alp.sector}` : ""}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        {alpList.length === 0 && (
-                            <p className={`text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>
-                                Créez d'abord un ALP avant d'ajouter un ARC.
-                            </p>
-                        )}
+            <div className="p-4 space-y-3">
+                {msg && (
+                    <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs border ${
+                        msg.type === "ok"
+                            ? isLight ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            : isLight ? "bg-red-50 border-red-200 text-red-700" : "bg-red-500/10 border-red-500/20 text-red-400"
+                    }`}>
+                        {msg.type === "ok" ? <CheckCircle2 size={13} className="shrink-0 mt-0.5" /> : <AlertCircle size={13} className="shrink-0 mt-0.5" />}
+                        <span>{msg.text}</span>
                     </div>
                 )}
+
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className={labelCls}>Prénom *</label>
+                        <div className={fieldCls(false)}>
+                            <User className={iconCls} size={14} />
+                            <input value={form.firstname} onChange={setField("firstname")} required placeholder="Jean" className={inputCls} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Nom *</label>
+                        <div className={fieldCls(false)}>
+                            <User className={iconCls} size={14} />
+                            <input value={form.lastname} onChange={setField("lastname")} required placeholder="Dupont" className={inputCls} />
+                        </div>
+                    </div>
+                    <div className="col-span-2">
+                        <label className={labelCls}>Email *</label>
+                        <div className={fieldCls(false)}>
+                            <Mail className={iconCls} size={14} />
+                            <input type="email" value={form.email} onChange={setField("email")} required placeholder="jean.dupont@exemple.fr" className={inputCls} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Téléphone</label>
+                        <div className={fieldCls(false)}>
+                            <Phone className={iconCls} size={14} />
+                            <input value={form.phone} onChange={setField("phone")} placeholder="06 00 00 00 00" className={inputCls} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Secteur</label>
+                        <div className={fieldCls(false)}>
+                            <Briefcase className={iconCls} size={14} />
+                            <input value={form.sector} onChange={setField("sector")} placeholder="Agence Nord" className={inputCls} />
+                        </div>
+                    </div>
+                    {role === "ARC" && (
+                        <div className="col-span-2">
+                            <label className={labelCls}>ALP référent *</label>
+                            <div className={fieldCls(!form.alpId && msg?.type === "err")}>
+                                <Users className={iconCls} size={14} />
+                                <select value={form.alpId} onChange={setField("alpId")}
+                                    className={`flex-1 min-w-0 bg-transparent text-sm focus:outline-none appearance-none cursor-pointer ${
+                                        !form.alpId ? isLight ? "text-slate-400" : "text-slate-500" : isLight ? "text-slate-800" : "text-white"
+                                    }`}>
+                                    <option value="">{alpList.length === 0 ? "Aucun ALP créé" : "Choisir un ALP..."}</option>
+                                    {alpList.map(alp => (
+                                        <option key={alp.id} value={alp.id} className={isLight ? "bg-white text-slate-800" : "bg-[#0e1535] text-white"}>
+                                            {alp.firstname} {alp.lastname}{alp.sector ? ` — ${alp.sector}` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <button type="button" disabled={loading} onClick={onSubmit}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm text-white shadow-md transition-all disabled:opacity-60 ${
+                        role === "ALP"
+                            ? "bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/25"
+                            : "bg-gradient-to-r from-purple-500 to-violet-600 shadow-purple-500/25"
+                    }`}>
+                    {loading
+                        ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        : <UserPlus size={14} />}
+                    {loading ? "Création..." : `Créer le compte ${role}`}
+                </button>
             </div>
+        </div>
+    );
 
-            <button type="submit" disabled={loading}
-                className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:brightness-110 transition-all disabled:opacity-60">
-                {loading
-                    ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    : <UserPlus size={16} />}
-                {loading ? "Création en cours..." : `Créer le compte ${role} et envoyer l'email`}
-            </button>
-
-            <p className={`text-xs text-center ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+    return (
+        <div className="space-y-4">
+            <MiniForm role="ALP" form={alpForm} setField={setAlp} msg={alpMsg} loading={alpLoad}
+                onSubmit={() => submit("ALP", alpForm, setAlpForm, setAlpMsg, setAlpLoad)} />
+            <MiniForm role="ARC" form={arcForm} setField={setArc} msg={arcMsg} loading={arcLoad}
+                onSubmit={() => submit("ARC", arcForm, setArcForm, setArcMsg, setArcLoad)} />
+            <p className={`text-[10px] text-center ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                 Un mot de passe temporaire sera généré et envoyé par email à l'apprenant.
             </p>
-        </form>
+        </div>
     );
 }
 
@@ -386,6 +384,12 @@ export default function AdminVehiclesPage() {
     const [blockReason, setBlockReason]   = useState("");
     const [blockLoading, setBlockLoading] = useState(false);
 
+    // Transfer modal
+    const [transferTarget,  setTransferTarget]  = useState(null); // { id, name, currentAlpId }
+    const [transferAlpId,   setTransferAlpId]   = useState("");
+    const [transferLoading, setTransferLoading] = useState(false);
+    const [transferError,   setTransferError]   = useState("");
+
     // Support chat (admin)
     const [supportChannels, setSupportChannels] = useState([]);
     const [supportLoading, setSupportLoading]   = useState(false);
@@ -396,7 +400,38 @@ export default function AdminVehiclesPage() {
     const supportEndRef = useRef(null);
 
     // Modale de rejet
-    const [rejectTarget, setRejectTarget] = useState(null); // { type: "vehicle"|"document", id, title }
+    const [rejectTarget, setRejectTarget] = useState(null); // { type: "vehicle"|"document"|"reservation", id, title }
+
+    // Réservations en attente (admin)
+    const [pendingReservations, setPendingReservations] = useState([]);
+    const [resActionLoading, setResActionLoading] = useState({});
+
+    const fetchPendingReservations = async () => {
+        try {
+            const { data } = await api.get("/api/admin/reservations/pending");
+            setPendingReservations(data);
+        } catch { /* silencieux */ }
+    };
+
+    const handleResApprove = async (id) => {
+        setResActionLoading(prev => ({ ...prev, [id]: "approve" }));
+        try {
+            await api.put(`/api/admin/reservations/${id}/approve`);
+            setPendingReservations(prev => prev.filter(r => r.id !== id));
+            decrementPending(1);
+        } catch { /* ignore */ }
+        finally { setResActionLoading(prev => { const n = { ...prev }; delete n[id]; return n; }); }
+    };
+
+    const handleResReject = async (id, reason) => {
+        setResActionLoading(prev => ({ ...prev, [id]: "reject" }));
+        try {
+            await api.put(`/api/admin/reservations/${id}/reject`, { reason });
+            setPendingReservations(prev => prev.filter(r => r.id !== id));
+            decrementPending(1);
+        } catch { /* ignore */ }
+        finally { setResActionLoading(prev => { const n = { ...prev }; delete n[id]; return n; }); }
+    };
 
     const fetchOverview = async () => {
         try {
@@ -445,6 +480,20 @@ export default function AdminVehiclesPage() {
         } catch { /* ignore */ }
     };
 
+    const handleTransferConfirm = async () => {
+        if (!transferTarget || !transferAlpId) return;
+        setTransferLoading(true); setTransferError("");
+        try {
+            await api.put(`/api/admin/users/${transferTarget.id}/transfer`, { newAlpId: transferAlpId });
+            setTransferTarget(null); setTransferAlpId("");
+            fetchAlpUsers();
+        } catch (e) {
+            setTransferError(e?.response?.data || "Erreur lors du transfert.");
+        } finally {
+            setTransferLoading(false);
+        }
+    };
+
     const fetchSupportChannels = async () => {
         setSupportLoading(true);
         try { const { data } = await api.get("/api/admin/support/channels"); setSupportChannels(data); }
@@ -481,7 +530,7 @@ export default function AdminVehiclesPage() {
 
     useEffect(() => { supportEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [supportMessages]);
 
-    useEffect(() => { fetchOverview(); }, []);
+    useEffect(() => { fetchOverview(); fetchPendingReservations(); }, []);
     useEffect(() => { if (adminTab === "alp") fetchAlpUsers(); }, [adminTab]);
     useEffect(() => { if (adminTab === "support") { fetchSupportChannels(); fetchUnreadSupport(); } }, [adminTab]);
 
@@ -505,14 +554,20 @@ export default function AdminVehiclesPage() {
     const handleRejectConfirm = async (reason) => {
         if (!rejectTarget) return;
         const { type, id } = rejectTarget;
-        decrementPending(1);
         if (type === "vehicle") {
+            decrementPending(1);
             await api.put(`/api/admin/vehicles/${id}/reject`, { reason });
-        } else {
+            setRejectTarget(null);
+            fetchOverview();
+        } else if (type === "document") {
+            decrementPending(1);
             await api.put(`/api/admin/documents/${id}/reject`, { reason });
+            setRejectTarget(null);
+            fetchOverview();
+        } else if (type === "reservation") {
+            setRejectTarget(null);
+            await handleResReject(id, reason);
         }
-        setRejectTarget(null);
-        fetchOverview();
     };
 
     const handleDocApprove = async (id) => {
@@ -653,7 +708,45 @@ export default function AdminVehiclesPage() {
                                 </button>
                             </div>
                         </div>
-                        <div className="divide-y overflow-y-auto max-h-[480px]">
+                        {/* Modale transfert ARC */}
+                        {transferTarget && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter:"blur(6px)", backgroundColor:"rgba(0,0,0,0.6)" }}>
+                                <div className={`w-full max-w-sm rounded-2xl border shadow-xl overflow-hidden ${isDark ? "bg-[#0f1129] border-slate-700" : "bg-white border-slate-200"}`}>
+                                    <div className={`px-5 py-4 border-b flex items-center gap-3 ${isDark ? "border-slate-700" : "border-slate-100"}`}>
+                                        <ArrowRightLeft size={16} className="text-blue-500" />
+                                        <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"}`}>
+                                            Transférer {transferTarget.name}
+                                        </p>
+                                    </div>
+                                    <div className="p-5 space-y-3">
+                                        <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Choisissez le nouvel ALP référent :</p>
+                                        <select value={transferAlpId} onChange={e => { setTransferAlpId(e.target.value); setTransferError(""); }}
+                                            className={`w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none appearance-none cursor-pointer transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200 text-slate-800"}`}>
+                                            <option value="">Sélectionner un ALP...</option>
+                                            {alpUsers.filter(u => u.roles === "ALP" && u.id !== transferTarget.currentAlpId).map(alp => (
+                                                <option key={alp.id} value={alp.id} className={isDark ? "bg-[#0e1535] text-white" : "bg-white text-slate-800"}>
+                                                    {alp.firstname} {alp.lastname}{alp.sector ? ` — ${alp.sector}` : ""}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {transferError && <p className="text-red-400 text-xs">{transferError}</p>}
+                                        <div className="flex gap-2 pt-1">
+                                            <button onClick={() => { setTransferTarget(null); setTransferAlpId(""); setTransferError(""); }}
+                                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${isDark ? "border-slate-700 text-slate-400 hover:bg-white/5" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                                                Annuler
+                                            </button>
+                                            <button onClick={handleTransferConfirm} disabled={transferLoading || !transferAlpId}
+                                                className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                                                {transferLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ArrowRightLeft size={14} />}
+                                                {transferLoading ? "..." : "Transférer"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="divide-y overflow-y-auto max-h-[520px]">
                             {alpLoading ? (
                                 <div className="flex justify-center py-10"><Spinner size="sm" color="warning" /></div>
                             ) : alpUsers.length === 0 ? (
@@ -665,6 +758,42 @@ export default function AdminVehiclesPage() {
                                 const alps = alpUsers.filter(u => u.roles === "ALP");
                                 const arcs = alpUsers.filter(u => u.roles === "ARC");
                                 const standalone = arcs.filter(a => !a.alpId);
+
+                                const ArcRow = ({ arc }) => (
+                                    <div className={`flex items-center gap-2.5 pl-10 pr-4 py-3 ${isDark ? "bg-purple-500/3 border-slate-800/60" : "bg-purple-50/60 border-slate-100"}`}>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0 ml-1" />
+                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center text-white font-black text-[10px] shrink-0">
+                                            {((arc.firstname?.[0]||"")+(arc.lastname?.[0]||"")).toUpperCase()||"?"}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`font-semibold text-sm truncate ${textPrimary}`}>{arc.firstname} {arc.lastname}</p>
+                                            <p className={`text-[11px] truncate ${textMuted}`}>{arc.email}</p>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-600 border border-purple-200"}`}>ARC</span>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${arc.status === "ACTIF" ? isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-200" : isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                                                {arc.status === "ACTIF" ? "Actif" : "Bloqué"}
+                                            </span>
+                                            <button onClick={() => { setTransferTarget({ id: arc.id, name: `${arc.firstname} ${arc.lastname}`, currentAlpId: arc.alpId }); setTransferAlpId(""); setTransferError(""); }}
+                                                title="Transférer vers un autre ALP"
+                                                className={`p-1 rounded-md transition-all ${isDark ? "text-blue-400 hover:bg-blue-500/10" : "text-blue-500 hover:bg-blue-50"}`}>
+                                                <ArrowRightLeft size={13} />
+                                            </button>
+                                            {arc.status === "SUSPENDU" ? (
+                                                <button onClick={() => handleUnblock(arc.id)} title="Débloquer"
+                                                    className={`p-1 rounded-md transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
+                                                    <Unlock size={13} />
+                                                </button>
+                                            ) : (
+                                                <button onClick={() => setBlockTarget({ id: arc.id, name: `${arc.firstname} ${arc.lastname}` })} title="Bloquer"
+                                                    className={`p-1 rounded-md transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+                                                    <Lock size={13} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+
                                 return (
                                     <>
                                         {alps.map(alp => {
@@ -672,94 +801,47 @@ export default function AdminVehiclesPage() {
                                             return (
                                                 <div key={alp.id}>
                                                     {/* Ligne ALP */}
-                                                    <div className={`flex items-center gap-3 px-5 py-3.5 ${isDark ? "border-slate-800/80" : "border-slate-100"}`}>
+                                                    <div className={`flex items-center gap-3 px-4 py-3.5 ${isDark ? "border-slate-800/80" : "border-slate-100"}`}>
                                                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-black text-sm shrink-0">
                                                             {((alp.firstname?.[0]||"")+(alp.lastname?.[0]||"")).toUpperCase()||"?"}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={`font-bold text-sm truncate ${textPrimary}`}>{alp.firstname} {alp.lastname}</p>
-                                                            <p className={`text-xs truncate ${textMuted}`}>{alp.email}</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className={`font-bold text-sm truncate ${textPrimary}`}>{alp.firstname} {alp.lastname}</p>
+                                                                {myArcs.length > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${isDark ? "bg-purple-500/10 text-purple-400" : "bg-purple-100 text-purple-600"}`}>{myArcs.length} ARC{myArcs.length>1?"s":""}</span>}
+                                                            </div>
+                                                            <p className={`text-xs truncate ${textMuted}`}>{alp.email}{alp.sector ? ` · ${alp.sector}` : ""}</p>
                                                         </div>
-                                                        <div className="flex items-center gap-1.5 shrink-0">
-                                                            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-600 border border-orange-200"}`}>ALP</span>
-                                                            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${alp.status === "ACTIF" ? isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-200" : isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-600 border border-orange-200"}`}>ALP</span>
+                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${alp.status === "ACTIF" ? isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-200" : isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>
                                                                 {alp.status === "ACTIF" ? "Actif" : "Bloqué"}
                                                             </span>
                                                             {alp.status === "SUSPENDU" ? (
                                                                 <button onClick={() => handleUnblock(alp.id)} title="Débloquer"
-                                                                    className={`p-1.5 rounded-lg transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
-                                                                    <Unlock size={14} />
+                                                                    className={`p-1 rounded-md transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
+                                                                    <Unlock size={13} />
                                                                 </button>
                                                             ) : (
                                                                 <button onClick={() => setBlockTarget({ id: alp.id, name: `${alp.firstname} ${alp.lastname}` })} title="Bloquer"
-                                                                    className={`p-1.5 rounded-lg transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
-                                                                    <Lock size={14} />
+                                                                    className={`p-1 rounded-md transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+                                                                    <Lock size={13} />
                                                                 </button>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    {/* ARCs rattachés */}
-                                                    {myArcs.map(arc => (
-                                                        <div key={arc.id} className={`flex items-center gap-3 pl-10 pr-5 py-3 ${isDark ? "bg-purple-500/3 border-slate-800/60" : "bg-purple-50/60 border-slate-100"}`}>
-                                                            <div className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
-                                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center text-white font-black text-xs shrink-0">
-                                                                {((arc.firstname?.[0]||"")+(arc.lastname?.[0]||"")).toUpperCase()||"?"}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className={`font-semibold text-sm truncate ${textPrimary}`}>{arc.firstname} {arc.lastname}</p>
-                                                                <p className={`text-xs truncate ${textMuted}`}>{arc.email}</p>
-                                                            </div>
-                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-600 border border-purple-200"}`}>ARC</span>
-                                                                {arc.status === "SUSPENDU" ? (
-                                                                    <>
-                                                                        <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>Bloqué</span>
-                                                                        <button onClick={() => handleUnblock(arc.id)} title="Débloquer"
-                                                                            className={`p-1.5 rounded-lg transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
-                                                                            <Unlock size={14} />
-                                                                        </button>
-                                                                    </>
-                                                                ) : (
-                                                                    <button onClick={() => setBlockTarget({ id: arc.id, name: `${arc.firstname} ${arc.lastname}` })} title="Bloquer"
-                                                                        className={`p-1.5 rounded-lg transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
-                                                                        <Lock size={14} />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                    {myArcs.map(arc => <ArcRow key={arc.id} arc={arc} />)}
                                                 </div>
                                             );
                                         })}
-                                        {/* ARCs sans ALP */}
-                                        {standalone.map(arc => (
-                                            <div key={arc.id} className={`flex items-center gap-3 px-5 py-3.5 ${isDark ? "border-slate-800/80" : "border-slate-100"}`}>
-                                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center text-white font-black text-sm shrink-0">
-                                                    {((arc.firstname?.[0]||"")+(arc.lastname?.[0]||"")).toUpperCase()||"?"}
+                                        {standalone.length > 0 && (
+                                            <div>
+                                                <div className={`px-4 py-2 ${isDark ? "bg-white/2" : "bg-slate-50"}`}>
+                                                    <p className={`text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>ARCs sans ALP référent</p>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`font-bold text-sm truncate ${textPrimary}`}>{arc.firstname} {arc.lastname}</p>
-                                                    <p className={`text-xs truncate ${textMuted}`}>{arc.email}</p>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                    <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-600 border border-purple-200"}`}>ARC</span>
-                                                    {arc.status === "SUSPENDU" ? (
-                                                        <>
-                                                            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${isDark ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-red-50 text-red-600 border border-red-200"}`}>Bloqué</span>
-                                                            <button onClick={() => handleUnblock(arc.id)} title="Débloquer"
-                                                                className={`p-1.5 rounded-lg transition-all ${isDark ? "text-emerald-400 hover:bg-emerald-500/10" : "text-emerald-600 hover:bg-emerald-50"}`}>
-                                                                <Unlock size={14} />
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <button onClick={() => setBlockTarget({ id: arc.id, name: `${arc.firstname} ${arc.lastname}` })} title="Bloquer"
-                                                            className={`p-1.5 rounded-lg transition-all ${isDark ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
-                                                            <Lock size={14} />
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                {standalone.map(arc => <ArcRow key={arc.id} arc={arc} />)}
                                             </div>
-                                        ))}
+                                        )}
                                     </>
                                 );
                             })()}
@@ -883,12 +965,233 @@ export default function AdminVehiclesPage() {
                 <div className="flex justify-center items-center min-h-[300px]">
                     <Spinner size="lg" color="warning" label="Chargement..." />
                 </div>
-            ) : filteredUsers.length === 0 ? (
-                <div className={`flex flex-col items-center justify-center min-h-[300px] gap-2 ${textMuted}`}>
-                    <CheckCircle size={48} />
-                    <p className="text-lg font-medium">Aucun élément en attente</p>
-                </div>
-            ) : (
+            ) : filter === "pending" ? (() => {
+                // ── Vue liste plate des demandes en attente ──────────────────────────
+                const pendingVehicles = users.flatMap(u =>
+                    (u.vehicles||[]).filter(v => v.status === "en_attente").map(v => ({ ...v, _owner: u }))
+                );
+                const pendingDocs = users.flatMap(u =>
+                    (u.documents||[]).filter(d => d.status === "en_attente").map(d => ({ ...d, _owner: u }))
+                );
+                const totalPending = pendingVehicles.length + pendingDocs.length + pendingReservations.length;
+
+                if (totalPending === 0) return (
+                    <div className={`flex flex-col items-center justify-center min-h-[300px] gap-3 ${textMuted}`}>
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isDark ? "bg-emerald-500/10" : "bg-emerald-50"}`}>
+                            <CheckCircle size={32} className="text-emerald-500" />
+                        </div>
+                        <p className={`text-base font-bold ${textPrimary}`}>Tout est à jour !</p>
+                        <p className="text-sm">Aucun véhicule ni document en attente de validation.</p>
+                    </div>
+                );
+
+                const OwnerBadge = ({ owner }) => (
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-orange-500 to-yellow-400 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                            {((owner.firstname?.[0]||"")+(owner.lastname?.[0]||"")).toUpperCase()||"?"}
+                        </div>
+                        <span className={`text-xs font-semibold ${textMuted}`}>{owner.firstname} {owner.lastname}</span>
+                        <span className={`text-[10px] ${textMuted}`}>·</span>
+                        <span className={`text-[10px] ${textMuted}`}>{owner.email}</span>
+                    </div>
+                );
+
+                return (
+                    <div className="space-y-8">
+                        {/* ── Véhicules en attente ── */}
+                        {pendingVehicles.length > 0 && (
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${isDark ? "bg-orange-500/10" : "bg-orange-50"}`}>
+                                        <Car size={15} className="text-orange-500" />
+                                        <span className={`text-sm font-bold ${isDark ? "text-orange-400" : "text-orange-600"}`}>Véhicules en attente</span>
+                                        <span className="bg-orange-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none">
+                                            {pendingVehicles.length}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    {pendingVehicles.map(v => {
+                                        const firstImg = v.images?.[0] ? resolveUrl(v.images[0]) : null;
+                                        return (
+                                            <div key={v.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                                                {/* Photo + infos */}
+                                                <button type="button" onClick={() => setSelectedVehicle(v)}
+                                                    className="w-full flex gap-3 items-start p-4 text-left hover:opacity-90 transition group">
+                                                    <div className="w-24 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+                                                        {firstImg
+                                                            ? <img src={firstImg} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                            : <div className={`w-full h-full flex items-center justify-center ${isDark ? "bg-slate-800" : "bg-slate-100"}`}><Car size={20} className={textMuted} /></div>
+                                                        }
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                            <span className={`font-bold text-sm ${textPrimary}`}>{v.brand} {v.model}</span>
+                                                            <code className={`text-[11px] px-1.5 py-0.5 rounded-md font-mono ${isDark ? "bg-orange-500/10 text-orange-400" : "bg-orange-50 text-orange-600"}`}>{v.plateNumber}</code>
+                                                        </div>
+                                                        <div className={`flex flex-wrap gap-x-3 gap-y-0.5 text-xs mb-2 ${textMuted}`}>
+                                                            {v.fuel && <span className="flex items-center gap-1"><Fuel size={10}/>{v.fuel}</span>}
+                                                            {v.mileage && <span className="flex items-center gap-1"><Gauge size={10}/>{v.mileage?.toLocaleString("fr-FR")} km</span>}
+                                                            {v.baseDailyPrice && <span className="font-semibold">{v.baseDailyPrice}€/j</span>}
+                                                            {v.images?.length > 0 && <span>{v.images.length} photo{v.images.length > 1 ? "s" : ""}</span>}
+                                                        </div>
+                                                        <OwnerBadge owner={v._owner} />
+                                                    </div>
+                                                    <span className={`text-xs shrink-0 mt-1 ${isDark ? "text-orange-400" : "text-orange-500"}`}>Voir →</span>
+                                                </button>
+                                                {/* Actions */}
+                                                <div className={`flex gap-2 px-4 pb-4 pt-0 border-t ${divider} mt-0 pt-3`}>
+                                                    <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
+                                                        startContent={<CheckCircle size={13}/>}
+                                                        onPress={() => handleVehicleApprove(v.id)}>
+                                                        Approuver
+                                                    </Button>
+                                                    <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
+                                                        startContent={<XCircle size={13}/>}
+                                                        onPress={() => setRejectTarget({ type:"vehicle", id:v.id, title:`Rejeter ${v.brand} ${v.model}` })}>
+                                                        Rejeter
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Réservations en attente ── */}
+                        {pendingReservations.length > 0 && (
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${isDark ? "bg-purple-500/10" : "bg-purple-50"}`}>
+                                        <CalendarCheck size={15} className="text-purple-500" />
+                                        <span className={`text-sm font-bold ${isDark ? "text-purple-400" : "text-purple-600"}`}>Réservations en attente</span>
+                                        <span className="bg-purple-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none">
+                                            {pendingReservations.length}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    {pendingReservations.map(r => {
+                                        const actionKey = resActionLoading[r.id];
+                                        const fmtDate = (d) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+                                        const nights = r.startDate && r.endDate
+                                            ? Math.max(1, Math.round((new Date(r.endDate) - new Date(r.startDate)) / 86400000))
+                                            : null;
+                                        return (
+                                            <div key={r.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                                                <div className="p-4">
+                                                    {/* Client */}
+                                                    <div className="flex items-start gap-3 mb-3">
+                                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-black text-sm shrink-0">
+                                                            {(r.customerName || "?").split(" ").map(p => p[0]).join("").toUpperCase().slice(0,2)}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={`font-bold text-sm truncate ${textPrimary}`}>{r.customerName || "Client"}</p>
+                                                            <p className={`text-xs truncate ${textMuted}`}>{r.customerEmail}</p>
+                                                        </div>
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-600 border border-orange-200"}`}>
+                                                            En attente
+                                                        </span>
+                                                    </div>
+                                                    {/* Véhicule */}
+                                                    <div className={`rounded-xl px-3 py-2.5 mb-3 ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
+                                                        <p className={`text-xs font-bold ${textPrimary}`}>{r.vehicleBrand} {r.vehicleModel}</p>
+                                                        <p className={`text-xs mt-0.5 ${textMuted}`}>
+                                                            {fmtDate(r.startDate)} → {fmtDate(r.endDate)}
+                                                            {nights && <span className="ml-1.5 opacity-60">({nights} nuit{nights > 1 ? "s" : ""})</span>}
+                                                        </p>
+                                                    </div>
+                                                    {/* Montant */}
+                                                    {r.totalAmount && (
+                                                        <p className={`text-base font-black mb-3 ${textPrimary}`}>
+                                                            {Number(r.totalAmount).toLocaleString("fr-FR")} €
+                                                            <span className={`text-xs font-normal ml-1 ${textMuted}`}>total</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {/* Actions */}
+                                                <div className={`flex gap-2 px-4 pb-4 border-t ${divider} pt-3`}>
+                                                    <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
+                                                        isLoading={actionKey === "approve"}
+                                                        isDisabled={!!actionKey}
+                                                        startContent={!actionKey && <CheckCircle size={13}/>}
+                                                        onPress={() => handleResApprove(r.id)}>
+                                                        Confirmer
+                                                    </Button>
+                                                    <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
+                                                        isLoading={actionKey === "reject"}
+                                                        isDisabled={!!actionKey}
+                                                        startContent={!actionKey && <XCircle size={13}/>}
+                                                        onPress={() => setRejectTarget({ type: "reservation", id: r.id, title: `Refuser la réservation · ${r.vehicleBrand} ${r.vehicleModel}` })}>
+                                                        Refuser
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Documents en attente ── */}
+                        {pendingDocs.length > 0 && (
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${isDark ? "bg-blue-500/10" : "bg-blue-50"}`}>
+                                        <FileText size={15} className="text-blue-500" />
+                                        <span className={`text-sm font-bold ${isDark ? "text-blue-400" : "text-blue-600"}`}>Documents en attente</span>
+                                        <span className="bg-blue-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none">
+                                            {pendingDocs.length}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    {pendingDocs.map(d => (
+                                        <div key={d.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                                            <a href={resolveUrl(d.fileUrl)} target="_blank" rel="noopener noreferrer"
+                                                className="flex items-start gap-3 p-4 hover:opacity-90 transition group">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? "bg-blue-500/10 border border-blue-500/20" : "bg-blue-50 border border-blue-100"}`}>
+                                                    <FileText size={20} className={isDark ? "text-blue-400" : "text-blue-500"} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`font-bold text-sm mb-1 ${textPrimary}`}>{docTypeLabel[d.type] || d.type}</p>
+                                                    <p className={`text-xs mb-2 ${textMuted}`}>
+                                                        {d.scope && <span>{d.scope} · </span>}
+                                                        {d.issueDate && <span>Émis le {d.issueDate} · </span>}
+                                                        {d.expirationDate && <span>Expire le {d.expirationDate}</span>}
+                                                    </p>
+                                                    <OwnerBadge owner={d._owner} />
+                                                </div>
+                                                <span className={`text-xs shrink-0 mt-1 ${isDark ? "text-blue-400" : "text-blue-500"}`}>Ouvrir →</span>
+                                            </a>
+                                            <div className={`flex gap-2 px-4 pb-4 border-t ${divider} pt-3`}>
+                                                <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
+                                                    startContent={<CheckCircle size={13}/>}
+                                                    onPress={() => handleDocApprove(d.id)}>
+                                                    Valider
+                                                </Button>
+                                                <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
+                                                    startContent={<XCircle size={13}/>}
+                                                    onPress={() => setRejectTarget({ type:"document", id:d.id, title:`Rejeter « ${docTypeLabel[d.type]||d.type} »` })}>
+                                                    Rejeter
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            })() : (
+                // ── Vue "Tout voir" : accordion par utilisateur ──────────────────────
+                filteredUsers.length === 0 ? (
+                    <div className={`flex flex-col items-center justify-center min-h-[300px] gap-2 ${textMuted}`}>
+                        <CheckCircle size={48} />
+                        <p className="text-lg font-medium">Aucun élément</p>
+                    </div>
+                ) : (
                 <div className="flex flex-col gap-4">
                     {filteredUsers.map(userRow => {
                         const isOpen = !!openUsers[userRow.id];
@@ -898,8 +1201,6 @@ export default function AdminVehiclesPage() {
 
                         return (
                             <div key={userRow.id} className={`rounded-2xl border ${cardBg} overflow-hidden`}>
-
-                                {/* En-tête utilisateur */}
                                 <button type="button" className="w-full flex items-center justify-between px-5 py-4 text-left"
                                     onClick={() => toggleUser(userRow.id)}>
                                     <div className="flex items-center gap-3">
@@ -924,8 +1225,6 @@ export default function AdminVehiclesPage() {
 
                                 {isOpen && (
                                     <div className={`px-5 pb-5 border-t ${divider}`}>
-
-                                        {/* ── Véhicules ── */}
                                         {userRow.vehicles?.length > 0 && (
                                             <div className="mt-4">
                                                 <p className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2 ${textMuted}`}>
@@ -948,38 +1247,21 @@ export default function AdminVehiclesPage() {
                                                                         <div className="flex items-center gap-2 flex-wrap">
                                                                             <span className={`font-semibold ${textPrimary}`}>{v.brand} {v.model}</span>
                                                                             <code className={`text-xs px-1.5 py-0.5 rounded ${isDark?"bg-orange-500/10 text-orange-400":"bg-orange-50 text-orange-600"}`}>{v.plateNumber}</code>
-                                                                            <Chip size="sm" variant="flat" color={vehicleStatusColor[v.status]||"default"}>
-                                                                                {vehicleStatusLabel[v.status]||v.status}
-                                                                            </Chip>
+                                                                            <Chip size="sm" variant="flat" color={vehicleStatusColor[v.status]||"default"}>{vehicleStatusLabel[v.status]||v.status}</Chip>
                                                                         </div>
                                                                         <div className={`flex gap-3 text-xs mt-1 ${textMuted}`}>
                                                                             <span className="flex items-center gap-1"><Fuel size={11}/>{v.fuel}</span>
                                                                             <span className="flex items-center gap-1"><Gauge size={11}/>{v.mileage} km</span>
                                                                             <span className="font-semibold">{v.baseDailyPrice}€/j</span>
-                                                                            {v.images?.length > 0 && <span>{v.images.length} photo(s)</span>}
                                                                         </div>
-                                                                        {/* Raison rejet */}
-                                                                        {v.rejectionReason && (
-                                                                            <p className={`text-xs mt-1 flex items-center gap-1 ${isDark?"text-red-400":"text-red-600"}`}>
-                                                                                <AlertCircle size={11}/> {v.rejectionReason}
-                                                                            </p>
-                                                                        )}
+                                                                        {v.rejectionReason && <p className={`text-xs mt-1 flex items-center gap-1 ${isDark?"text-red-400":"text-red-600"}`}><AlertCircle size={11}/> {v.rejectionReason}</p>}
                                                                     </div>
                                                                     <span className={`text-xs ${textMuted} flex-shrink-0`}>Voir →</span>
                                                                 </button>
-
                                                                 {v.status === "en_attente" && (
                                                                     <div className="flex gap-2 px-3 pb-3">
-                                                                        <Button size="sm" className="bg-emerald-500 text-white font-semibold"
-                                                                            startContent={<CheckCircle size={13}/>}
-                                                                            onPress={() => handleVehicleApprove(v.id)}>
-                                                                            Approuver
-                                                                        </Button>
-                                                                        <Button size="sm" color="danger" variant="flat"
-                                                                            startContent={<XCircle size={13}/>}
-                                                                            onPress={() => setRejectTarget({ type:"vehicle", id:v.id, title:`Rejeter ${v.brand} ${v.model}` })}>
-                                                                            Rejeter
-                                                                        </Button>
+                                                                        <Button size="sm" className="bg-emerald-500 text-white font-semibold" startContent={<CheckCircle size={13}/>} onPress={() => handleVehicleApprove(v.id)}>Approuver</Button>
+                                                                        <Button size="sm" color="danger" variant="flat" startContent={<XCircle size={13}/>} onPress={() => setRejectTarget({ type:"vehicle", id:v.id, title:`Rejeter ${v.brand} ${v.model}` })}>Rejeter</Button>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -988,8 +1270,6 @@ export default function AdminVehiclesPage() {
                                                 </div>
                                             </div>
                                         )}
-
-                                        {/* ── Documents ── */}
                                         {userRow.documents?.length > 0 && (
                                             <div className="mt-4">
                                                 <p className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2 ${textMuted}`}>
@@ -998,43 +1278,22 @@ export default function AdminVehiclesPage() {
                                                 <div className="flex flex-col gap-3">
                                                     {userRow.documents.map(d => (
                                                         <div key={d.id} className={`rounded-xl ${innerBg} overflow-hidden`}>
-                                                            <a href={resolveUrl(d.fileUrl)} target="_blank" rel="noopener noreferrer"
-                                                                className="flex items-center gap-3 p-3 hover:opacity-80 transition">
-                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark?"bg-slate-800":"bg-slate-200"}`}>
-                                                                    <FileText size={18} className={textMuted}/>
-                                                                </div>
+                                                            <a href={resolveUrl(d.fileUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 hover:opacity-80 transition">
+                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark?"bg-slate-800":"bg-slate-200"}`}><FileText size={18} className={textMuted}/></div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2 flex-wrap">
                                                                         <span className={`font-semibold ${textPrimary}`}>{docTypeLabel[d.type]||d.type}</span>
-                                                                        <Chip size="sm" variant="flat" color={docStatusColor[d.status]||"default"}>
-                                                                            {docStatusLabel[d.status]||d.status}
-                                                                        </Chip>
+                                                                        <Chip size="sm" variant="flat" color={docStatusColor[d.status]||"default"}>{docStatusLabel[d.status]||d.status}</Chip>
                                                                     </div>
-                                                                    <p className={`text-xs mt-0.5 ${textMuted}`}>
-                                                                        {d.scope}{d.issueDate && ` · Émis le ${d.issueDate}`}{d.expirationDate && ` · Expire le ${d.expirationDate}`}
-                                                                    </p>
-                                                                    {/* Raison rejet */}
-                                                                    {d.rejectionReason && (
-                                                                        <p className={`text-xs mt-1 flex items-center gap-1 ${isDark?"text-red-400":"text-red-600"}`}>
-                                                                            <AlertCircle size={11}/> {d.rejectionReason}
-                                                                        </p>
-                                                                    )}
+                                                                    <p className={`text-xs mt-0.5 ${textMuted}`}>{d.scope}{d.issueDate && ` · Émis le ${d.issueDate}`}{d.expirationDate && ` · Expire le ${d.expirationDate}`}</p>
+                                                                    {d.rejectionReason && <p className={`text-xs mt-1 flex items-center gap-1 ${isDark?"text-red-400":"text-red-600"}`}><AlertCircle size={11}/> {d.rejectionReason}</p>}
                                                                 </div>
                                                                 <span className={`text-xs ${textMuted} flex-shrink-0`}>Ouvrir →</span>
                                                             </a>
-
                                                             {d.status === "en_attente" && (
                                                                 <div className="flex gap-2 px-3 pb-3">
-                                                                    <Button size="sm" className="bg-emerald-500 text-white font-semibold"
-                                                                        startContent={<CheckCircle size={13}/>}
-                                                                        onPress={() => handleDocApprove(d.id)}>
-                                                                        Valider
-                                                                    </Button>
-                                                                    <Button size="sm" color="danger" variant="flat"
-                                                                        startContent={<XCircle size={13}/>}
-                                                                        onPress={() => setRejectTarget({ type:"document", id:d.id, title:`Rejeter « ${docTypeLabel[d.type]||d.type} »` })}>
-                                                                        Rejeter
-                                                                    </Button>
+                                                                    <Button size="sm" className="bg-emerald-500 text-white font-semibold" startContent={<CheckCircle size={13}/>} onPress={() => handleDocApprove(d.id)}>Valider</Button>
+                                                                    <Button size="sm" color="danger" variant="flat" startContent={<XCircle size={13}/>} onPress={() => setRejectTarget({ type:"document", id:d.id, title:`Rejeter « ${docTypeLabel[d.type]||d.type} »` })}>Rejeter</Button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1048,6 +1307,7 @@ export default function AdminVehiclesPage() {
                         );
                     })}
                 </div>
+                )
             )}
 
             {/* Modale galerie véhicule */}
@@ -1061,7 +1321,6 @@ export default function AdminVehiclesPage() {
                 />
             )}
 
-            {/* Modale de rejet avec raison */}
             <RejectModal
                 isOpen={!!rejectTarget}
                 title={rejectTarget?.title || "Rejeter"}

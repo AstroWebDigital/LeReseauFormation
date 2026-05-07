@@ -19,6 +19,8 @@ import MessagesPage from "./pages/messages/MessagesPage";
 import StatisticsPage from "./pages/Statistics/StatisticsPage";
 import AdminVehiclesPage from "@/pages/admin/AdminVehiclesPage";
 import MyTeamPage from "@/pages/alp/MyTeamPage";
+import PlanningPage from "@/pages/planning/PlanningPage";
+import UserPlanningPage from "@/pages/planning/UserPlanningPage";
 
 import { HeroUIProvider } from "@heroui/react";
 import { AuthProvider } from "@/auth/AuthContext";
@@ -67,6 +69,12 @@ function ThemedApp() {
                                         <AdminVehiclesPage />
                                     </RoleRoute>
                                 } />
+                                <Route path="planning" element={
+                                    <RoleRoute allowedRoles={["ADMIN", "ALP", "PARTENAIRE"]}>
+                                        <PlanningPage />
+                                    </RoleRoute>
+                                } />
+                                <Route path="mon-planning" element={<UserPlanningPage />} />
                                 <Route path="equipe" element={
                                     <RoleRoute allowedRoles={["ALP"]}>
                                         <MyTeamPage />

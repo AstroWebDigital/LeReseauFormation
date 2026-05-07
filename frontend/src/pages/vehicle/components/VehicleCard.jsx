@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardBody, Button, Chip, Divider } from "@heroui/react";
-import { Fuel, Settings2, Gauge, MapPin, Edit, Trash2, Car, AlertCircle } from "lucide-react";
+import { Fuel, Settings2, Gauge, MapPin, Edit, Trash2, Car, AlertCircle, CalendarRange } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -21,7 +21,7 @@ const statusLabels = {
     "bloque":         "Bloqué",
 };
 
-export const VehicleCard = ({ vehicle, onEdit, onDelete, statusColorMap, canManage = true }) => {
+export const VehicleCard = ({ vehicle, onEdit, onDelete, onCalendar, statusColorMap, canManage = true }) => {
     const { isDark } = useTheme();
 
     const cardClass = isDark
@@ -56,6 +56,14 @@ export const VehicleCard = ({ vehicle, onEdit, onDelete, statusColorMap, canMana
                 </div>
                 {canManage && (
                     <div className="flex gap-1">
+                        <Button
+                            isIconOnly size="sm" variant="light"
+                            className="text-green-500"
+                            onPress={() => onCalendar(vehicle)}
+                            title="Gérer les disponibilités"
+                        >
+                            <CalendarRange size={14} />
+                        </Button>
                         <Button isIconOnly size="sm" variant="light" className={textMuted} onPress={() => onEdit(vehicle)}>
                             <Edit size={14} />
                         </Button>

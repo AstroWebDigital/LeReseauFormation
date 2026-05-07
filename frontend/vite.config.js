@@ -5,6 +5,7 @@ import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react()],
+  envDir: "..",   // charge le .env à la racine du projet
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

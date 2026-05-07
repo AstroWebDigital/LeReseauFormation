@@ -12,6 +12,8 @@ public class ReservationResponse {
     private String vehicleBrand;
     private String vehicleModel;
     private UUID customerId;
+    private String customerName;
+    private String customerEmail;
     private OffsetDateTime startDate;
     private OffsetDateTime endDate;
     private String pickupLocation;
@@ -22,4 +24,5 @@ public class ReservationResponse {
     private BigDecimal securityDeposit;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private String rejectionReason;
 }

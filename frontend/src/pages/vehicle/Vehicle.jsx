@@ -7,6 +7,7 @@ import { useAuth } from "@/auth/AuthContext";
 
 import { VehicleGrid } from "./components/VehicleGrid";
 import { VehicleModal } from "./components/VehicleModal";
+import { VehicleAvailabilityModal } from "./components/VehicleAvailabilityModal";
 
 const statusColorMap = {
     "en_attente":    "warning",
@@ -26,7 +27,9 @@ export default function Vehicle() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onOpenChange: onCalendarOpenChange } = useDisclosure();
     const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [calendarVehicle, setCalendarVehicle] = useState(null);
     const [selectedImages, setSelectedImages] = useState([]);
 
     // Vérifie si l'utilisateur peut gérer les véhicules (ALP, ADMIN ou PARTENAIRE)
@@ -107,6 +110,11 @@ export default function Vehicle() {
         }
     };
 
+    const openCalendar = (vehicle) => {
+        setCalendarVehicle(vehicle);
+        onCalendarOpen();
+    };
+
     const openModal = (vehicle = null) => {
         setSelectedImages([]);
         if (vehicle) {
@@ -160,6 +168,7 @@ export default function Vehicle() {
                 vehicles={vehicles}
                 onEdit={canManageVehicles ? openModal : null}
                 onDelete={canManageVehicles ? handleDelete : null}
+                onCalendar={canManageVehicles ? openCalendar : null}
                 statusColorMap={statusColorMap}
                 canManage={canManageVehicles}
             />
@@ -173,6 +182,13 @@ export default function Vehicle() {
                 isEdit={!!selectedVehicle}
                 selectedImages={selectedImages}
                 setSelectedImages={setSelectedImages}
+            />
+
+            <VehicleAvailabilityModal
+                isOpen={isCalendarOpen}
+                onOpenChange={onCalendarOpenChange}
+                vehicle={calendarVehicle}
+                isDark={isDark}
             />
         </div>
     );

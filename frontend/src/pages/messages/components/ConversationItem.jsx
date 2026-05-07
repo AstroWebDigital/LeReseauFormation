@@ -1,8 +1,11 @@
 import React from "react";
 import { Avatar } from "@heroui/react";
-import { Clock } from "lucide-react";
+import { Clock, Archive } from "lucide-react";
+
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 export default function ConversationItem({ conversation_name, last_message, last_message_time, initials, active, onClick, formatTime, status, isDark }) {
+    const archived = status === "ARCHIVED" || (last_message_time && (Date.now() - new Date(last_message_time).getTime()) > ONE_YEAR_MS);
     const activeBg = isDark ? "rgba(30,41,59,0.8)" : "rgba(255,146,43,0.08)";
     const hoverBg = isDark ? "rgba(30,41,59,0.4)" : "rgba(0,0,0,0.04)";
     const borderColor = active ? "#ff922b" : "transparent";
@@ -24,7 +27,14 @@ export default function ConversationItem({ conversation_name, last_message, last
                     </span>
                 </div>
                 <p className={`text-xs truncate mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{last_message}</p>
-                {status && <span className={`text-[10px] px-1.5 py-0.5 rounded-full inline-block mt-1 font-medium ${status === "ACTIVE" ? "bg-green-500/10 text-green-400" : isDark ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-400"}`}>{status}</span>}
+                <div className="flex items-center gap-1.5 mt-1">
+                    {archived && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 font-medium ${isDark ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-400"}`}>
+                            <Archive size={8} />Archivée
+                        </span>
+                    )}
+                    {status && !archived && <span className={`text-[10px] px-1.5 py-0.5 rounded-full inline-block font-medium ${status === "ACTIVE" ? "bg-green-500/10 text-green-400" : isDark ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-400"}`}>{status}</span>}
+                </div>
             </div>
         </div>
     );

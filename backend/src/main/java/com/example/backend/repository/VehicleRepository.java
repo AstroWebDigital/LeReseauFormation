@@ -13,6 +13,7 @@ import java.util.UUID;
 public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
 
     Page<Vehicle> findByStatus(String status, Pageable pageable);
+    Page<Vehicle> findByStatusIn(List<String> statuses, Pageable pageable);
     Page<Vehicle> findByUserId(UUID userId, Pageable pageable);
     List<Vehicle> findAllByUserId(UUID userId);
 }

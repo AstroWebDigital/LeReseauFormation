@@ -2,7 +2,7 @@ import React from "react";
 import { useTheme } from "@/theme/ThemeProvider";
 import { VehicleCard } from "./VehicleCard";
 
-export const VehicleGrid = ({ vehicles, onEdit, onDelete, statusColorMap, canManage = true }) => {
+export const VehicleGrid = ({ vehicles, onEdit, onDelete, onCalendar, statusColorMap, canManage = true }) => {
     const { isDark } = useTheme();
 
     if (vehicles.length === 0) {
@@ -25,6 +25,7 @@ export const VehicleGrid = ({ vehicles, onEdit, onDelete, statusColorMap, canMan
                     vehicle={v}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onCalendar={onCalendar}
                     statusColorMap={statusColorMap}
                     canManage={canManage}
                 />

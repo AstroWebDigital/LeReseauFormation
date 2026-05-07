@@ -73,4 +73,7 @@ public class Reservation {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "rejection_reason", length = Integer.MAX_VALUE)
+    private String rejectionReason;
 }

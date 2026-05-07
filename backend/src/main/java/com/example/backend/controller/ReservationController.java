@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,13 +37,39 @@ public class ReservationController {
 
     @GetMapping("/my")
     public ResponseEntity<List<ReservationResponse>> getMyReservations(Authentication auth) {
-        List<ReservationResponse> history = reservationService.getMyReservations(auth.getName());
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(reservationService.getMyReservations(auth.getName()));
+    }
+
+    /** Toutes les réservations sur les véhicules du loueur connecté */
+    @GetMapping("/owner")
+    public ResponseEntity<List<ReservationResponse>> getOwnerReservations(Authentication auth) {
+        return ResponseEntity.ok(reservationService.getOwnerReservations(auth.getName()));
+    }
+
+    /** Approuver une demande de réservation */
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveReservation(@PathVariable UUID id, Authentication auth) {
+        try {
+            return ResponseEntity.ok(reservationService.approveReservation(id, auth.getName()));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
+    }
+
+    /** Refuser une demande de réservation */
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<?> rejectReservation(@PathVariable UUID id, Authentication auth,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        try {
+            String reason = body != null ? body.get("reason") : null;
+            return ResponseEntity.ok(reservationService.rejectReservation(id, auth.getName(), reason));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
     }
 
     @GetMapping("/history/{customerId}")
     public ResponseEntity<List<ReservationResponse>> getCustomerHistory(@PathVariable UUID customerId) {
-        List<ReservationResponse> history = reservationService.getCustomerHistory(customerId);
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(reservationService.getCustomerHistory(customerId));
     }
 }

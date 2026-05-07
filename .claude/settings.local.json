@@ -6,7 +6,12 @@
       "Bash(npm install *)",
       "Bash(npx vite *)",
       "Bash(./gradlew compileJava)",
-      "Bash(where java *)"
+      "Bash(where java *)",
+      "Bash(find /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src -type f \\\\\\(-name *[Mm]essage* -o -name *[Cc]hat* -o -name *[Ii]nbox* \\\\\\))",
+      "Bash(find /Users/theopohin/IdeaProjects/LeReseauFormation/backend/src/main/resources/db/migration -type f -name *.sql)",
+      "Bash(grep -r \"equipe\\\\|Equipe\" /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src --include=*.jsx --include=*.js)",
+      "Bash(find /Users/theopohin/IdeaProjects/LeReseauFormation -type f \\\\\\(-name *Alp* -o -name *Arc* -o -name *ALP* -o -name *ARC* \\\\\\))",
+      "Bash(ls /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/*.jsx)"
     ]
   }
 }

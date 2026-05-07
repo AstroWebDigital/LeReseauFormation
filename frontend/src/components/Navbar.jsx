@@ -97,6 +97,7 @@ const AppNavbar = ({
     // État pour le panneau notifications
     const [showNotif, setShowNotif] = useState(false);
     const [docNotifs, setDocNotifs] = useState([]);
+    const [dbNotifs, setDbNotifs] = useState([]);
     const [dismissed, setDismissed] = useState(() => {
         try { return new Set(JSON.parse(localStorage.getItem("lr_dismissed_notifs") || "[]")); }
         catch { return new Set(); }
@@ -165,6 +166,11 @@ const AppNavbar = ({
                 .filter(d => d.status === "valide" || d.status === "rejete")
                 .slice(0, 5);
             setDocNotifs(relevant);
+        }).catch(() => {});
+
+        // Notifications en base (ex: refus de réservation)
+        api.get("/api/notifications").then(({ data }) => {
+            setDbNotifs(Array.isArray(data) ? data.slice(0, 10) : []);
         }).catch(() => {});
     }, [token]);
 
@@ -399,8 +405,15 @@ const AppNavbar = ({
                                 const showMsg = unreadMessages > 0 && !dismissed.has("messages");
                                 const showAdmin = isAdmin && pendingDocuments > 0 && !dismissed.has("admin_docs");
                                 const showSupport = isAdmin && unreadSupport > 0 && !dismissed.has("support");
-                                const badge = (showMsg ? unreadMessages : 0) + visibleDocs.length + (showAdmin ? 1 : 0) + (showSupport ? unreadSupport : 0);
-                                const hasAny = showMsg || visibleDocs.length > 0 || showAdmin || showSupport;
+                                const unreadDbNotifs = dbNotifs.filter(n => !n.isRead && !dismissed.has(`db_${n.id}`));
+                                const badge = (showMsg ? unreadMessages : 0) + visibleDocs.length + (showAdmin ? 1 : 0) + (showSupport ? unreadSupport : 0) + unreadDbNotifs.length;
+                                const hasAny = showMsg || visibleDocs.length > 0 || showAdmin || showSupport || unreadDbNotifs.length > 0;
+
+                                const dismissDb = (id) => {
+                                    api.put(`/api/notifications/${id}/read`).catch(() => {});
+                                    dismiss(`db_${id}`);
+                                    setDbNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+                                };
 
                                 return (
                                     <>
@@ -520,6 +533,35 @@ const AppNavbar = ({
                                                                 badgeColor={ok ? "emerald" : "red"}
                                                                 onDismiss={() => dismiss(key)}
                                                                 onClick={() => dismiss(key, "/documents")}
+                                                                isLight={isLight}
+                                                            />
+                                                        );
+                                                    })}
+
+                                                    {/* Notifications DB (véhicule / document / réservation) */}
+                                                    {unreadDbNotifs.map(n => {
+                                                        const isApproved = n.contenu?.includes("approuvé") || n.contenu?.includes("validé") || n.contenu?.includes("confirmée");
+                                                        const accent = isApproved ? "emerald" : "red";
+                                                        const icon = isApproved
+                                                            ? <CheckCircle size={15} className="text-emerald-500" />
+                                                            : <XCircle size={15} className="text-red-500" />;
+                                                        const badge = isApproved ? "Accepté" : "Refusé";
+                                                        let title = "Notification";
+                                                        let navTarget = "/";
+                                                        if (n.type === "VEHICULE")    { title = isApproved ? "Véhicule approuvé"   : "Véhicule refusé";    navTarget = "/vehicles"; }
+                                                        if (n.type === "DOCUMENT")    { title = isApproved ? "Document validé"     : "Document refusé";    navTarget = "/documents"; }
+                                                        if (n.type === "RESERVATION") { title = isApproved ? "Réservation confirmée" : "Réservation refusée"; navTarget = "/reservations"; }
+                                                        return (
+                                                            <NotifItem
+                                                                key={n.id}
+                                                                accentColor={accent}
+                                                                icon={icon}
+                                                                title={title}
+                                                                desc={n.contenu}
+                                                                statusBadge={badge}
+                                                                badgeColor={accent}
+                                                                onDismiss={() => dismissDb(n.id)}
+                                                                onClick={() => { dismissDb(n.id); setShowNotif(false); navigate(navTarget); }}
                                                                 isLight={isLight}
                                                             />
                                                         );
