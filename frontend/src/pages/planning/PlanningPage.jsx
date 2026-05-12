@@ -5,6 +5,7 @@ import api from "@/services/auth/client";
 import { useTheme } from "@/theme/ThemeProvider";
 
 const COL_W = 36;
+const LABEL_W = typeof window !== "undefined" && window.innerWidth < 640 ? 140 : 220;
 
 const STATUS_META = {
     en_attente: { label: "En attente",  color: "bg-amber-400",   text: "text-amber-400",   dot: "bg-amber-400",   border: "border-amber-400/30"  },
@@ -146,7 +147,7 @@ export default function PlanningPage() {
     );
 
     return (
-        <div className={`p-5 lg:p-8 space-y-5 min-h-screen ${bg}`}>
+        <div className={`p-3 md:p-5 lg:p-8 space-y-4 min-h-screen ${bg}`}>
 
             {/* ── En-tête ── */}
             <div className="flex items-start justify-between flex-wrap gap-4">
@@ -222,11 +223,11 @@ export default function PlanningPage() {
             {/* ── Gantt ── */}
             <div className={`rounded-2xl border overflow-hidden ${cardBg}`}>
                 <div className="overflow-x-auto">
-                    <div style={{ minWidth: `${220 + viewDays * COL_W}px` }} className="relative">
+                    <div style={{ minWidth: `${LABEL_W + viewDays * COL_W}px` }} className="relative">
 
                         {/* Ligne mois */}
                         <div className={`flex border-b ${divider}`}>
-                            <div style={{ width: 220 }} className="shrink-0" />
+                            <div style={{ width: LABEL_W }} className="shrink-0" />
                             {monthGroups.map(g => (
                                 <div key={g.key} style={{ width: g.count * COL_W }}
                                     className={`text-center text-[10px] font-bold uppercase tracking-widest py-2 border-r last:border-r-0 capitalize ${divider} ${textSub}`}>
@@ -237,7 +238,7 @@ export default function PlanningPage() {
 
                         {/* Ligne jours */}
                         <div className={`flex border-b ${divider}`}>
-                            <div style={{ width: 220 }}
+                            <div style={{ width: LABEL_W }}
                                 className={`shrink-0 px-5 py-2 text-[10px] font-bold uppercase tracking-widest ${textSub}`}>
                                 Véhicule
                             </div>
@@ -274,7 +275,7 @@ export default function PlanningPage() {
                                     style={{ height: 48 }}>
 
                                     {/* Label véhicule */}
-                                    <div style={{ width: 220 }} className="shrink-0 px-4 flex items-center gap-2.5">
+                                    <div style={{ width: LABEL_W }} className="shrink-0 px-4 flex items-center gap-2.5">
                                         <div className={`w-2 h-2 rounded-full shrink-0 ${
                                             vStatus === "disponible" ? "bg-emerald-400"
                                             : vStatus === "reserve"  ? "bg-orange-400"

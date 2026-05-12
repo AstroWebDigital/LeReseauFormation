@@ -1,15 +1,23 @@
 import React from "react";
 import { Avatar, Chip, Tooltip } from "@heroui/react";
-import { Phone } from "lucide-react";
+import { Phone, ChevronLeft } from "lucide-react";
 import OptionsMenu from "./OptionsMenu";
 
-export default function ChatHeader({ conversation, messages, onShowPinned, isDark }) {
+export default function ChatHeader({ conversation, messages, onShowPinned, onBack, isDark }) {
     const bg = isDark ? "#0f172a" : "#ffffff";
     const border = isDark ? "#1e293b" : "#e2e8f0";
 
     return (
-        <div style={{ flexShrink: 0, borderBottom: `1px solid ${border}`, background: bg, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div className="flex gap-3 items-center">
+        <div style={{ flexShrink: 0, borderBottom: `1px solid ${border}`, background: bg, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div className="flex gap-2 items-center">
+                {/* Bouton retour mobile */}
+                <button
+                    onClick={onBack}
+                    className={`md:hidden p-1.5 rounded-lg mr-1 transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
+                    aria-label="Retour"
+                >
+                    <ChevronLeft size={20} />
+                </button>
                 <div className="relative">
                     <Avatar name={conversation.initials} className="bg-orange-500/20 text-[#ff922b] font-bold border border-orange-500/30" size="md" />
                     <span className={`absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 ${isDark ? "border-slate-900" : "border-white"}`} />

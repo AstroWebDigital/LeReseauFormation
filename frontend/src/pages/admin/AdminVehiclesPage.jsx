@@ -11,7 +11,7 @@ import {
     ChevronLeft, ChevronRight, AlertCircle,
     UserPlus, Users, Mail, Phone, Briefcase, User,
     CheckCircle2, Shield, X, Lock, Unlock, MessageSquare, Send,
-    ArrowRightLeft, CalendarCheck,
+    ArrowRightLeft, CalendarCheck, RefreshCw,
 } from "lucide-react";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNotifications } from "@/context/NotificationsContext";
@@ -150,7 +150,7 @@ function VehicleDetailModal({ vehicle, onClose, onApprove, onOpenReject, isDark 
                                 </div>
                             )}
 
-                            <div className={`grid grid-cols-2 gap-3 mt-4 text-sm ${textMuted}`}>
+                            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-sm ${textMuted}`}>
                                 <div className="flex items-center gap-2"><Fuel size={14} />{vehicle.fuel}</div>
                                 <div className="flex items-center gap-2"><Settings2 size={14} />{vehicle.transmission}</div>
                                 <div className="flex items-center gap-2"><Gauge size={14} />{vehicle.mileage} km</div>
@@ -199,31 +199,8 @@ function VehicleDetailModal({ vehicle, onClose, onApprove, onOpenReject, isDark 
     );
 }
 
-/* ─── Formulaire création ALP / ARC (deux sections empilées) ─── */
-function CreateAlpForm({ isDark, onCreated }) {
-    const isLight = !isDark;
-
-    const emptyForm = { firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" };
-    const [alpForm,  setAlpForm]  = useState(emptyForm);
-    const [arcForm,  setArcForm]  = useState(emptyForm);
-    const [alpList,  setAlpList]  = useState([]);
-    const [alpLoad,  setAlpLoad]  = useState(false);
-    const [arcLoad,  setArcLoad]  = useState(false);
-    const [alpMsg,   setAlpMsg]   = useState(null); // { type: "ok"|"err", text }
-    const [arcMsg,   setArcMsg]   = useState(null);
-
-    // Charger la liste des ALP pour le select ARC
-    const loadAlpList = () => {
-        api.get("/api/admin/users/alp-only")
-            .then(r => setAlpList(r.data))
-            .catch(() => setAlpList([]));
-    };
-    useEffect(() => { loadAlpList(); }, []);
-
-    const setA = (form, setForm) => (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
-    const setAlp = setA(alpForm, setAlpForm);
-    const setArc = setA(arcForm, setArcForm);
-
+/* ─── Sous-formulaire ALP / ARC (défini au niveau module pour éviter le remount) ─── */
+function MiniForm({ role, form, setField, msg, loading, onSubmit, alpList, isLight }) {
     const fieldCls = (err) => `flex items-center gap-2 rounded-xl border px-3 py-2.5 transition-all ${
         err ? "border-red-500" : isLight ? "border-slate-200 focus-within:border-orange-400 bg-white" : "border-white/10 focus-within:border-orange-400 bg-white/3"
     }`;
@@ -231,25 +208,8 @@ function CreateAlpForm({ isDark, onCreated }) {
     const iconCls  = `h-4 w-4 shrink-0 ${isLight ? "text-slate-400" : "text-slate-500"}`;
     const labelCls = `text-[10px] font-bold uppercase tracking-wider mb-1 block ${isLight ? "text-slate-500" : "text-slate-400"}`;
 
-    const submit = async (role, form, setForm, setMsg, setLoad) => {
-        if (role === "ARC" && !form.alpId) { setMsg({ type:"err", text:"Sélectionnez un ALP référent." }); return; }
-        setLoad(true); setMsg(null);
-        try {
-            await api.post("/api/admin/users", { ...form, role });
-            setMsg({ type:"ok", text:`Compte ${role} créé · email envoyé à ${form.email}` });
-            setForm(emptyForm);
-            onCreated?.();
-            if (role === "ALP") loadAlpList();
-        } catch (err) {
-            setMsg({ type:"err", text: err?.response?.data || "Erreur lors de la création." });
-        } finally {
-            setLoad(false);
-        }
-    };
-
-    const MiniForm = ({ role, form, setField, msg, loading, onSubmit }) => (
+    return (
         <div className={`rounded-2xl border overflow-hidden ${isLight ? "border-slate-200" : "border-white/8"}`}>
-            {/* En-tête section */}
             <div className={`flex items-center gap-3 px-4 py-3 border-b ${
                 isLight ? "border-slate-100 bg-slate-50" : "border-white/8 bg-white/3"
             }`}>
@@ -349,12 +309,53 @@ function CreateAlpForm({ isDark, onCreated }) {
             </div>
         </div>
     );
+}
+
+/* ─── Formulaire création ALP / ARC (deux sections empilées) ─── */
+function CreateAlpForm({ isDark, onCreated }) {
+    const isLight = !isDark;
+
+    const emptyForm = { firstname: "", lastname: "", email: "", phone: "", sector: "", alpId: "" };
+    const [alpForm,  setAlpForm]  = useState(emptyForm);
+    const [arcForm,  setArcForm]  = useState(emptyForm);
+    const [alpList,  setAlpList]  = useState([]);
+    const [alpLoad,  setAlpLoad]  = useState(false);
+    const [arcLoad,  setArcLoad]  = useState(false);
+    const [alpMsg,   setAlpMsg]   = useState(null);
+    const [arcMsg,   setArcMsg]   = useState(null);
+
+    const loadAlpList = () => {
+        api.get("/api/admin/users/alp-only")
+            .then(r => setAlpList(r.data))
+            .catch(() => setAlpList([]));
+    };
+    useEffect(() => { loadAlpList(); }, []);
+
+    const setA = (setForm) => (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+    const setAlp = setA(setAlpForm);
+    const setArc = setA(setArcForm);
+
+    const submit = async (role, form, setForm, setMsg, setLoad) => {
+        if (role === "ARC" && !form.alpId) { setMsg({ type:"err", text:"Sélectionnez un ALP référent." }); return; }
+        setLoad(true); setMsg(null);
+        try {
+            await api.post("/api/admin/users", { ...form, role });
+            setMsg({ type:"ok", text:`Compte ${role} créé · email envoyé à ${form.email}` });
+            setForm(emptyForm);
+            onCreated?.();
+            if (role === "ALP") loadAlpList();
+        } catch (err) {
+            setMsg({ type:"err", text: err?.response?.data || "Erreur lors de la création." });
+        } finally {
+            setLoad(false);
+        }
+    };
 
     return (
         <div className="space-y-4">
-            <MiniForm role="ALP" form={alpForm} setField={setAlp} msg={alpMsg} loading={alpLoad}
+            <MiniForm role="ALP" form={alpForm} setField={setAlp} msg={alpMsg} loading={alpLoad} alpList={alpList} isLight={isLight}
                 onSubmit={() => submit("ALP", alpForm, setAlpForm, setAlpMsg, setAlpLoad)} />
-            <MiniForm role="ARC" form={arcForm} setField={setArc} msg={arcMsg} loading={arcLoad}
+            <MiniForm role="ARC" form={arcForm} setField={setArc} msg={arcMsg} loading={arcLoad} alpList={alpList} isLight={isLight}
                 onSubmit={() => submit("ARC", arcForm, setArcForm, setArcMsg, setArcLoad)} />
             <p className={`text-[10px] text-center ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                 Un mot de passe temporaire sera généré et envoyé par email à l'apprenant.
@@ -589,7 +590,7 @@ export default function AdminVehiclesPage() {
     })).filter(u => u.vehicles.length > 0 || u.documents.length > 0);
 
     return (
-        <div className={`p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
+        <div className={`p-3 md:p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
 
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -600,26 +601,39 @@ export default function AdminVehiclesPage() {
             </div>
 
             {/* Tabs */}
-            <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl mb-6 w-fit ${isDark ? "bg-white/5" : "bg-slate-200/60"}`}>
-                {[
-                    { key: "overview", label: "Véhicules & Docs", icon: Car },
+            {(() => {
+                const ADMIN_TABS = [
+                    { key: "overview", label: "Véhicules & Docs",  icon: Car },
                     { key: "alp",      label: "Apprenants ALP/ARC", icon: Users },
-                    { key: "support",  label: "Support", icon: MessageSquare, badge: unreadSupport },
-                ].map(({ key, label, icon: Icon, badge }) => (
-                    <button key={key} onClick={() => setAdminTab(key)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
-                            ${adminTab === key
-                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30"
-                                : isDark ? "text-slate-500 hover:text-slate-300 hover:bg-white/5" : "text-slate-500 hover:text-slate-700 hover:bg-white/70"}`}>
-                        <Icon size={15} />{label}
-                        {badge > 0 && (
-                            <span className={`text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none ${
-                                adminTab === key ? "bg-white/30 text-white" : "bg-red-500 text-white"
-                            }`}>{badge > 99 ? "99+" : badge}</span>
-                        )}
-                    </button>
-                ))}
-            </div>
+                    { key: "support",  label: "Support",            icon: MessageSquare, badge: unreadSupport },
+                ];
+                const activeTabLabel = ADMIN_TABS.find(t => t.key === adminTab)?.label;
+                return (
+                    <>
+                        <div className={`flex items-center gap-1 p-1 sm:p-1.5 rounded-2xl mb-3 ${isDark ? "bg-white/5" : "bg-slate-200/60"}`}>
+                            {ADMIN_TABS.map(({ key, label, icon: Icon, badge }) => (
+                                <button key={key} onClick={() => setAdminTab(key)} title={label}
+                                    className={`relative flex items-center justify-center gap-2 flex-1 sm:flex-none sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
+                                        ${adminTab === key
+                                            ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30"
+                                            : isDark ? "text-slate-500 hover:text-slate-300 hover:bg-white/5" : "text-slate-500 hover:text-slate-700 hover:bg-white/70"}`}>
+                                    <Icon size={16} />
+                                    <span className="hidden sm:inline whitespace-nowrap">{label}</span>
+                                    {badge > 0 && (
+                                        <span className={`text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none ${
+                                            adminTab === key ? "bg-white/30 text-white" : "bg-red-500 text-white"
+                                        }`}>{badge > 99 ? "99+" : badge}</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Label onglet actif — mobile uniquement */}
+                        <p className={`sm:hidden text-xs font-bold uppercase tracking-widest mb-4 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                            {activeTabLabel}
+                        </p>
+                    </>
+                );
+            })()}
 
             {/* ── Onglet Overview : filtres ── */}
             {adminTab === "overview" && (
@@ -852,108 +866,149 @@ export default function AdminVehiclesPage() {
 
             {/* ── Onglet Support ── */}
             {adminTab === "support" && (
-                <div className={`rounded-2xl border overflow-hidden flex ${isDark ? "bg-[#0f1129] border-slate-800" : "bg-white border-slate-200 shadow-sm"}`} style={{ height: 520 }}>
-                    {/* Sidebar conversations */}
-                    <div className={`w-64 shrink-0 border-r flex flex-col ${isDark ? "border-slate-800" : "border-slate-200"}`}>
-                        <div className={`px-4 py-3.5 border-b flex items-center justify-between ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-                            <div className="flex items-center gap-2">
-                                <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-800"}`}>Demandes de support</p>
-                                {unreadSupport > 0 && (
-                                    <span className="bg-red-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none">
-                                        {unreadSupport > 99 ? "99+" : unreadSupport}
-                                    </span>
-                                )}
-                            </div>
-                            <button onClick={fetchSupportChannels} className={`text-xs px-2.5 py-1 rounded-lg ${isDark ? "bg-white/5 text-slate-400 hover:bg-white/10" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>↻</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto divide-y">
-                            {supportLoading ? (
-                                <div className="flex justify-center py-8"><Spinner size="sm" color="warning" /></div>
-                            ) : supportChannels.length === 0 ? (
-                                <div className={`flex flex-col items-center justify-center py-12 gap-2 ${textMuted}`}>
-                                    <MessageSquare size={28} className="opacity-25" />
-                                    <p className="text-xs">Aucune demande</p>
-                                </div>
-                            ) : supportChannels.map(ch => (
-                                <button key={ch.id} onClick={() => openSupportChannel(ch)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
-                                        activeSupport?.id === ch.id
-                                            ? isDark ? "bg-orange-500/10 border-l-2 border-orange-500" : "bg-orange-50 border-l-2 border-orange-500"
-                                            : isDark ? "hover:bg-white/3 border-slate-800" : "hover:bg-slate-50 border-slate-100"
-                                    }`}>
-                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-xs shrink-0">
-                                        {((ch.userFirstname?.[0]||"")+(ch.userLastname?.[0]||"")).toUpperCase()||"?"}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-[#0f1129] border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}
+                     style={{ height: "calc(100vh - 260px)", minHeight: 400 }}>
+                    <div className="flex h-full">
+
+                        {/* ── Liste conversations (gauche sur desktop, plein écran mobile si pas de conv active) ── */}
+                        <div className={`${activeSupport ? "hidden md:flex" : "flex"} flex-col w-full md:w-72 md:flex-shrink-0 border-r ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+                            {/* Header liste */}
+                            <div className={`px-4 py-3.5 border-b flex items-center justify-between shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`p-1.5 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-50"}`}>
+                                        <MessageSquare size={14} className="text-red-500" />
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`font-bold text-xs truncate ${isDark ? "text-white" : "text-slate-800"}`}>{ch.userFirstname} {ch.userLastname}</p>
-                                        <p className={`text-[11px] truncate ${isDark ? "text-slate-500" : "text-slate-400"}`}>{ch.lastMessage || "Nouveau"}</p>
-                                    </div>
-                                    {ch.unreadCount > 0 && (
-                                        <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">{ch.unreadCount}</span>
+                                    <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-800"}`}>Support</p>
+                                    {unreadSupport > 0 && (
+                                        <span className="bg-red-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center leading-none">
+                                            {unreadSupport > 99 ? "99+" : unreadSupport}
+                                        </span>
                                     )}
+                                </div>
+                                <button onClick={fetchSupportChannels}
+                                    className={`p-1.5 rounded-lg transition-colors ${isDark ? "bg-white/5 text-slate-400 hover:bg-white/10" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                                    <RefreshCw size={13} />
                                 </button>
-                            ))}
+                            </div>
+
+                            {/* Channels */}
+                            <div className="flex-1 overflow-y-auto">
+                                {supportLoading ? (
+                                    <div className="flex justify-center py-8"><Spinner size="sm" color="warning" /></div>
+                                ) : supportChannels.length === 0 ? (
+                                    <div className={`flex flex-col items-center justify-center py-16 gap-3 ${textMuted}`}>
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-slate-100"}`}>
+                                            <MessageSquare size={24} className="opacity-30" />
+                                        </div>
+                                        <p className="text-sm font-medium">Aucune demande</p>
+                                        <p className="text-xs opacity-60">Les utilisateurs bloqués apparaîtront ici</p>
+                                    </div>
+                                ) : supportChannels.map(ch => {
+                                    const initials = ((ch.userFirstname?.[0]||"")+(ch.userLastname?.[0]||"")).toUpperCase()||"?";
+                                    const active = activeSupport?.id === ch.id;
+                                    return (
+                                        <button key={ch.id} onClick={() => openSupportChannel(ch)}
+                                            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all border-b ${
+                                                active
+                                                    ? isDark ? "bg-orange-500/10 border-l-2 border-l-orange-500 border-slate-800" : "bg-orange-50 border-l-2 border-l-orange-500 border-slate-100"
+                                                    : isDark ? "hover:bg-white/3 border-slate-800" : "hover:bg-slate-50 border-slate-100"
+                                            }`}>
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-sm">
+                                                {initials}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`font-bold text-sm truncate ${isDark ? "text-white" : "text-slate-800"}`}>{ch.userFirstname} {ch.userLastname}</p>
+                                                <p className={`text-xs truncate mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{ch.lastMessage || "Nouvelle demande"}</p>
+                                            </div>
+                                            {ch.unreadCount > 0 && (
+                                                <span className="w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">{ch.unreadCount}</span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* ── Zone chat (droite sur desktop, plein écran mobile si conv active) ── */}
+                        <div className={`${activeSupport ? "flex" : "hidden md:flex"} flex-1 flex-col min-w-0`}>
+                            {activeSupport ? (
+                                <>
+                                    {/* Header chat */}
+                                    <div className={`px-4 py-3.5 border-b flex items-center gap-3 shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                                        {/* Bouton retour mobile */}
+                                        <button
+                                            onClick={() => setActiveSupport(null)}
+                                            className={`md:hidden p-1.5 rounded-lg mr-1 transition-colors ${isDark ? "text-slate-400 hover:bg-white/5" : "text-slate-500 hover:bg-slate-100"}`}>
+                                            <ChevronLeft size={18} />
+                                        </button>
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-sm">
+                                            {((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`font-bold text-sm truncate ${isDark ? "text-white" : "text-slate-800"}`}>{activeSupport.userFirstname} {activeSupport.userLastname}</p>
+                                            <p className={`text-xs truncate ${isDark ? "text-red-400" : "text-red-500"}`}>Compte suspendu · {activeSupport.userEmail}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Messages */}
+                                    <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+                                        {supportMessages.length === 0 ? (
+                                            <div className={`flex flex-col items-center justify-center h-full gap-3 ${textMuted}`}>
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-slate-100"}`}>
+                                                    <MessageSquare size={22} className="opacity-30" />
+                                                </div>
+                                                <p className="text-sm">Aucun message pour l'instant</p>
+                                            </div>
+                                        ) : supportMessages.map(msg => (
+                                            <div key={msg.id} className={`flex gap-2.5 ${msg.fromAdmin ? "flex-row-reverse" : "flex-row"}`}>
+                                                <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-[10px] shrink-0 shadow-sm ${msg.fromAdmin ? "bg-gradient-to-br from-orange-500 to-amber-500" : "bg-gradient-to-br from-red-500 to-rose-600"}`}>
+                                                    {msg.fromAdmin ? "A" : ((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
+                                                </div>
+                                                <div className={`max-w-[75%] sm:max-w-[65%] flex flex-col gap-1 ${msg.fromAdmin ? "items-end" : "items-start"}`}>
+                                                    <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                                                        msg.fromAdmin
+                                                            ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm shadow-sm shadow-orange-500/20"
+                                                            : isDark ? "bg-white/8 text-slate-200 border border-white/8 rounded-tl-sm" : "bg-slate-100 text-slate-700 rounded-tl-sm"
+                                                    }`}>
+                                                        {msg.content}
+                                                    </div>
+                                                    <p className={`text-[10px] px-1 ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                                                        {msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : ""}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div ref={supportEndRef} />
+                                    </div>
+
+                                    {/* Input */}
+                                    <div className={`flex items-end gap-2 px-4 py-3.5 border-t shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                                        <textarea
+                                            value={supportInput}
+                                            onChange={e => setSupportInput(e.target.value)}
+                                            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendSupportMessage(); } }}
+                                            rows={1}
+                                            placeholder="Écrire une réponse..."
+                                            className={`flex-1 resize-none rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all ${isDark ? "bg-white/8 border border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/40" : "bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-orange-400"}`}
+                                            style={{ fieldSizing: "content", minHeight: 42, maxHeight: 100 }}
+                                        />
+                                        <button onClick={sendSupportMessage} disabled={supportSending || !supportInput.trim()}
+                                            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white disabled:opacity-40 hover:brightness-110 transition-all shadow-sm shadow-orange-500/20">
+                                            {supportSending ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={15} />}
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className={`flex-1 flex flex-col items-center justify-center gap-3 ${textMuted}`}>
+                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-slate-100"}`}>
+                                        <MessageSquare size={28} className="opacity-25" />
+                                    </div>
+                                    <p className="text-sm font-medium">Sélectionnez une conversation</p>
+                                    <p className="text-xs opacity-60">Choisissez un utilisateur dans la liste</p>
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    {/* Zone messages */}
-                    {activeSupport ? (
-                        <div className="flex-1 flex flex-col min-w-0">
-                            {/* Header */}
-                            <div className={`px-5 py-3.5 border-b flex items-center gap-3 shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-                                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-xs shrink-0">
-                                    {((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
-                                </div>
-                                <div>
-                                    <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"}`}>{activeSupport.userFirstname} {activeSupport.userLastname}</p>
-                                    <p className={`text-[11px] ${isDark ? "text-red-400" : "text-red-500"}`}>Compte suspendu · {activeSupport.userEmail}</p>
-                                </div>
-                            </div>
-                            {/* Messages */}
-                            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
-                                {supportMessages.length === 0 ? (
-                                    <div className={`flex flex-col items-center justify-center h-full gap-2 ${textMuted}`}>
-                                        <MessageSquare size={24} className="opacity-25" />
-                                        <p className="text-xs">Aucun message</p>
-                                    </div>
-                                ) : supportMessages.map(msg => (
-                                    <div key={msg.id} className={`flex gap-2 ${msg.fromAdmin ? "flex-row-reverse" : "flex-row"}`}>
-                                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-[10px] shrink-0 ${msg.fromAdmin ? "bg-gradient-to-br from-orange-500 to-amber-500" : "bg-gradient-to-br from-red-500 to-rose-600"}`}>
-                                            {msg.fromAdmin ? "A" : ((activeSupport.userFirstname?.[0]||"")+(activeSupport.userLastname?.[0]||"")).toUpperCase()||"?"}
-                                        </div>
-                                        <div className={`max-w-[70%] flex flex-col gap-0.5 ${msg.fromAdmin ? "items-end" : "items-start"}`}>
-                                            <div className={`px-3.5 py-2.5 rounded-2xl text-sm ${msg.fromAdmin ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm" : isDark ? "bg-white/8 text-slate-200 border border-white/8 rounded-tl-sm" : "bg-slate-100 text-slate-700 rounded-tl-sm"}`}>
-                                                {msg.content}
-                                            </div>
-                                            <p className={`text-[10px] ${isDark ? "text-slate-600" : "text-slate-400"}`}>{msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : ""}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                <div ref={supportEndRef} />
-                            </div>
-                            {/* Input */}
-                            <div className={`flex items-end gap-2 px-5 py-3.5 border-t shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-                                <textarea
-                                    value={supportInput}
-                                    onChange={e => setSupportInput(e.target.value)}
-                                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendSupportMessage(); } }}
-                                    rows={1}
-                                    placeholder="Répondre..."
-                                    className={`flex-1 resize-none rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all ${isDark ? "bg-white/8 border border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/40" : "bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-orange-400"}`}
-                                    style={{ fieldSizing: "content", minHeight: 40, maxHeight: 80 }}
-                                />
-                                <button onClick={sendSupportMessage} disabled={supportSending || !supportInput.trim()}
-                                    className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white disabled:opacity-40 hover:brightness-110 transition-all">
-                                    {supportSending ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={14} />}
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className={`flex-1 flex flex-col items-center justify-center gap-3 ${textMuted}`}>
-                            <MessageSquare size={36} className="opacity-20" />
-                            <p className="text-sm">Sélectionnez une conversation</p>
-                        </div>
-                    )}
                 </div>
             )}
 

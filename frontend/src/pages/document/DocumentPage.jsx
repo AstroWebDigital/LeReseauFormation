@@ -163,7 +163,7 @@ export default function DocumentPage() {
     );
 
     return (
-        <div className={`p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
+        <div className={`p-3 md:p-6 min-h-screen ${isDark ? "" : "bg-slate-50"}`}>
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className={`text-2xl font-bold ${isDark ? "text-slate-100" : "text-slate-800"}`}>

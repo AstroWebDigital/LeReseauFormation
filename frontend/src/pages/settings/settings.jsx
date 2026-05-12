@@ -157,12 +157,12 @@ function CardSection({ title, sub, isLight, children }) {
     return (
         <Card isLight={isLight}>
             {(title || sub) && (
-                <div className={`px-6 py-4 border-b ${isLight ? "border-slate-100" : "border-white/5"}`}>
+                <div className={`px-4 sm:px-6 py-3.5 sm:py-4 border-b ${isLight ? "border-slate-100" : "border-white/5"}`}>
                     {title && <p className={`font-black text-base ${isLight ? "text-slate-800" : "text-white"}`}>{title}</p>}
                     {sub && <p className={`text-xs mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>{sub}</p>}
                 </div>
             )}
-            <div className="p-6">{children}</div>
+            <div className="p-4 sm:p-6">{children}</div>
         </Card>
     );
 }
@@ -337,39 +337,44 @@ export default function SettingsPage() {
         <>
             <DeleteAccountModal isOpen={showDelete} onClose={() => setShowDelete(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} isLight={isLight} />
 
-            <div className={`min-h-screen p-5 lg:p-8 ${isLight ? "bg-slate-50" : ""}`}>
+            <div className={`min-h-screen p-3 sm:p-5 lg:p-8 ${isLight ? "bg-slate-50" : ""}`}>
 
                 {/* ── Header ───────────────────────────────────────────── */}
-                <div className="flex items-center justify-between mb-7">
+                <div className="flex items-center justify-between mb-5 sm:mb-7">
                     <div>
-                        <h1 className={`text-2xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>Paramètres</h1>
-                        <p className={`text-sm mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Gérez votre compte et vos préférences</p>
+                        <h1 className={`text-xl sm:text-2xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>Paramètres</h1>
+                        <p className={`text-xs sm:text-sm mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Gérez votre compte et vos préférences</p>
                     </div>
                     <button onClick={logout}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border
+                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-sm transition-all border
                             ${isLight ? "border-slate-200 bg-white text-slate-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50 shadow-sm" : "border-white/10 bg-white/5 text-slate-400 hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5"}`}>
-                        <LogOut size={16} />
-                        Déconnexion
+                        <LogOut size={15} />
+                        <span className="hidden sm:inline">Déconnexion</span>
                     </button>
                 </div>
 
                 {/* ── Tabs ─────────────────────────────────────────────── */}
-                <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl mb-7 overflow-x-auto scrollbar-hide
+                <div className={`flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-2xl mb-5 sm:mb-7
                     ${isLight ? "bg-slate-200/60" : "bg-white/5"}`}>
                     {NAV_TABS.map(({ key, label, icon: Icon }) => {
                         const active = tab === key;
                         return (
-                            <button key={key} onClick={() => setTab(key)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200
+                            <button key={key} onClick={() => setTab(key)} title={label}
+                                className={`flex items-center justify-center gap-2 flex-1 sm:flex-none sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
                                     ${active
                                         ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30"
                                         : isLight ? "text-slate-500 hover:text-slate-700 hover:bg-white/70" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"}`}>
-                                <Icon size={15} />
-                                {label}
+                                <Icon size={16} />
+                                <span className="hidden sm:inline whitespace-nowrap">{label}</span>
                             </button>
                         );
                     })}
                 </div>
+
+                {/* Label de l'onglet actif — mobile uniquement */}
+                <p className={`sm:hidden text-xs font-bold uppercase tracking-widest mb-4 ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+                    {NAV_TABS.find(t => t.key === tab)?.label}
+                </p>
 
                 {/* ── Contenu ──────────────────────────────────────────── */}
                 <div className="max-w-2xl">

@@ -11,7 +11,16 @@
       "Bash(find /Users/theopohin/IdeaProjects/LeReseauFormation/backend/src/main/resources/db/migration -type f -name *.sql)",
       "Bash(grep -r \"equipe\\\\|Equipe\" /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src --include=*.jsx --include=*.js)",
       "Bash(find /Users/theopohin/IdeaProjects/LeReseauFormation -type f \\\\\\(-name *Alp* -o -name *Arc* -o -name *ALP* -o -name *ARC* \\\\\\))",
-      "Bash(ls /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/*.jsx)"
+      "Bash(ls /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/*.jsx)",
+      "Bash(head -20 grep -n \"if \\(loading\\\\|if \\(isLoading\" -A 5 /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/document/DocumentPage.jsx)",
+      "Bash(head -20 grep -n \"if \\(loading\\\\|if \\(isLoading\" -A 5 /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/vehicle/Vehicle.jsx)",
+      "Bash(head -20 grep -n \"if \\(loading\\\\|if \\(isLoading\" -A 5 /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/Statistics/StatisticsPage.jsx)",
+      "Bash(head -20 grep -n \"if \\(loading\\\\|if \\(isLoading\" -A 5 /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/planning/PlanningPage.jsx)",
+      "Bash(head -10 grep -n \"px-6 py-6\\\\|px-8 py-8\\\\|p-8\\\\|p-6 min-h\" /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/vehicle/Vehicle.jsx)",
+      "Bash(head -10 grep -n \"px-6 py-6\\\\|px-8 py-8\\\\|p-8\\\\|p-6 min-h\" /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/document/DocumentPage.jsx)",
+      "Bash(head -10 grep -n \"px-6 py-6\\\\|px-8 py-8\\\\|p-8\\\\|p-6 min-h\" /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/admin/AdminVehiclesPage.jsx)",
+      "Bash(sed -i '' 's/{ minWidth: `\\\\${220 + viewDays \\\\* COL_W}px` }/{ minWidth: `${LABEL_W + viewDays * COL_W}px` }/g' /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/planning/PlanningPage.jsx)",
+      "Bash(sed -i '' 's/{ width: 220 }/{ width: LABEL_W }/g' /Users/theopohin/IdeaProjects/LeReseauFormation/frontend/src/pages/planning/PlanningPage.jsx)"
     ]
   }
 }

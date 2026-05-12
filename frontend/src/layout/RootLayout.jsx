@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import AppNavbar from "@/components/Navbar";
@@ -11,6 +11,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 const RootLayout = () => {
     const location = useLocation();
     const { isDark } = useTheme();
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     const hideFooterPaths = ["/messages"];
     const hideFooter = hideFooterPaths.includes(location.pathname);
@@ -25,14 +26,28 @@ const RootLayout = () => {
                     : "bg-[#f8fafc] text-slate-800"
             }`}
         >
-            {/* Sidebar */}
-            <Sidebar />
+            {/* Overlay mobile (fond sombre quand sidebar ouverte) */}
+            {mobileSidebarOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+                    onClick={() => setMobileSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar — drawer sur mobile, sticky sur desktop */}
+            <div className={`
+                fixed md:relative inset-y-0 left-0 z-50 md:z-auto
+                transition-transform duration-300 ease-in-out
+                ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+            `}>
+                <Sidebar onClose={() => setMobileSidebarOpen(false)} />
+            </div>
 
             {/* Zone principale */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 
                 {/* Navbar */}
-                <AppNavbar />
+                <AppNavbar onToggleSidebar={() => setMobileSidebarOpen(prev => !prev)} />
 
                 {/* Contenu */}
                 {isMessages ? (
@@ -40,7 +55,7 @@ const RootLayout = () => {
                         <Outlet />
                     </main>
                 ) : (
-                    <main className="flex-1 overflow-y-auto px-6 py-4">
+                    <main className="flex-1 overflow-y-auto px-3 py-3 md:px-6 md:py-4">
                         <Outlet />
                     </main>
                 )}

@@ -84,11 +84,14 @@ export function AuthProvider({ children }) {
 
 
   if (loading) {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = savedTheme ? savedTheme === "dark" : prefersDark;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050721]">
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? "bg-[#050721]" : "bg-[#f8fafc]"}`}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-slate-400 text-sm">Chargement...</span>
+          <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Chargement...</span>
         </div>
       </div>
     );

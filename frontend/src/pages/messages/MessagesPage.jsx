@@ -174,6 +174,9 @@ export default function MessagesPage() {
         </div>
     );
 
+    // Sur mobile : soit la liste, soit le chat
+    const showConvList = !activeConversation;
+
     return (
         <div style={{ display: "flex", flexDirection: "row", height: "100%", overflow: "hidden", background: bg }}>
             {contextMenu && (
@@ -191,21 +194,27 @@ export default function MessagesPage() {
                 />
             )}
 
-            <ConversationSidebar
-                conversations={filteredConvs}
-                activeConversation={activeConversation}
-                onSelect={setActiveConversation}
-                searchQuery={searchQuery}
-                onSearch={setSearchQuery}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                isLoading={isLoadingConversations}
-                userRole={userRole}
-                formatTime={formatTime}
-                isDark={isDark}
-            />
+            {/* Liste conversations : plein écran mobile si pas de conv active, colonne fixe sur desktop */}
+            <div className={`${showConvList ? "flex w-full" : "hidden"} md:flex md:w-80 md:flex-shrink-0`}
+                 style={{ flexDirection: "column", overflow: "hidden" }}>
+                <ConversationSidebar
+                    conversations={filteredConvs}
+                    activeConversation={activeConversation}
+                    onSelect={setActiveConversation}
+                    searchQuery={searchQuery}
+                    onSearch={setSearchQuery}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    isLoading={isLoadingConversations}
+                    userRole={userRole}
+                    formatTime={formatTime}
+                    isDark={isDark}
+                />
+            </div>
 
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", background: bg, position: "relative" }}>
+            {/* Zone chat : plein écran mobile si conv active, flex-1 sur desktop */}
+            <div className={`${!showConvList ? "flex" : "hidden"} md:flex`}
+                 style={{ flex: 1, flexDirection: "column", minHeight: 0, overflow: "hidden", background: bg, position: "relative" }}>
                 {!activeConversation ? (
                     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <div className={`p-6 rounded-2xl border text-center max-w-xs ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-white border-slate-200 shadow-md"}`}>
@@ -218,7 +227,7 @@ export default function MessagesPage() {
                 ) : (
                     <>
                         {showPinned && <PinnedPanel messages={messages} onClose={() => setShowPinned(false)} onScrollTo={scrollToMessage} isDark={isDark} />}
-                        <ChatHeader conversation={activeConversation} messages={messages} onShowPinned={() => setShowPinned(true)} isDark={isDark} />
+                        <ChatHeader conversation={activeConversation} messages={messages} onShowPinned={() => setShowPinned(true)} onBack={() => setActiveConversation(null)} isDark={isDark} />
 
                         <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "16px 24px", background: bg }}>
                             {isLoadingMessages ? (

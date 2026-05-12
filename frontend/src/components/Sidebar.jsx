@@ -11,7 +11,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNotifications } from "@/context/NotificationsContext";
 
-const DashboardSidebar = () => {
+const DashboardSidebar = ({ onClose }) => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
     const { user, token, logout } = useAuth();
@@ -106,7 +106,7 @@ const DashboardSidebar = () => {
     return (
         <aside
             style={{ width: collapsed ? "72px" : "256px", transition: "width 0.25s ease" }}
-            className={`sticky top-0 h-screen shrink-0 flex flex-col justify-between border-r overflow-hidden transition-colors duration-200 ${sidebarBg}`}
+            className={`h-screen shrink-0 flex flex-col justify-between border-r overflow-hidden transition-colors duration-200 ${sidebarBg}`}
         >
             {/* Header logo */}
             <div className={`px-3 pt-5 pb-4 border-b ${headerBorder} flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
@@ -160,7 +160,7 @@ const DashboardSidebar = () => {
                                     content: "text-xs font-medium px-2 py-1",
                                 }}
                             >
-                                <Link to={item.to} className="block">
+                                <Link to={item.to} className="block" onClick={onClose}>
                                     <div className={[
                                         "relative flex items-center rounded-2xl text-sm font-medium transition-all",
                                         collapsed ? "justify-center px-0 py-3" : "gap-3 px-4 py-3",

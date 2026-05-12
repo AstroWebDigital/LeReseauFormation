@@ -75,8 +75,7 @@ const CalendarCell = ({ date, reservations, isDark, onSelect }) => {
         <div
             className={`relative min-h-[80px] p-1 rounded-lg border transition-colors ${
                 isDark ? "border-white/5 hover:border-white/10" : "border-slate-100 hover:border-slate-200"
-            } ${cellBg} ${hits.length ? "cursor-pointer" : ""}`}
-            onClick={() => hits.length && onSelect(hits[0])}
+            } ${cellBg}`}
         >
             <span className={`text-[0.7rem] font-semibold ${
                 today ? "text-orange-400" : weekend
@@ -89,7 +88,11 @@ const CalendarCell = ({ date, reservations, isDark, onSelect }) => {
             {hits.slice(0, 2).map((r, i) => {
                 const m = meta(resolveStatus(r));
                 return (
-                    <div key={i} className={`mt-0.5 rounded px-1 py-0.5 text-[0.6rem] font-medium truncate ${m.color} text-white`}>
+                    <div
+                        key={i}
+                        onClick={(e) => { e.stopPropagation(); onSelect(r); }}
+                        className={`mt-0.5 rounded px-1 py-0.5 text-[0.6rem] font-medium truncate cursor-pointer ${m.color} text-white`}
+                    >
                         {r.vehicleBrand} {r.vehicleModel}
                     </div>
                 );

@@ -190,7 +190,7 @@ export default function ReservationPage() {
     );
 
     return (
-        <div className={`p-6 min-h-screen ${isLight ? "bg-slate-50" : ""}`}>
+        <div className={`p-3 md:p-6 min-h-screen ${isLight ? "bg-slate-50" : ""}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className={`text-2xl font-bold ${isLight ? "text-slate-800" : "text-slate-100"}`}>

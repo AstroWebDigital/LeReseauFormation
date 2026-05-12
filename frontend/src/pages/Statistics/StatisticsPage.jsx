@@ -129,15 +129,15 @@ export default function StatisticsPage() {
     const tooltipBorder = isLight ? "#e2e8f0" : "#1e293b";
 
     const StatCard = ({ icon: Icon, label, value, sub, color = "text-orange-500", bgColor = "bg-orange-500/10" }) => (
-        <div className={`rounded-2xl border p-5 ${cardBg}`}>
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className={`text-xs font-medium mb-1 ${textSecondary}`}>{label}</p>
-                    <p className={`text-3xl font-bold ${textPrimary}`}>{value}</p>
-                    {sub && <p className={`text-xs mt-1 ${textSecondary}`}>{sub}</p>}
+        <div className={`rounded-2xl border p-3.5 sm:p-5 ${cardBg}`}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <p className={`text-[10px] sm:text-xs font-medium mb-1 leading-tight ${textSecondary}`}>{label}</p>
+                    <p className={`text-2xl sm:text-3xl font-bold ${textPrimary}`}>{value}</p>
+                    {sub && <p className={`text-[11px] sm:text-xs mt-1 leading-tight ${textSecondary}`}>{sub}</p>}
                 </div>
-                <div className={`p-3 rounded-xl ${bgColor}`}>
-                    <Icon className={`h-6 w-6 ${color}`} />
+                <div className={`p-2 sm:p-3 rounded-xl shrink-0 ${bgColor}`}>
+                    <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${color}`} />
                 </div>
             </div>
         </div>
@@ -162,17 +162,17 @@ export default function StatisticsPage() {
     );
 
     return (
-        <div className={`p-6 lg:p-8 min-h-screen ${pageBg}`}>
+        <div className={`p-3 sm:p-5 md:p-6 lg:p-8 min-h-screen ${pageBg}`}>
 
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-5 sm:mb-8">
                 <p className="text-xs uppercase tracking-widest text-orange-500 font-semibold mb-1">Tableau de bord</p>
-                <h1 className={`text-2xl font-bold ${textPrimary}`}>Statistiques</h1>
-                <p className={`text-sm mt-1 ${textSecondary}`}>Vue d'ensemble de votre activité et de votre flotte</p>
+                <h1 className={`text-xl sm:text-2xl font-bold ${textPrimary}`}>Statistiques</h1>
+                <p className={`text-xs sm:text-sm mt-1 ${textSecondary}`}>Vue d'ensemble de votre activité et de votre flotte</p>
             </div>
 
             {/* ── KPI Cards ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-8">
                 <StatCard
                     icon={TruckIcon} label="Véhicules total" value={totalVehicles}
                     sub={`${disponibles} disponibles · ${reserves} réservés`}
@@ -198,7 +198,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* ── Ligne 2 ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-8">
 
                 {/* Taux occupation */}
                 <div className={`rounded-2xl border p-5 ${cardBg}`}>
@@ -270,7 +270,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* ── Graphiques ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-5 sm:mb-8">
 
                 {/* CA par mois */}
                 <div className={`rounded-2xl border p-5 ${cardBg}`}>
@@ -331,7 +331,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* ── CA par type + Pies ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-5 sm:mb-8">
 
                 {/* CA par type */}
                 <div className={`rounded-2xl border p-5 ${cardBg}`}>
@@ -424,8 +424,8 @@ export default function StatisticsPage() {
                 </div>
             </div>
 
-            {/* ── Tableau véhicules ── */}
-            <div className={`rounded-2xl border p-5 ${cardBg}`}>
+            {/* ── Tableau / Cards véhicules ── */}
+            <div className={`rounded-2xl border p-3.5 sm:p-5 ${cardBg}`}>
                 <SectionTitle icon={TruckIcon} title="Détail de la flotte" sub={`${totalVehicles} véhicule(s)`} />
                 {vehicles.length === 0 ? (
                     <div className={`flex flex-col items-center justify-center py-12 ${textSecondary}`}>
@@ -433,19 +433,12 @@ export default function StatisticsPage() {
                         <p className="text-sm">Aucun véhicule enregistré</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                            <tr className={`text-xs border-b ${isLight ? "border-slate-200" : "border-slate-800"}`}>
-                                {["Véhicule", "Type", "Carburant", "Kilométrage", "Prix/jour", "Statut", "CA estimé/mois"].map(h => (
-                                    <th key={h} className={`pb-3 text-left font-semibold ${textSecondary}`}>{h}</th>
-                                ))}
-                            </tr>
-                            </thead>
-                            <tbody>
+                    <>
+                        {/* Cards mobiles */}
+                        <div className="sm:hidden space-y-3">
                             {vehicles.map((v, i) => {
                                 const s = v.status?.toLowerCase();
-                                const statusColor = s === "disponible"
+                                const statusCls = s === "disponible"
                                     ? "text-emerald-500 bg-emerald-500/10"
                                     : s === "reserve"
                                         ? "text-orange-500 bg-orange-500/10"
@@ -453,36 +446,91 @@ export default function StatisticsPage() {
                                             ? "text-amber-500 bg-amber-500/10"
                                             : "text-slate-500 bg-slate-500/10";
                                 return (
-                                    <tr key={v.id || i} className={`text-xs border-b ${isLight ? "border-slate-100 hover:bg-slate-50" : "border-slate-800 hover:bg-slate-800/30"} transition-colors`}>
-                                        <td className={`py-3 font-medium ${textPrimary}`}>{v.brand} {v.model}</td>
-                                        <td className={textSecondary}>{v.type || "—"}</td>
-                                        <td className={textSecondary}>{v.fuel || "—"}</td>
-                                        <td className={textSecondary}>{v.mileage ? `${Number(v.mileage).toLocaleString("fr-FR")} km` : "—"}</td>
-                                        <td className={`font-medium ${textPrimary}`}>{v.baseDailyPrice ? `${v.baseDailyPrice}€` : "—"}</td>
-                                        <td>
+                                    <div key={v.id || i} className={`rounded-xl p-3 border ${isLight ? "border-slate-100 bg-slate-50" : "border-slate-700 bg-slate-800/40"}`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className={`text-sm font-bold ${textPrimary}`}>{v.brand} {v.model}</p>
+                                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusCls}`}>{v.status || "—"}</span>
+                                        </div>
+                                        <div className={`grid grid-cols-2 gap-x-4 gap-y-1 text-xs ${textSecondary}`}>
+                                            <span>Type : <span className={`font-medium ${textPrimary}`}>{v.type || "—"}</span></span>
+                                            <span>Carburant : <span className={`font-medium ${textPrimary}`}>{v.fuel || "—"}</span></span>
+                                            <span>Prix/j : <span className={`font-medium ${textPrimary}`}>{v.baseDailyPrice ? `${v.baseDailyPrice}€` : "—"}</span></span>
+                                            <span>Km : <span className={`font-medium ${textPrimary}`}>{v.mileage ? `${Number(v.mileage).toLocaleString("fr-FR")} km` : "—"}</span></span>
+                                        </div>
+                                        <div className={`mt-2 pt-2 border-t flex justify-between items-center ${isLight ? "border-slate-200" : "border-slate-700"}`}>
+                                            <span className={`text-[11px] ${textSecondary}`}>CA estimé/mois</span>
+                                            <span className="text-sm font-bold text-orange-500">
+                                                {v.baseDailyPrice ? `${(Number(v.baseDailyPrice) * 20).toLocaleString("fr-FR")}€` : "—"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {/* Totaux mobile */}
+                            <div className={`rounded-xl p-3 border ${isLight ? "border-orange-100 bg-orange-50" : "border-orange-500/20 bg-orange-500/5"}`}>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className={`text-xs font-semibold ${textSecondary}`}>Total CA estimé</span>
+                                    <span className="text-sm font-bold text-orange-500">{caEstime.toLocaleString("fr-FR")}€</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className={`text-xs font-semibold ${textSecondary}`}>Total CA réel</span>
+                                    <span className="text-sm font-bold text-emerald-500">{caReel.toLocaleString("fr-FR")}€</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tableau desktop */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                <tr className={`text-xs border-b ${isLight ? "border-slate-200" : "border-slate-800"}`}>
+                                    {["Véhicule", "Type", "Carburant", "Kilométrage", "Prix/jour", "Statut", "CA estimé/mois"].map(h => (
+                                        <th key={h} className={`pb-3 text-left font-semibold ${textSecondary}`}>{h}</th>
+                                    ))}
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {vehicles.map((v, i) => {
+                                    const s = v.status?.toLowerCase();
+                                    const statusColor = s === "disponible"
+                                        ? "text-emerald-500 bg-emerald-500/10"
+                                        : s === "reserve"
+                                            ? "text-orange-500 bg-orange-500/10"
+                                            : s === "en_revision"
+                                                ? "text-amber-500 bg-amber-500/10"
+                                                : "text-slate-500 bg-slate-500/10";
+                                    return (
+                                        <tr key={v.id || i} className={`text-xs border-b ${isLight ? "border-slate-100 hover:bg-slate-50" : "border-slate-800 hover:bg-slate-800/30"} transition-colors`}>
+                                            <td className={`py-3 font-medium ${textPrimary}`}>{v.brand} {v.model}</td>
+                                            <td className={textSecondary}>{v.type || "—"}</td>
+                                            <td className={textSecondary}>{v.fuel || "—"}</td>
+                                            <td className={textSecondary}>{v.mileage ? `${Number(v.mileage).toLocaleString("fr-FR")} km` : "—"}</td>
+                                            <td className={`font-medium ${textPrimary}`}>{v.baseDailyPrice ? `${v.baseDailyPrice}€` : "—"}</td>
+                                            <td>
                                                 <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusColor}`}>
                                                     {v.status || "—"}
                                                 </span>
-                                        </td>
-                                        <td className="font-bold text-orange-500">
-                                            {v.baseDailyPrice ? `${(Number(v.baseDailyPrice) * 20).toLocaleString("fr-FR")}€` : "—"}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            </tbody>
-                            <tfoot>
-                            <tr className={`border-t ${isLight ? "border-slate-200" : "border-slate-800"}`}>
-                                <td colSpan={6} className={`pt-3 text-xs font-bold ${textPrimary}`}>Total CA estimé</td>
-                                <td className="pt-3 font-bold text-orange-500">{caEstime.toLocaleString("fr-FR")}€</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={6} className={`pt-1 text-xs font-bold ${textPrimary}`}>Total CA réel</td>
-                                <td className="pt-1 font-bold text-emerald-500">{caReel.toLocaleString("fr-FR")}€</td>
-                            </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                                            </td>
+                                            <td className="font-bold text-orange-500">
+                                                {v.baseDailyPrice ? `${(Number(v.baseDailyPrice) * 20).toLocaleString("fr-FR")}€` : "—"}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                </tbody>
+                                <tfoot>
+                                <tr className={`border-t ${isLight ? "border-slate-200" : "border-slate-800"}`}>
+                                    <td colSpan={6} className={`pt-3 text-xs font-bold ${textPrimary}`}>Total CA estimé</td>
+                                    <td className="pt-3 font-bold text-orange-500">{caEstime.toLocaleString("fr-FR")}€</td>
+                                </tr>
+                                <tr>
+                                    <td colSpan={6} className={`pt-1 text-xs font-bold ${textPrimary}`}>Total CA réel</td>
+                                    <td className="pt-1 font-bold text-emerald-500">{caReel.toLocaleString("fr-FR")}€</td>
+                                </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

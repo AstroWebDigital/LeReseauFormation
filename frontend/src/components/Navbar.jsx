@@ -8,7 +8,7 @@ import {
     DropdownItem,
     Spinner,
 } from "@heroui/react";
-import { Car, FileText, Search, X, Bell, MessageSquare, CheckCircle, XCircle } from "lucide-react";
+import { Car, FileText, Search, X, Bell, MessageSquare, CheckCircle, XCircle, Menu, LogOut, User, Settings } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
 import api from "@/services/auth/client";
@@ -72,6 +72,7 @@ function NotifItem({ accentColor, icon, title, desc, badge, statusBadge, badgeCo
 const AppNavbar = ({
                        title = "Tableau de bord",
                        subtitle = "Agent Loueur Partenaire",
+                       onToggleSidebar,
                    }) => {
     const navigate = useNavigate();
     const { user, token, logout } = useAuth();
@@ -255,32 +256,64 @@ const AppNavbar = ({
 
     return (
         <>
-            <header className={`w-full px-6 lg:px-10 py-3 shadow-sm transition-colors duration-200
+            <header className={`w-full px-4 md:px-6 lg:px-10 py-3 shadow-sm transition-colors duration-200
                 ${isLight
                 ? "bg-white border-b border-slate-200"
                 : "bg-gradient-to-b from-[#060d33] to-[#050718]"
             }`}>
-                <div className="flex items-center gap-6">
-                    {/* Titre + sous-titre */}
-                    <div className="flex flex-col min-w-[170px]">
-                        <h1 className={`text-lg lg:text-xl font-semibold ${isLight ? "text-slate-800" : "text-white"}`}>
-                            {title}
-                        </h1>
-                        <p className={`text-[0.7rem] lg:text-xs ${isLight ? "text-slate-500" : "text-white"}`}>
-                            {subtitle}
-                        </p>
+                <div className="flex items-center gap-2 md:gap-4">
+
+                    {/* ══════════════════════════════════════════════════════
+                        MOBILE : hamburger | avatar | notifs  [flex-1 spacer]
+                        DESKTOP: titre     [flex-1 recherche] notifs | avatar
+                    ══════════════════════════════════════════════════════ */}
+
+                    {/* ── Hamburger — mobile uniquement ── */}
+                    <button
+                        onClick={onToggleSidebar}
+                        className={`md:hidden flex-shrink-0 p-2 rounded-xl transition-colors ${
+                            isLight ? "text-slate-600 hover:bg-slate-100" : "text-white/70 hover:bg-white/10"
+                        }`}
+                        aria-label="Menu"
+                    >
+                        <Menu size={20} />
+                    </button>
+
+                    {/* ── Avatar — mobile gauche / desktop droite ── */}
+                    {isAuthenticated && (
+                        <Dropdown placement="bottom-start">
+                            <DropdownTrigger>
+                                <button className="md:hidden flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none focus:outline-none hover:bg-slate-100 dark:hover:bg-white/10"
+                                    style={{ background: "transparent" }}
+                                >
+                                    <Avatar
+                                        name={initials}
+                                        src={user?.photoUrl ? resolvePhotoUrl(user.photoUrl) : undefined}
+                                        size="sm"
+                                        className="w-8 h-8 text-xs font-bold"
+                                        style={{ background: "#ff922b", color: "white" }}
+                                    />
+                                </button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Actions profil" className={isLight ? "bg-white" : "bg-[#0d1533]"}>
+                                <DropdownItem key="profile" startContent={<User size={15} />} onClick={() => navigate("/profile")}>Mon profil</DropdownItem>
+                                <DropdownItem key="logout" startContent={<LogOut size={15} />} className="text-red-500" color="danger" onClick={logout}>Déconnexion</DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    )}
+
+                    {/* ── Titre — desktop gauche uniquement ── */}
+                    <div className="hidden md:flex flex-col min-w-[140px]">
+                        <h1 className={`text-[15px] lg:text-base font-semibold leading-tight ${isLight ? "text-slate-800" : "text-white"}`}>{title}</h1>
+                        <p className={`text-[0.65rem] lg:text-[0.7rem] ${isLight ? "text-slate-400" : "text-slate-500"}`}>{subtitle}</p>
                     </div>
 
-                    {/* Barre de recherche centrée */}
-                    <div className="flex-1 flex justify-center">
+                    {/* ── Recherche — desktop centre (flex-1) ── */}
+                    <div className="hidden md:flex flex-1 justify-center">
                         <div className="w-full max-w-xl relative" ref={searchRef}>
                             <div className="relative">
                                 <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? "text-slate-400" : "text-slate-400"}`}>
-                                    {isSearching ? (
-                                        <Spinner size="sm" color="warning" />
-                                    ) : (
-                                        <Search size={16} />
-                                    )}
+                                    {isSearching ? <Spinner size="sm" color="warning" /> : <Search size={16} />}
                                 </span>
                                 <input
                                     type="text"
@@ -295,94 +328,53 @@ const AppNavbar = ({
                                     }`}
                                 />
                                 {searchQuery && (
-                                    <button
-                                        onClick={clearSearch}
-                                        className={`absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-200 transition-colors ${isLight ? "text-slate-400" : "text-slate-500"}`}
-                                    >
+                                    <button onClick={clearSearch} className={`absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-200 transition-colors ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                                         <X size={14} />
                                     </button>
                                 )}
                             </div>
-
-                            {/* Dropdown des résultats */}
                             {showResults && (
                                 <div className={`absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border overflow-hidden z-50
                                     ${isLight ? "bg-white border-slate-200" : "bg-[#0d1533] border-white/10"}`}>
-
                                     {isSearching ? (
                                         <div className="p-6 flex items-center justify-center gap-3">
                                             <Spinner size="sm" color="warning" />
-                                            <span className={`text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}>
-                                                Recherche en cours...
-                                            </span>
+                                            <span className={`text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}>Recherche en cours...</span>
                                         </div>
                                     ) : totalResults === 0 ? (
                                         <div className="p-6 text-center">
                                             <Search size={32} className={`mx-auto mb-2 ${isLight ? "text-slate-300" : "text-slate-600"}`} />
-                                            <p className={`text-sm font-medium ${isLight ? "text-slate-600" : "text-slate-300"}`}>
-                                                Aucun résultat trouvé
-                                            </p>
-                                            <p className={`text-xs mt-1 ${isLight ? "text-slate-400" : "text-slate-500"}`}>
-                                                Essayez avec d'autres termes
-                                            </p>
+                                            <p className={`text-sm font-medium ${isLight ? "text-slate-600" : "text-slate-300"}`}>Aucun résultat trouvé</p>
+                                            <p className={`text-xs mt-1 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Essayez avec d'autres termes</p>
                                         </div>
                                     ) : (
                                         <div className="max-h-[400px] overflow-y-auto">
-                                            {/* Véhicules */}
                                             {searchResults.vehicles.length > 0 && (
                                                 <div>
-                                                    <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${isLight ? "bg-slate-50 text-slate-500" : "bg-white/5 text-slate-400"}`}>
-                                                        Véhicules ({searchResults.vehicles.length})
-                                                    </div>
+                                                    <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${isLight ? "bg-slate-50 text-slate-500" : "bg-white/5 text-slate-400"}`}>Véhicules ({searchResults.vehicles.length})</div>
                                                     {searchResults.vehicles.map((v, i) => (
-                                                        <button
-                                                            key={`vehicle-${v.id || i}`}
-                                                            onClick={() => handleVehicleClick(v)}
-                                                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left
-                                                                ${isLight ? "hover:bg-slate-50" : "hover:bg-white/5"}`}
-                                                        >
-                                                            <div className={`p-2 rounded-lg ${isLight ? "bg-orange-50" : "bg-orange-500/10"}`}>
-                                                                <Car size={18} className="text-orange-500" />
-                                                            </div>
+                                                        <button key={`vehicle-${v.id || i}`} onClick={() => handleVehicleClick(v)}
+                                                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left ${isLight ? "hover:bg-slate-50" : "hover:bg-white/5"}`}>
+                                                            <div className={`p-2 rounded-lg ${isLight ? "bg-orange-50" : "bg-orange-500/10"}`}><Car size={18} className="text-orange-500" /></div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className={`font-medium truncate ${isLight ? "text-slate-800" : "text-white"}`}>
-                                                                    {v.brand} {v.model}
-                                                                </p>
-                                                                <p className={`text-xs truncate ${isLight ? "text-slate-400" : "text-slate-500"}`}>
-                                                                    {v.plateNumber || v.licensePlate} · {v.type}
-                                                                </p>
+                                                                <p className={`font-medium truncate ${isLight ? "text-slate-800" : "text-white"}`}>{v.brand} {v.model}</p>
+                                                                <p className={`text-xs truncate ${isLight ? "text-slate-400" : "text-slate-500"}`}>{v.plateNumber || v.licensePlate} · {v.type}</p>
                                                             </div>
-                                                            <span className={`text-xs px-2 py-1 rounded-lg ${isLight ? "bg-orange-50 text-orange-600" : "bg-orange-500/10 text-orange-400"}`}>
-                                                                Voir
-                                                            </span>
+                                                            <span className={`text-xs px-2 py-1 rounded-lg ${isLight ? "bg-orange-50 text-orange-600" : "bg-orange-500/10 text-orange-400"}`}>Voir</span>
                                                         </button>
                                                     ))}
                                                 </div>
                                             )}
-
-                                            {/* Documents */}
                                             {searchResults.documents.length > 0 && (
                                                 <div>
-                                                    <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${isLight ? "bg-slate-50 text-slate-500" : "bg-white/5 text-slate-400"}`}>
-                                                        Documents ({searchResults.documents.length})
-                                                    </div>
+                                                    <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${isLight ? "bg-slate-50 text-slate-500" : "bg-white/5 text-slate-400"}`}>Documents ({searchResults.documents.length})</div>
                                                     {searchResults.documents.map((d, i) => (
-                                                        <button
-                                                            key={`document-${d.id || i}`}
-                                                            onClick={() => handleDocumentClick(d)}
-                                                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left
-                                                                ${isLight ? "hover:bg-slate-50" : "hover:bg-white/5"}`}
-                                                        >
-                                                            <div className={`p-2 rounded-lg ${isLight ? "bg-violet-50" : "bg-violet-500/10"}`}>
-                                                                <FileText size={18} className="text-violet-500" />
-                                                            </div>
+                                                        <button key={`document-${d.id || i}`} onClick={() => handleDocumentClick(d)}
+                                                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left ${isLight ? "hover:bg-slate-50" : "hover:bg-white/5"}`}>
+                                                            <div className={`p-2 rounded-lg ${isLight ? "bg-violet-50" : "bg-violet-500/10"}`}><FileText size={18} className="text-violet-500" /></div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className={`font-medium truncate capitalize ${isLight ? "text-slate-800" : "text-white"}`}>
-                                                                    {d.type?.replace(/_/g, " ")}
-                                                                </p>
-                                                                <p className={`text-xs truncate capitalize ${isLight ? "text-slate-400" : "text-slate-500"}`}>
-                                                                    {d.scope} · {d.status}
-                                                                </p>
+                                                                <p className={`font-medium truncate capitalize ${isLight ? "text-slate-800" : "text-white"}`}>{d.type?.replace(/_/g, " ")}</p>
+                                                                <p className={`text-xs truncate capitalize ${isLight ? "text-slate-400" : "text-slate-500"}`}>{d.scope} · {d.status}</p>
                                                             </div>
                                                         </button>
                                                     ))}
@@ -395,11 +387,11 @@ const AppNavbar = ({
                         </div>
                     </div>
 
-                    {/* Zone droite : notif + user */}
-                    <div className="flex items-center gap-6">
-                        {/* Bouton notifications */}
-                        <div className="relative" ref={notifRef}>
-                            {/* Calculs visibilité */}
+                    {/* ── Mobile : spacer pour pousser notifs à droite ── */}
+                    <div className="flex-1 md:hidden" />
+
+                    {/* ── Notifications ── */}
+                    <div className="relative" ref={notifRef}>
                             {(() => {
                                 const visibleDocs = docNotifs.filter(d => !dismissed.has(`doc_${d.id}`));
                                 const showMsg = unreadMessages > 0 && !dismissed.has("messages");
@@ -442,7 +434,7 @@ const AppNavbar = ({
 
                                         {/* Panneau */}
                                         {showNotif && (
-                                            <div className={`absolute right-0 top-full mt-2 w-[340px] rounded-2xl shadow-2xl border z-50 overflow-hidden
+                                            <div className={`absolute left-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-[340px] max-w-[340px] rounded-2xl shadow-2xl border z-50 overflow-hidden
                                                 ${isLight ? "bg-white border-slate-200/80" : "bg-[#0b1229] border-white/8"}`}
                                                 style={{ boxShadow: isLight ? "0 20px 60px -10px rgba(0,0,0,.15)" : "0 20px 60px -10px rgba(0,0,0,.6)" }}
                                             >
@@ -585,58 +577,32 @@ const AppNavbar = ({
                             })()}
                         </div>
 
-                        {/* Séparateur vertical */}
-                        <div className={`hidden sm:block h-9 w-px ${isLight ? "bg-slate-200" : "bg-slate-300/70"}`} />
-
-                        {/* Utilisateur */}
-                        {isAuthenticated ? (
-                            <Dropdown placement="bottom-end">
-                                <DropdownTrigger>
-                                    <button className="flex items-center gap-3 cursor-pointer">
-                                        <div className="hidden sm:block text-right leading-tight">
-                                            <p className={`text-sm font-medium ${isLight ? "text-slate-800" : "text-white"}`}>
-                                                {userDisplayName}
-                                            </p>
-                                            <p className={`text-[0.7rem] ${isLight ? "text-slate-500" : "text-white"}`}>
-                                                {user?.roleLabel || "Agent Loueur Partenaire"}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Avatar
-                                                size="sm"
-                                                radius="lg"
-                                                className="bg-[#111b46] text-white font-semibold shadow-md"
-                                                src={resolvePhotoUrl(user?.profilPhoto)}
-                                                name={userDisplayName}
-                                            >
-                                                {initials}
-                                            </Avatar>
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 className={`h-4 w-4 ${isLight ? "text-slate-400" : "text-[#7a849f]"}`}
-                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                 strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="6 9 12 15 18 9" />
-                                            </svg>
-                                        </div>
-                                    </button>
-                                </DropdownTrigger>
-                                <DropdownMenu
-                                    aria-label="Menu utilisateur"
-                                    onAction={(key) => {
-                                        if (key === "profile") navigate("/settings");
-                                        if (key === "logout") logout();
-                                    }}
+                    {/* ── Avatar desktop — à droite des notifs ── */}
+                    {isAuthenticated && (
+                        <Dropdown placement="bottom-end">
+                            <DropdownTrigger>
+                                <button className="hidden md:flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none focus:outline-none hover:bg-slate-100 dark:hover:bg-white/10"
+                                    style={{ background: "transparent" }}
                                 >
-                                    <DropdownItem key="profile">Mon profil</DropdownItem>
-                                    <DropdownItem key="logout" color="danger">Se déconnecter</DropdownItem>
-                                </DropdownMenu>
-                            </Dropdown>
-                        ) : (
-                            <RouterLink to="/login" className={`text-sm font-medium hover:underline ${isLight ? "text-slate-700" : "text-white"}`}>
-                                Se connecter
-                            </RouterLink>
-                        )}
-                    </div>
+                                    <Avatar
+                                        name={initials}
+                                        src={user?.photoUrl ? resolvePhotoUrl(user.photoUrl) : undefined}
+                                        size="sm"
+                                        className="w-8 h-8 text-xs font-bold"
+                                        style={{ background: "#ff922b", color: "white" }}
+                                    />
+                                    <div className="flex flex-col items-start leading-none">
+                                        <span className={`text-[13px] font-semibold truncate max-w-[100px] ${isLight ? "text-slate-800" : "text-white"}`}>{userDisplayName}</span>
+                                        <span className={`text-[10px] truncate max-w-[100px] ${isLight ? "text-slate-400" : "text-slate-500"}`}>{userRoles[0] || "Utilisateur"}</span>
+                                    </div>
+                                </button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Actions profil" className={isLight ? "bg-white" : "bg-[#0d1533]"}>
+                                <DropdownItem key="profile" startContent={<User size={15} />} onClick={() => navigate("/profile")}>Mon profil</DropdownItem>
+                                <DropdownItem key="logout" startContent={<LogOut size={15} />} className="text-red-500" color="danger" onClick={logout}>Déconnexion</DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    )}
                 </div>
             </header>
 

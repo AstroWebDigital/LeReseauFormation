@@ -9,6 +9,7 @@ import {
 import api from "@/services/auth/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useTheme } from "@/theme/ThemeProvider";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
 
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -69,7 +70,7 @@ const greetingByTime = (name) => {
 // ── KPI Card améliorée ────────────────────────────────────────────────────────
 function KpiCard({ icon: Icon, label, value, sub, gradient, isLight }) {
     return (
-        <div className={`relative rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 group cursor-default
+        <div className={`relative rounded-2xl p-3.5 sm:p-5 flex flex-col gap-3 sm:gap-4 overflow-hidden transition-all duration-300 group cursor-default
             ${isLight
                 ? "bg-white border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-slate-200/80 hover:-translate-y-0.5"
                 : "bg-[#0d1533] border border-white/5 hover:border-white/10 hover:-translate-y-0.5"}`}>
@@ -78,15 +79,16 @@ function KpiCard({ icon: Icon, label, value, sub, gradient, isLight }) {
             {/* Bg glow */}
             <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl bg-gradient-to-br ${gradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
 
-            <div className="flex items-start justify-between relative">
-                <span className={`text-[11px] font-semibold uppercase tracking-widest ${isLight ? "text-slate-400" : "text-slate-500"}`}>{label}</span>
-                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
-                    <Icon size={16} className="text-white" />
+            <div className="flex items-start justify-between gap-2 relative">
+                <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider leading-tight ${isLight ? "text-slate-400" : "text-slate-500"}`}>{label}</span>
+                <div className={`p-2 sm:p-2.5 rounded-xl bg-gradient-to-br ${gradient} shadow-lg shrink-0`}>
+                    <Icon size={14} className="text-white sm:hidden" />
+                    <Icon size={16} className="text-white hidden sm:block" />
                 </div>
             </div>
             <div className="relative">
-                <div className={`text-3xl font-black tracking-tight ${isLight ? "text-slate-800" : "text-white"}`}>{value}</div>
-                {sub && <div className={`text-xs mt-1 ${isLight ? "text-slate-400" : "text-slate-500"}`}>{sub}</div>}
+                <div className={`text-2xl sm:text-3xl font-black tracking-tight ${isLight ? "text-slate-800" : "text-white"}`}>{value}</div>
+                {sub && <div className={`text-[11px] sm:text-xs mt-0.5 sm:mt-1 ${isLight ? "text-slate-400" : "text-slate-500"}`}>{sub}</div>}
             </div>
         </div>
     );
@@ -616,10 +618,10 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
         : 0;
 
     return (
-        <div className={`p-5 lg:p-8 space-y-8 min-h-screen ${isLight ? "bg-slate-50" : "bg-[#050721]"}`}>
+        <div className={`p-3 sm:p-5 lg:p-8 space-y-5 sm:space-y-8 min-h-screen ${isLight ? "bg-slate-50" : "bg-[#050721]"}`}>
 
             {/* ── Hero ──────────────────────────────────────────────────────── */}
-            <div className={`relative rounded-3xl overflow-hidden
+            <div className={`relative rounded-2xl sm:rounded-3xl overflow-hidden
                 ${isLight
                     ? "bg-white border border-slate-100 shadow-md"
                     : "bg-gradient-to-br from-[#0d1533] via-[#111b46] to-[#0a1128]"
@@ -627,30 +629,30 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
                 {/* Background orbs */}
                 <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-orange-500/20 blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-16 left-1/4 w-48 h-48 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
-                <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-violet-500/10 blur-2xl pointer-events-none" />
 
-                <div className="relative p-6 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="relative p-4 sm:p-6 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
                     <div>
                         {/* Avatar + titre */}
-                        <div className="flex items-center gap-4 mb-3">
-                            <div className="relative">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40">
-                                    <BarChart2 size={28} className="text-white" />
+                        <div className="flex items-center gap-3 sm:gap-4 mb-3">
+                            <div className="relative shrink-0">
+                                <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40">
+                                    <BarChart2 size={22} className="text-white sm:hidden" />
+                                    <BarChart2 size={28} className="text-white hidden sm:block" />
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-white dark:border-[#0d1533] animate-pulse" />
+                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-400 border-2 border-white dark:border-[#0d1533] animate-pulse" />
                             </div>
                             <div>
-                                <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${isLight ? "text-slate-400" : "text-orange-400/70"}`}>
+                                <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-0.5 sm:mb-1 ${isLight ? "text-slate-400" : "text-orange-400/70"}`}>
                                     Tableau de bord
                                 </p>
-                                <h1 className={`text-2xl lg:text-3xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>
+                                <h1 className={`text-xl sm:text-2xl lg:text-3xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>
                                     {greetingByTime(user?.firstname || "vous")} !
                                 </h1>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-4 ml-1">
+                        <div className="flex flex-wrap items-center gap-3 ml-1">
                             <span className={`flex items-center gap-1.5 text-xs ${isLight ? "text-slate-400" : "text-white/40"}`}>
-                                <Clock size={12} /> {todayCapitalized}
+                                <Clock size={11} /> {todayCapitalized}
                             </span>
                             <span className="flex items-center gap-1.5 text-emerald-500 text-xs font-semibold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -660,14 +662,14 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
                     </div>
 
                     {/* Stats hero cards */}
-                    <div className="flex gap-3 relative shrink-0">
-                        <div className={`rounded-2xl p-4 min-w-[140px] ${isLight ? "bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/30" : "bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30"}`}>
-                            <div className="flex justify-between items-start mb-3">
-                                <p className="text-white/80 text-xs font-semibold uppercase tracking-wide">Loués</p>
-                                <TrendingUp size={14} className="text-white/60" />
+                    <div className="flex gap-2 sm:gap-3 relative shrink-0 w-full sm:w-auto">
+                        <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 flex-1 sm:flex-none sm:min-w-[140px] ${isLight ? "bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/30" : "bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30"}`}>
+                            <div className="flex justify-between items-start mb-2 sm:mb-3">
+                                <p className="text-white/80 text-[10px] sm:text-xs font-semibold uppercase tracking-wide">Loués</p>
+                                <TrendingUp size={13} className="text-white/60" />
                             </div>
-                            <p className="text-4xl font-black text-white">{data.rentedVehicles ?? 0}</p>
-                            <div className={`h-1.5 rounded-full bg-white/20 mt-3`}>
+                            <p className="text-3xl sm:text-4xl font-black text-white">{data.rentedVehicles ?? 0}</p>
+                            <div className="h-1.5 rounded-full bg-white/20 mt-2 sm:mt-3">
                                 <div className="h-full rounded-full bg-white transition-all duration-700"
                                      style={{ width: `${occupancyRate}%` }} />
                             </div>
@@ -675,13 +677,13 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
                         </div>
 
                         {data.expiredDocuments + data.expiringDocuments > 0 && (
-                            <div className="rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 p-4 min-w-[130px] shadow-lg shadow-red-500/30">
-                                <div className="flex justify-between items-start mb-3">
-                                    <p className="text-white/80 text-xs font-semibold uppercase tracking-wide">Alertes</p>
-                                    <AlertTriangle size={14} className="text-white/60" />
+                            <div className="rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 p-3 sm:p-4 flex-1 sm:flex-none sm:min-w-[130px] shadow-lg shadow-red-500/30">
+                                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                                    <p className="text-white/80 text-[10px] sm:text-xs font-semibold uppercase tracking-wide">Alertes</p>
+                                    <AlertTriangle size={13} className="text-white/60" />
                                 </div>
-                                <p className="text-4xl font-black text-white">{data.expiredDocuments + data.expiringDocuments}</p>
-                                <p className="text-white/60 text-[10px] mt-3 font-medium">{data.expiredDocuments} expirés</p>
+                                <p className="text-3xl sm:text-4xl font-black text-white">{data.expiredDocuments + data.expiringDocuments}</p>
+                                <p className="text-white/60 text-[10px] mt-2 sm:mt-3 font-medium">{data.expiredDocuments} expirés</p>
                             </div>
                         )}
                     </div>
@@ -689,7 +691,7 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
             </div>
 
             {/* ── KPIs ─────────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {kpis.map((k, i) => <KpiCard key={i} {...k} isLight={isLight} />)}
             </div>
 
@@ -879,10 +881,10 @@ function UserDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
     const nextDaysUntil = nextRes ? Math.ceil((new Date(nextRes.startDate) - now) / (1000 * 60 * 60 * 24)) : null;
 
     return (
-        <div className={`p-5 lg:p-8 space-y-8 min-h-screen ${isLight ? "bg-slate-50" : "bg-[#050721]"}`}>
+        <div className={`p-3 sm:p-5 lg:p-8 space-y-5 sm:space-y-8 min-h-screen ${isLight ? "bg-slate-50" : "bg-[#050721]"}`}>
 
             {/* ── Hero utilisateur ─────────────────────────────────────────── */}
-            <div className={`relative rounded-3xl overflow-hidden
+            <div className={`relative rounded-2xl sm:rounded-3xl overflow-hidden
                 ${isLight
                     ? "bg-white border border-slate-100 shadow-md"
                     : "bg-gradient-to-br from-[#0d1533] via-[#111b46] to-[#0a1128]"
@@ -890,40 +892,40 @@ function UserDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
                 <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-orange-500/15 blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-8 left-1/4 w-48 h-48 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
-                <div className="relative p-6 lg:p-8">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="relative p-4 sm:p-6 lg:p-8">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
                         <div>
-                            <div className="flex items-center gap-4 mb-3">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40 shrink-0">
-                                    <span className="text-white font-black text-xl">
+                            <div className="flex items-center gap-3 sm:gap-4 mb-3">
+                                <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40 shrink-0">
+                                    <span className="text-white font-black text-lg sm:text-xl">
                                         {(user?.firstname || "U")[0].toUpperCase()}
                                     </span>
                                 </div>
                                 <div>
-                                    <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${isLight ? "text-slate-400" : "text-orange-400/70"}`}>
+                                    <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-0.5 sm:mb-1 ${isLight ? "text-slate-400" : "text-orange-400/70"}`}>
                                         Espace client
                                     </p>
-                                    <h1 className={`text-2xl lg:text-3xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>
+                                    <h1 className={`text-xl sm:text-2xl lg:text-3xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>
                                         {greetingByTime(user?.firstname || "vous")} !
                                     </h1>
                                 </div>
                             </div>
                             <span className={`flex items-center gap-1.5 text-xs ml-1 ${isLight ? "text-slate-400" : "text-white/40"}`}>
-                                <Clock size={12} /> {todayCapitalized}
+                                <Clock size={11} /> {todayCapitalized}
                             </span>
                         </div>
 
                         {/* Prochaine réservation */}
                         {nextRes ? (
-                            <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 p-5 min-w-[210px] shadow-xl shadow-orange-500/30 shrink-0">
-                                <div className="flex justify-between items-start mb-3">
-                                    <p className="text-white/80 text-xs font-bold uppercase tracking-wide">Prochaine location</p>
-                                    <Calendar size={14} className="text-white/60" />
+                            <div className="rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 p-4 sm:p-5 w-full sm:w-auto sm:min-w-[210px] shadow-xl shadow-orange-500/30 shrink-0">
+                                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                                    <p className="text-white/80 text-[10px] sm:text-xs font-bold uppercase tracking-wide">Prochaine location</p>
+                                    <Calendar size={13} className="text-white/60" />
                                 </div>
-                                <p className="text-white font-black text-lg leading-tight mb-1">
+                                <p className="text-white font-black text-base sm:text-lg leading-tight mb-1">
                                     {nextRes.vehicleBrand} {nextRes.vehicleModel}
                                 </p>
-                                <p className="text-white/70 text-xs mb-3">{fmtDateLong(nextRes.startDate)}</p>
+                                <p className="text-white/70 text-xs mb-2 sm:mb-3">{fmtDateLong(nextRes.startDate)}</p>
                                 {nextDaysUntil !== null && nextDaysUntil >= 0 && (
                                     <div className="rounded-xl bg-white/20 px-3 py-1.5 text-center">
                                         <span className="text-white font-black text-sm">
@@ -934,9 +936,9 @@ function UserDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
                             </div>
                         ) : (
                             <a href="/reservations"
-                               className="rounded-2xl border-2 border-dashed border-orange-500/40 p-5 min-w-[200px] flex flex-col items-center gap-3 group hover:border-orange-500/70 transition-colors shrink-0">
-                                <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-                                    <CalendarCheck size={24} className="text-orange-500" />
+                               className="rounded-xl sm:rounded-2xl border-2 border-dashed border-orange-500/40 p-4 sm:p-5 w-full sm:w-auto sm:min-w-[200px] flex flex-col items-center gap-3 group hover:border-orange-500/70 transition-colors shrink-0">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                                    <CalendarCheck size={22} className="text-orange-500" />
                                 </div>
                                 <p className={`text-sm font-bold text-center ${isLight ? "text-slate-600" : "text-slate-300"}`}>
                                     Réserver un véhicule
@@ -951,7 +953,7 @@ function UserDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
             </div>
 
             {/* ── KPIs ─────────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {kpis.map((k, i) => <KpiCard key={i} {...k} isLight={isLight} />)}
             </div>
 
@@ -1060,9 +1062,11 @@ export default function Dashboard() {
         return String(user.roles).toUpperCase().split(",").map(r => r.trim());
     };
     const userRoles = getUserRoles();
-    const isLoueur = userRoles.some(role => ["ADMIN", "ALP", "PARTENAIRE"].includes(role));
+    const isAdmin  = userRoles.includes("ADMIN");
+    const isLoueur = !isAdmin && userRoles.some(role => ["ALP", "PARTENAIRE"].includes(role));
 
     const fetchDashboard = async () => {
+        if (isAdmin) return;
         setLoading(true);
         try {
             const endpoint = isLoueur ? "/api/dashboard" : "/api/dashboard/user";
@@ -1082,7 +1086,10 @@ export default function Dashboard() {
         }
     };
 
-    useEffect(() => { fetchDashboard(); }, [isLoueur]);
+    useEffect(() => { fetchDashboard(); }, [isAdmin, isLoueur]);
+
+    // Admin dashboard — rendu après tous les hooks
+    if (isAdmin) return <AdminDashboard user={user} />;
 
     if (loading) return (
         <div className="h-full flex items-center justify-center min-h-[400px]">
