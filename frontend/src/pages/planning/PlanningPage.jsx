@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight, CalendarCheck, X, Car, User, MapPin, Euro, C
 import api from "@/services/auth/client";
 import { useTheme } from "@/theme/ThemeProvider";
 
-const COL_W = 36;
-const LABEL_W = typeof window !== "undefined" && window.innerWidth < 640 ? 140 : 220;
+const COL_W = 52;
+const LABEL_W = typeof window !== "undefined" && window.innerWidth < 640 ? 160 : 240;
 
 const STATUS_META = {
     en_attente: { label: "En attente",  color: "bg-amber-400",   text: "text-amber-400",   dot: "bg-amber-400",   border: "border-amber-400/30"  },
@@ -247,13 +247,13 @@ export default function PlanningPage() {
                                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                                 return (
                                     <div key={i} style={{ width: COL_W }}
-                                        className={`shrink-0 text-center text-[9px] py-1.5 border-r last:border-r-0
+                                        className={`shrink-0 text-center text-[10px] py-2 border-r last:border-r-0
                                             ${isToday ? "bg-orange-500/10 font-black text-orange-400"
                                                 : isWeekend ? `${wkndBg} ${isLight ? "text-slate-300" : "text-slate-600"}`
                                                 : textSub}
                                             ${cellBord}`}>
                                         <div className="font-semibold">{d.getDate()}</div>
-                                        <div className="text-[7px] uppercase opacity-70">
+                                        <div className="text-[8px] uppercase opacity-70">
                                             {d.toLocaleDateString("fr-FR", { weekday: "short" }).slice(0, 2)}
                                         </div>
                                     </div>
@@ -272,7 +272,7 @@ export default function PlanningPage() {
                             return (
                                 <div key={v.id || vi}
                                     className={`flex items-center border-b last:border-b-0 relative ${rowHov} ${divider} transition-colors`}
-                                    style={{ height: 48 }}>
+                                    style={{ height: 62 }}>
 
                                     {/* Label véhicule */}
                                     <div style={{ width: LABEL_W }} className="shrink-0 px-4 flex items-center gap-2.5">
@@ -295,7 +295,7 @@ export default function PlanningPage() {
                                     </div>
 
                                     {/* Cellules + barres */}
-                                    <div className="relative flex" style={{ flex: 1, height: 48 }}>
+                                    <div className="relative flex" style={{ flex: 1, height: 62 }}>
                                         {days.map((d, i) => {
                                             const isToday   = d.getTime() === todayMs;
                                             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -337,7 +337,7 @@ export default function PlanningPage() {
                                                         left:  startCol * COL_W + 2,
                                                         width: Math.max(durCols * COL_W - 4, 6),
                                                     }}>
-                                                    <span className="text-[9px] text-white font-bold px-1.5 truncate leading-none select-none">
+                                                    <span className="text-[10px] text-white font-bold px-2 truncate leading-none select-none">
                                                         {isPending && "⏳ "}
                                                         {r.customerName?.split(" ")[0] || ""}
                                                     </span>
