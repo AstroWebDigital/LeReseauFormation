@@ -44,6 +44,7 @@ export default function MessagesPage() {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [hasAuthError, setHasAuthError] = useState(false);
     const [contextMenu, setContextMenu] = useState(null);
+    const [lightboxUrl, setLightboxUrl] = useState(null);
     const [replyTo, setReplyTo] = useState(null);
     const [editingMessage, setEditingMessage] = useState(null);
     const [showPinned, setShowPinned] = useState(false);
@@ -195,7 +196,7 @@ export default function MessagesPage() {
             )}
 
             {/* Liste conversations : plein écran mobile si pas de conv active, colonne fixe sur desktop */}
-            <div className={`${showConvList ? "flex w-full" : "hidden"} md:flex md:w-80 md:flex-shrink-0`}
+            <div className={`${showConvList ? "flex w-full" : "hidden"} md:flex md:w-[340px] md:flex-shrink-0`}
                  style={{ flexDirection: "column", overflow: "hidden" }}>
                 <ConversationSidebar
                     conversations={filteredConvs}
@@ -263,6 +264,7 @@ export default function MessagesPage() {
                                             isConsecutive={i > 0 && prev.senderUserId === m.senderUserId && d && prev.sentAt && isSameDay(new Date(prev.sentAt), d)}
                                             onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, message: m }); }}
                                             onReplyClick={() => scrollToMessage(m.replyTo?.id)}
+                                            onImageClick={(url) => setLightboxUrl(url)}
                                             ref={(el) => { if (el) messageRefs.current[m.id] = el; }}
                                             isDark={isDark}
                                         />
@@ -283,6 +285,41 @@ export default function MessagesPage() {
                     </>
                 )}
             </div>
+
+            {/* Lightbox permis */}
+            {lightboxUrl && (
+                <div
+                    onClick={() => setLightboxUrl(null)}
+                    style={{
+                        position: "fixed", inset: 0, zIndex: 9999,
+                        background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "zoom-out",
+                    }}
+                >
+                    <img
+                        src={lightboxUrl}
+                        alt="permis"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            maxWidth: "90vw", maxHeight: "85vh",
+                            borderRadius: "16px", boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
+                            objectFit: "contain", cursor: "default",
+                        }}
+                    />
+                    <button
+                        onClick={() => setLightboxUrl(null)}
+                        style={{
+                            position: "absolute", top: 16, right: 20,
+                            background: "rgba(255,255,255,0.15)", border: "none",
+                            color: "#fff", borderRadius: "50%", width: 36, height: 36,
+                            fontSize: 20, cursor: "pointer", display: "flex",
+                            alignItems: "center", justifyContent: "center",
+                            backdropFilter: "blur(4px)",
+                        }}
+                    >×</button>
+                </div>
+            )}
         </div>
     );
 }

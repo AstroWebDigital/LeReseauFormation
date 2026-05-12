@@ -25,4 +25,7 @@ public class ReservationResponse {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private String rejectionReason;
+    private String customerLicenseNumber;
+    private String customerLicensePhotoFront;
+    private String customerLicensePhotoBack;
 }

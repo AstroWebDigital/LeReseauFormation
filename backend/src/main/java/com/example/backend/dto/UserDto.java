@@ -23,4 +23,8 @@ public class UserDto {
     private boolean mustChangePassword;
     private String alpId;
     private String blockReason;
+    private String licenseNumber;
+    private String licenseExpiryDate;
+    private String licensePhotoFront;
+    private String licensePhotoBack;
 }

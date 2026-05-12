@@ -66,6 +66,18 @@ public class User {
     @Column(name = "block_reason", columnDefinition = "TEXT")
     private String blockReason;
 
+    @Column(name = "license_number", length = 100)
+    private String licenseNumber;
+
+    @Column(name = "license_expiry_date", length = 20)
+    private String licenseExpiryDate;
+
+    @Column(name = "license_photo_front", length = 255)
+    private String licensePhotoFront;
+
+    @Column(name = "license_photo_back", length = 255)
+    private String licensePhotoBack;
+
     @NotNull
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

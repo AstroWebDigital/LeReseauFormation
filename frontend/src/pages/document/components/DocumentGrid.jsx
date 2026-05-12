@@ -2,10 +2,40 @@ import React from "react";
 import { Card, CardHeader, CardBody, CardFooter, Chip, Button, Tooltip, Divider } from "@heroui/react";
 import {
     FileText, Calendar, Download, Edit2, Trash2,
-    Clock, ShieldCheck, Layers, AlertCircle
+    Clock, ShieldCheck, Layers, AlertCircle, IdentificationIcon
 } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const resolveUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `${API_BASE_URL}${url.startsWith("/") ? url : "/" + url}`;
+};
+const isImageFile = (url) => url && /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+
+function Lightbox({ url, onClose }) {
+    if (!url) return null;
+    return (
+        <div onClick={onClose}
+            style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(0,0,0,0.85)",
+                     backdropFilter:"blur(6px)", display:"flex", alignItems:"center",
+                     justifyContent:"center", cursor:"zoom-out" }}>
+            <img src={url} alt="document" onClick={e => e.stopPropagation()}
+                 style={{ maxWidth:"90vw", maxHeight:"85vh", borderRadius:16,
+                          boxShadow:"0 25px 60px rgba(0,0,0,0.6)", objectFit:"contain", cursor:"default" }} />
+            <button onClick={onClose}
+                style={{ position:"absolute", top:16, right:20, background:"rgba(255,255,255,0.15)",
+                         border:"none", color:"#fff", borderRadius:"50%", width:36, height:36,
+                         fontSize:20, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                ×
+            </button>
+        </div>
+    );
+}
+
 export const DocumentGrid = ({ documents, onEdit, onDelete, onDownload, statusColorMap, isDark }) => {
+    const [lightboxUrl, setLightboxUrl] = React.useState(null);
+
     if (documents.length === 0) {
         return (
             <div className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-xl
@@ -22,6 +52,7 @@ export const DocumentGrid = ({ documents, onEdit, onDelete, onDownload, statusCo
     };
 
     return (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {documents.map((doc) => (
                 <Card
@@ -58,6 +89,14 @@ export const DocumentGrid = ({ documents, onEdit, onDelete, onDownload, statusCo
                                     <span className="font-semibold">Motif : </span>{doc.rejectionReason}
                                 </p>
                             </div>
+                        )}
+
+                        {/* Aperçu image pour permis de conduire */}
+                        {doc.type?.startsWith("permis_conduire") && doc.fileUrl && isImageFile(doc.fileUrl) && (
+                            <button onClick={() => setLightboxUrl(resolveUrl(doc.fileUrl))}
+                                className={`block w-full rounded-xl overflow-hidden border cursor-zoom-in ${isDark ? "border-white/10" : "border-slate-200"}`}>
+                                <img src={resolveUrl(doc.fileUrl)} alt={doc.type} className="w-full h-32 object-cover hover:scale-105 transition-transform" />
+                            </button>
                         )}
                         <div className={`rounded-lg p-3 border space-y-2
                             ${isDark ? "bg-slate-950/50 border-slate-800/50" : "bg-slate-50 border-slate-200"}`}>
@@ -127,5 +166,8 @@ export const DocumentGrid = ({ documents, onEdit, onDelete, onDownload, statusCo
                 </Card>
             ))}
         </div>
+
+        <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+        </>
     );
 };

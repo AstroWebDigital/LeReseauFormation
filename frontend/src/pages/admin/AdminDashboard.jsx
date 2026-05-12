@@ -83,40 +83,69 @@ function SectionHeader({ title, sub, to, isLight }) {
 
 // ─── Pending reservation row ──────────────────────────────────────────────────
 function PendingResRow({ r, onApprove, onReject, loading, isLight }) {
+    const [showLicense, setShowLicense] = React.useState(false);
+    const hasLicense = r.customerLicenseNumber || r.customerLicensePhotoFront;
     return (
-        <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border transition-colors ${
+        <div className={`rounded-xl border overflow-hidden transition-colors ${
             isLight ? "bg-slate-50 border-slate-100" : "bg-white/3 border-white/5"
         }`}>
-            <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold truncate ${isLight ? "text-slate-800" : "text-white"}`}>
-                    {r.vehicleBrand} {r.vehicleModel}
-                </p>
-                <p className={`text-xs truncate ${isLight ? "text-slate-500" : "text-slate-400"}`}>
-                    <span className="hidden sm:inline">{r.customerName} · </span>
-                    {fmtDate(r.startDate)} → {fmtDate(r.endDate)}
-                </p>
+            <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3">
+                <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${isLight ? "text-slate-800" : "text-white"}`}>
+                        {r.vehicleBrand} {r.vehicleModel}
+                    </p>
+                    <p className={`text-xs truncate ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                        <span className="hidden sm:inline">{r.customerName} · </span>
+                        {fmtDate(r.startDate)} → {fmtDate(r.endDate)}
+                    </p>
+                </div>
+                <span className={`hidden sm:inline text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 ${isLight ? "text-orange-600 bg-orange-50 border-orange-200" : "text-orange-400 bg-orange-400/10 border-orange-400/20"}`}>
+                    {fmtCurrency(r.totalAmount)}
+                </span>
+                {hasLicense && (
+                    <button onClick={() => setShowLicense(v => !v)}
+                        className={`p-1.5 rounded-lg transition-colors shrink-0 ${showLicense ? "bg-blue-500/20 text-blue-400" : isLight ? "bg-slate-200 text-slate-500 hover:bg-blue-100 hover:text-blue-500" : "bg-white/10 text-slate-400 hover:bg-blue-500/15 hover:text-blue-400"}`}
+                        title="Voir le permis">
+                        <UserCheck size={15} />
+                    </button>
+                )}
+                <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => onApprove(r.id)} disabled={loading}
+                        className="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 transition-colors disabled:opacity-40" title="Approuver">
+                        <CheckCircle size={15} />
+                    </button>
+                    <button onClick={() => onReject(r.id)} disabled={loading}
+                        className="p-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-400 transition-colors disabled:opacity-40" title="Refuser">
+                        <XCircle size={15} />
+                    </button>
+                </div>
             </div>
-            <span className={`hidden sm:inline text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 ${isLight ? "text-orange-600 bg-orange-50 border-orange-200" : "text-orange-400 bg-orange-400/10 border-orange-400/20"}`}>
-                {fmtCurrency(r.totalAmount)}
-            </span>
-            <div className="flex items-center gap-1 shrink-0">
-                <button
-                    onClick={() => onApprove(r.id)}
-                    disabled={loading}
-                    className="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 transition-colors disabled:opacity-40"
-                    title="Approuver"
-                >
-                    <CheckCircle size={15} />
-                </button>
-                <button
-                    onClick={() => onReject(r.id)}
-                    disabled={loading}
-                    className="p-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-400 transition-colors disabled:opacity-40"
-                    title="Refuser"
-                >
-                    <XCircle size={15} />
-                </button>
-            </div>
+            {showLicense && hasLicense && (
+                <div className={`px-3 pb-3 border-t ${isLight ? "border-slate-100 bg-blue-50/50" : "border-white/5 bg-blue-500/5"}`}>
+                    <p className={`text-[11px] font-bold uppercase tracking-wider pt-2 pb-1.5 flex items-center gap-1 ${isLight ? "text-blue-600" : "text-blue-400"}`}>
+                        <UserCheck size={12}/> Permis de conduire
+                    </p>
+                    {r.customerLicenseNumber && (
+                        <p className={`text-xs mb-2 ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+                            N° <span className="font-mono font-semibold">{r.customerLicenseNumber}</span>
+                        </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                        {r.customerLicensePhotoFront && (
+                            <a href={r.customerLicensePhotoFront} target="_blank" rel="noopener noreferrer">
+                                <img src={r.customerLicensePhotoFront} alt="Recto" className="w-full h-20 object-cover rounded-lg" />
+                                <p className={`text-[10px] text-center mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Recto</p>
+                            </a>
+                        )}
+                        {r.customerLicensePhotoBack && (
+                            <a href={r.customerLicensePhotoBack} target="_blank" rel="noopener noreferrer">
+                                <img src={r.customerLicensePhotoBack} alt="Verso" className="w-full h-20 object-cover rounded-lg" />
+                                <p className={`text-[10px] text-center mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Verso</p>
+                            </a>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -328,7 +357,12 @@ export default function AdminDashboard({ user }) {
 
             {/* ── Header ── */}
             <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
+                <div className="min-w-0 flex items-center gap-3 sm:gap-4">
+                    {resolveUrl(user?.profilPhoto) && (
+                        <img src={resolveUrl(user?.profilPhoto)} alt="Photo"
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl object-cover shadow-lg ring-2 ring-orange-500/40 shrink-0" />
+                    )}
+                    <div>
                     <div className="flex items-center gap-2 mb-1">
                         <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 shadow">
                             <Shield size={13} className="text-white" />
@@ -346,6 +380,7 @@ export default function AdminDashboard({ user }) {
                             </span>
                         )}
                     </p>
+                    </div>
                 </div>
                 <button
                     onClick={fetchAll}

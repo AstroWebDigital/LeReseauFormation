@@ -67,6 +67,15 @@ export default function DocumentPage() {
 
     const handleDownload = async (fileUrl) => {
         if (!fileUrl) return alert("Pas de fichier associé");
+
+        // Fichiers images servis en statique (permis, photos…) — ouvrir directement
+        if (/\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl)) {
+            const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+            const absolute = fileUrl.startsWith("http") ? fileUrl : `${API_BASE}${fileUrl.startsWith("/") ? fileUrl : "/" + fileUrl}`;
+            window.open(absolute, "_blank", "noopener,noreferrer");
+            return;
+        }
+
         try {
             const filename = fileUrl.split('/').pop();
             const response = await api.get(`/api/documents/download/${filename}`, { responseType: 'blob' });

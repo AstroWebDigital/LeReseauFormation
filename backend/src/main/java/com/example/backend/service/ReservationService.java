@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import com.example.backend.dto.ReservationRequest;
 import com.example.backend.dto.ReservationResponse;
+import com.example.backend.entity.ChatChannel;
 import com.example.backend.entity.Reservation;
 import com.example.backend.entity.User;
 import com.example.backend.entity.Vehicle;
@@ -21,6 +22,7 @@ import com.example.backend.repository.VehicleRepository;
 import com.stripe.exception.StripeException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +32,15 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class ReservationService {
 
+    @Value("${app.public-base-url:http://localhost:8080}")
+    private String publicBaseUrl;
+
     private final ReservationRepository reservationRepository;
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
     private final ChatService chatService;
+    private final MessageService messageService;
     private final NotificationService notificationService;
     private final StripePaymentService stripePaymentService;
     private final EmailService emailService;
@@ -116,9 +122,10 @@ public class ReservationService {
         notificationService.sendReservationConfirmation(savedReservation);
 
         try {
-            chatService.createChannelForReservation(savedReservation);
+            ChatChannel channel = chatService.createChannelForReservation(savedReservation);
+            messageService.sendWelcomeMessage(savedReservation, channel.getId(), publicBaseUrl);
         } catch (Exception e) {
-            System.err.println("ERREUR LORS DE LA CRÉATION DU CANAL DE CHAT: " + e.getMessage());
+            System.err.println("ERREUR lors de la création du canal/message: " + e.getMessage());
         }
 
         return savedReservation;
@@ -301,6 +308,17 @@ public class ReservationService {
         response.setCreatedAt(reservation.getCreatedAt());
         response.setUpdatedAt(reservation.getUpdatedAt());
         response.setRejectionReason(reservation.getRejectionReason());
+        User renter = reservation.getUser();
+        response.setCustomerLicenseNumber(renter.getLicenseNumber());
+        response.setCustomerLicensePhotoFront(toAbsolute(renter.getLicensePhotoFront()));
+        response.setCustomerLicensePhotoBack(toAbsolute(renter.getLicensePhotoBack()));
         return response;
+    }
+
+    private String toAbsolute(String path) {
+        if (path == null || path.isBlank()) return null;
+        if (path.startsWith("http://") || path.startsWith("https://")) return path;
+        String base = publicBaseUrl != null ? publicBaseUrl.replaceAll("/+$", "") : "";
+        return base + (path.startsWith("/") ? path : "/" + path);
     }
 }

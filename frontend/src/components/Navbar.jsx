@@ -283,16 +283,16 @@ const AppNavbar = ({
                     {isAuthenticated && (
                         <Dropdown placement="bottom-start">
                             <DropdownTrigger>
-                                <button className="md:hidden flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none focus:outline-none hover:bg-slate-100 dark:hover:bg-white/10"
+                                <button className="md:hidden flex items-center gap-2 rounded-xl px-1 py-1 transition-colors outline-none focus:outline-none"
                                     style={{ background: "transparent" }}
                                 >
-                                    <Avatar
-                                        name={initials}
-                                        src={user?.photoUrl ? resolvePhotoUrl(user.photoUrl) : undefined}
-                                        size="sm"
-                                        className="w-8 h-8 text-xs font-bold"
-                                        style={{ background: "#ff922b", color: "white" }}
-                                    />
+                                    {resolvePhotoUrl(user?.profilPhoto)
+                                        ? <img src={resolvePhotoUrl(user?.profilPhoto)} alt="Photo"
+                                            className="w-8 h-8 rounded-xl object-cover ring-2 ring-orange-500/40" />
+                                        : <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-black text-xs shadow-sm shadow-orange-500/30">
+                                            {initials}
+                                          </div>
+                                    }
                                 </button>
                             </DropdownTrigger>
                             <DropdownMenu aria-label="Actions profil" className={isLight ? "bg-white" : "bg-[#0d1533]"}>
@@ -581,24 +581,25 @@ const AppNavbar = ({
                     {isAuthenticated && (
                         <Dropdown placement="bottom-end">
                             <DropdownTrigger>
-                                <button className="hidden md:flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none focus:outline-none hover:bg-slate-100 dark:hover:bg-white/10"
+                                <button className={`hidden md:flex items-center gap-2.5 rounded-2xl px-2 py-1.5 transition-all outline-none focus:outline-none
+                                    ${isLight ? "hover:bg-orange-50 border border-transparent hover:border-orange-100" : "hover:bg-white/8 border border-transparent hover:border-white/10"}`}
                                     style={{ background: "transparent" }}
                                 >
-                                    <Avatar
-                                        name={initials}
-                                        src={user?.photoUrl ? resolvePhotoUrl(user.photoUrl) : undefined}
-                                        size="sm"
-                                        className="w-8 h-8 text-xs font-bold"
-                                        style={{ background: "#ff922b", color: "white" }}
-                                    />
+                                    {resolvePhotoUrl(user?.profilPhoto)
+                                        ? <img src={resolvePhotoUrl(user?.profilPhoto)} alt="Photo"
+                                            className="w-9 h-9 rounded-xl object-cover ring-2 ring-orange-500/40 shrink-0" />
+                                        : <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-sm shadow-orange-500/30">
+                                            {initials}
+                                          </div>
+                                    }
                                     <div className="flex flex-col items-start leading-none">
-                                        <span className={`text-[13px] font-semibold truncate max-w-[100px] ${isLight ? "text-slate-800" : "text-white"}`}>{userDisplayName}</span>
-                                        <span className={`text-[10px] truncate max-w-[100px] ${isLight ? "text-slate-400" : "text-slate-500"}`}>{userRoles[0] || "Utilisateur"}</span>
+                                        <span className={`text-[13px] font-bold truncate max-w-[110px] ${isLight ? "text-slate-800" : "text-white"}`}>{userDisplayName}</span>
+                                        <span className={`text-[10px] truncate max-w-[110px] font-medium ${isLight ? "text-orange-500/80" : "text-orange-400/70"}`}>{userRoles[0] || "Utilisateur"}</span>
                                     </div>
                                 </button>
                             </DropdownTrigger>
                             <DropdownMenu aria-label="Actions profil" className={isLight ? "bg-white" : "bg-[#0d1533]"}>
-                                <DropdownItem key="profile" startContent={<User size={15} />} onClick={() => navigate("/profile")}>Mon profil</DropdownItem>
+                                <DropdownItem key="profile" startContent={<User size={15} />} onClick={() => navigate("/settings")}>Mon profil</DropdownItem>
                                 <DropdownItem key="logout" startContent={<LogOut size={15} />} className="text-red-500" color="danger" onClick={logout}>Déconnexion</DropdownItem>
                             </DropdownMenu>
                         </Dropdown>

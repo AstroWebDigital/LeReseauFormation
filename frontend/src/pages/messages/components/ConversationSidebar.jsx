@@ -10,7 +10,7 @@ export default function ConversationSidebar({ conversations, activeConversation,
     const textSub = isDark ? "text-slate-500" : "text-slate-400";
 
     return (
-        <div style={{ width: "340px", flexShrink: 0, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", borderRight: `1px solid ${border}`, background: bg }}>
+        <div style={{ width: "100%", flexShrink: 0, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", borderRight: `1px solid ${border}`, background: bg }}>
             <div style={{ flexShrink: 0, padding: "20px", borderBottom: `1px solid ${border}` }}>
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-orange-500/10 rounded-lg">

@@ -33,6 +33,10 @@ public class UserMapper {
                 .mustChangePassword(u.isMustChangePassword())
                 .alpId(u.getAlpId() != null ? u.getAlpId().toString() : null)
                 .blockReason(u.getBlockReason())
+                .licenseNumber(u.getLicenseNumber())
+                .licenseExpiryDate(u.getLicenseExpiryDate())
+                .licensePhotoFront(toAbsolute(u.getLicensePhotoFront()))
+                .licensePhotoBack(toAbsolute(u.getLicensePhotoBack()))
                 .build();
     }
 

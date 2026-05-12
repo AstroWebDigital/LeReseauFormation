@@ -623,39 +623,49 @@ function LoueurDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
             {/* ── Hero ──────────────────────────────────────────────────────── */}
             <div className={`relative rounded-2xl sm:rounded-3xl overflow-hidden
                 ${isLight
-                    ? "bg-white border border-slate-100 shadow-md"
-                    : "bg-gradient-to-br from-[#0d1533] via-[#111b46] to-[#0a1128]"
+                    ? "bg-gradient-to-br from-white via-orange-50/40 to-white border border-orange-100 shadow-lg shadow-orange-500/5"
+                    : "bg-gradient-to-br from-[#0f1b4d] via-[#111b46] to-[#080e2e]"
                 }`}>
-                {/* Background orbs */}
-                <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-orange-500/20 blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-16 left-1/4 w-48 h-48 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+                {/* Decorative background */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-orange-500/25 blur-3xl" />
+                    <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 rounded-full bg-orange-400/10 blur-2xl" />
+                    {/* Grid overlay */}
+                    <div className="absolute inset-0 opacity-[0.03]"
+                        style={{ backgroundImage: "linear-gradient(#888 1px, transparent 1px), linear-gradient(90deg, #888 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+                </div>
 
                 <div className="relative p-4 sm:p-6 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
                     <div>
                         {/* Avatar + titre */}
                         <div className="flex items-center gap-3 sm:gap-4 mb-3">
                             <div className="relative shrink-0">
-                                <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40">
-                                    <BarChart2 size={22} className="text-white sm:hidden" />
-                                    <BarChart2 size={28} className="text-white hidden sm:block" />
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-400 border-2 border-white dark:border-[#0d1533] animate-pulse" />
+                                {resolvePhoto(user?.profilPhoto)
+                                    ? <img src={resolvePhoto(user?.profilPhoto)} alt="Photo"
+                                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover shadow-xl shadow-orange-500/40 ring-2 ring-orange-500/50 ring-offset-2 ring-offset-transparent" />
+                                    : <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40 ring-2 ring-orange-500/30">
+                                        <BarChart2 size={24} className="text-white sm:hidden" />
+                                        <BarChart2 size={30} className="text-white hidden sm:block" />
+                                      </div>
+                                }
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-white dark:border-[#111b46] shadow-sm shadow-emerald-500/50" />
                             </div>
                             <div>
-                                <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-0.5 sm:mb-1 ${isLight ? "text-slate-400" : "text-orange-400/70"}`}>
+                                <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 ${isLight ? "text-orange-500/70" : "text-orange-400/60"}`}>
                                     Tableau de bord
                                 </p>
-                                <h1 className={`text-xl sm:text-2xl lg:text-3xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>
-                                    {greetingByTime(user?.firstname || "vous")} !
+                                <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-black leading-tight ${isLight ? "text-slate-800" : "text-white"}`}>
+                                    {greetingByTime(user?.firstname || "vous")} <span className="text-orange-500">!</span>
                                 </h1>
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 ml-1">
-                            <span className={`flex items-center gap-1.5 text-xs ${isLight ? "text-slate-400" : "text-white/40"}`}>
+                            <span className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full ${isLight ? "bg-slate-100 text-slate-500" : "bg-white/8 text-white/40"}`}>
                                 <Clock size={11} /> {todayCapitalized}
                             </span>
-                            <span className="flex items-center gap-1.5 text-emerald-500 text-xs font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${isLight ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"}`}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                 Système opérationnel
                             </span>
                         </div>
@@ -886,33 +896,43 @@ function UserDashboard({ data, user, isLight, fetchDashboard, lastRefresh }) {
             {/* ── Hero utilisateur ─────────────────────────────────────────── */}
             <div className={`relative rounded-2xl sm:rounded-3xl overflow-hidden
                 ${isLight
-                    ? "bg-white border border-slate-100 shadow-md"
-                    : "bg-gradient-to-br from-[#0d1533] via-[#111b46] to-[#0a1128]"
+                    ? "bg-gradient-to-br from-white via-orange-50/40 to-white border border-orange-100 shadow-lg shadow-orange-500/5"
+                    : "bg-gradient-to-br from-[#0f1b4d] via-[#111b46] to-[#080e2e]"
                 }`}>
-                <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-orange-500/15 blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-8 left-1/4 w-48 h-48 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-orange-500/25 blur-3xl" />
+                    <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl" />
+                    <div className="absolute inset-0 opacity-[0.03]"
+                        style={{ backgroundImage: "linear-gradient(#888 1px, transparent 1px), linear-gradient(90deg, #888 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+                </div>
 
                 <div className="relative p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
                         <div>
                             <div className="flex items-center gap-3 sm:gap-4 mb-3">
-                                <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40 shrink-0">
-                                    <span className="text-white font-black text-lg sm:text-xl">
-                                        {(user?.firstname || "U")[0].toUpperCase()}
-                                    </span>
-                                </div>
+                                {resolvePhoto(user?.profilPhoto)
+                                    ? <img src={resolvePhoto(user?.profilPhoto)} alt="Photo"
+                                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover shadow-xl shadow-orange-500/40 ring-2 ring-orange-500/50 ring-offset-2 ring-offset-transparent shrink-0" />
+                                    : <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/40 ring-2 ring-orange-500/30 shrink-0">
+                                        <span className="text-white font-black text-xl sm:text-2xl">
+                                            {(user?.firstname || "U")[0].toUpperCase()}
+                                        </span>
+                                      </div>
+                                }
                                 <div>
-                                    <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-0.5 sm:mb-1 ${isLight ? "text-slate-400" : "text-orange-400/70"}`}>
+                                    <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 ${isLight ? "text-orange-500/70" : "text-orange-400/60"}`}>
                                         Espace client
                                     </p>
-                                    <h1 className={`text-xl sm:text-2xl lg:text-3xl font-black ${isLight ? "text-slate-800" : "text-white"}`}>
-                                        {greetingByTime(user?.firstname || "vous")} !
+                                    <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-black leading-tight ${isLight ? "text-slate-800" : "text-white"}`}>
+                                        {greetingByTime(user?.firstname || "vous")} <span className="text-orange-500">!</span>
                                     </h1>
                                 </div>
                             </div>
-                            <span className={`flex items-center gap-1.5 text-xs ml-1 ${isLight ? "text-slate-400" : "text-white/40"}`}>
-                                <Clock size={11} /> {todayCapitalized}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-2 ml-1">
+                                <span className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full ${isLight ? "bg-slate-100 text-slate-500" : "bg-white/8 text-white/40"}`}>
+                                    <Clock size={11} /> {todayCapitalized}
+                                </span>
+                            </div>
                         </div>
 
                         {/* Prochaine réservation */}

@@ -4,16 +4,17 @@ import { Spinner, Input, Avatar } from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useAuth } from "@/auth/AuthContext";
-import { CheckIcon, XMarkIcon, ClockIcon, CalendarDaysIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, XMarkIcon, ClockIcon, CalendarDaysIcon, IdentificationIcon } from "@heroicons/react/24/outline";
 
 import { VehicleGrid } from "./components/VehicleGrid";
 import { BookingModal } from "./components/BookingModal";
 import { PaymentModal } from "./components/PaymentModal";
+import { LicenseModal } from "./components/LicenseModal";
 
 export default function ReservationPage() {
     const { isDark } = useTheme();
     const isLight = !isDark;
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
 
     const getUserRoles = () => {
         if (!user?.roles) return [];
@@ -41,8 +42,12 @@ export default function ReservationPage() {
     const [rejectModal, setRejectModal] = useState(null); // { id, vehicleName }
     const [rejectReason, setRejectReason] = useState("");
 
-    const bookingDisclosure = useDisclosure();
-    const paymentDisclosure = useDisclosure();
+    const bookingDisclosure  = useDisclosure();
+    const licenseDisclosure  = useDisclosure();
+    const paymentDisclosure  = useDisclosure();
+
+    // Formulaire de réservation en attente pendant la saisie du permis
+    const [pendingBookingForm, setPendingBookingForm] = useState(null);
 
     const fetchVehicles = async () => {
         try {
@@ -88,8 +93,32 @@ export default function ReservationPage() {
         bookingDisclosure.onOpen();
     };
 
-    // Étape 1 : l'utilisateur valide les dates → on crée le PaymentIntent
+    // Étape 1a : l'utilisateur valide les dates → vérifier le permis d'abord
     const handleProceedToPayment = async (bookingForm) => {
+        if (!selectedVehicle) return;
+
+        if (!user?.licenseNumber) {
+            bookingDisclosure.onClose();
+            setPendingBookingForm(bookingForm);
+            licenseDisclosure.onOpen();
+            return;
+        }
+
+        await createPaymentIntent(bookingForm);
+    };
+
+    // Étape 1b : permis soumis → mettre à jour le contexte et continuer
+    const handleLicenseSuccess = async (updatedUser) => {
+        setUser(updatedUser);
+        licenseDisclosure.onClose();
+        if (pendingBookingForm) {
+            await createPaymentIntent(pendingBookingForm);
+            setPendingBookingForm(null);
+        }
+    };
+
+    // Étape 1c : créer le PaymentIntent et ouvrir la modal de paiement
+    const createPaymentIntent = async (bookingForm) => {
         if (!selectedVehicle) return;
         setIsCreatingIntent(true);
 
@@ -101,7 +130,6 @@ export default function ReservationPage() {
 
             setPendingBooking({ ...bookingForm, paymentIntentId: data.paymentIntentId });
             setClientSecret(data.clientSecret);
-            bookingDisclosure.onClose();
             paymentDisclosure.onOpen();
         } catch (err) {
             const msg = err.response?.data?.message || err.response?.data || "Erreur lors de la création du paiement.";
@@ -266,6 +294,37 @@ export default function ReservationPage() {
                                 <p className="text-orange-500 font-bold text-sm mt-1">{fmtAmount(r.totalAmount)}</p>
                             </div>
 
+                            {/* Permis de conduire du client */}
+                            {(r.customerLicenseNumber || r.customerLicensePhotoFront) && (
+                                <div className={`rounded-xl px-3 py-2 mb-3 border ${isLight ? "bg-blue-50 border-blue-100" : "bg-blue-500/8 border-blue-500/15"}`}>
+                                    <div className="flex items-center gap-1.5 mb-2">
+                                        <IdentificationIcon className={`h-3.5 w-3.5 ${isLight ? "text-blue-500" : "text-blue-400"}`} />
+                                        <span className={`text-[11px] font-bold uppercase tracking-wider ${isLight ? "text-blue-600" : "text-blue-400"}`}>Permis de conduire</span>
+                                    </div>
+                                    {r.customerLicenseNumber && (
+                                        <p className={`text-xs mb-2 ${isLight ? "text-slate-600" : "text-slate-300"}`}>N° <span className="font-mono font-semibold">{r.customerLicenseNumber}</span></p>
+                                    )}
+                                    {(r.customerLicensePhotoFront || r.customerLicensePhotoBack) && (
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                            {r.customerLicensePhotoFront && (
+                                                <a href={r.customerLicensePhotoFront} target="_blank" rel="noopener noreferrer" className="block">
+                                                    <img src={r.customerLicensePhotoFront} alt="Recto"
+                                                        className={`w-full h-16 object-cover rounded-lg border ${isLight ? "border-blue-200" : "border-blue-500/20"}`} />
+                                                    <p className={`text-[10px] text-center mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Recto</p>
+                                                </a>
+                                            )}
+                                            {r.customerLicensePhotoBack && (
+                                                <a href={r.customerLicensePhotoBack} target="_blank" rel="noopener noreferrer" className="block">
+                                                    <img src={r.customerLicensePhotoBack} alt="Verso"
+                                                        className={`w-full h-16 object-cover rounded-lg border ${isLight ? "border-blue-200" : "border-blue-500/20"}`} />
+                                                    <p className={`text-[10px] text-center mt-0.5 ${isLight ? "text-slate-400" : "text-slate-500"}`}>Verso</p>
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {showActions && (
                                 <div className="flex gap-2">
                                     <button
@@ -390,6 +449,14 @@ export default function ReservationPage() {
                     </div>
                 </div>
             )}
+
+            {/* Modal permis de conduire */}
+            <LicenseModal
+                isOpen={licenseDisclosure.isOpen}
+                onOpenChange={licenseDisclosure.onOpenChange}
+                onSuccess={handleLicenseSuccess}
+                isDark={isDark}
+            />
 
             {/* Modal 2 : paiement Stripe */}
             <PaymentModal

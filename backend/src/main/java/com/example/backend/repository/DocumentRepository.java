@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
     List<Document> findByUserId(UUID userId);
     List<Document> findByStatus(String status);
+    List<Document> findByUserIdAndTypeIn(UUID userId, java.util.List<String> types);
 }

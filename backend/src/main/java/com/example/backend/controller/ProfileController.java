@@ -102,6 +102,21 @@ public class ProfileController {
         return ResponseEntity.ok(userMapper.toDto(saved));
     }
 
+    /* ─────────────── Permis de conduire ─────────── */
+
+    @PostMapping(value = "/license", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDto> saveLicense(
+            Authentication auth,
+            @RequestParam("licenseNumber") String licenseNumber,
+            @RequestParam(value = "expiryDate", required = false) String expiryDate,
+            @RequestParam(value = "photoFront", required = false) MultipartFile photoFront,
+            @RequestParam(value = "photoBack",  required = false) MultipartFile photoBack
+    ) throws Exception {
+        User u = getCurrentUser(auth);
+        User saved = profileService.saveLicense(u, licenseNumber, expiryDate, photoFront, photoBack);
+        return ResponseEntity.ok(userMapper.toDto(saved));
+    }
+
     @DeleteMapping("/photo")
     public ResponseEntity<UserDto> deletePhoto(Authentication auth) throws Exception {
         User u = getCurrentUser(auth);

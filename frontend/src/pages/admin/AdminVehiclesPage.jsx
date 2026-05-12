@@ -28,7 +28,7 @@ const vehicleStatusColor = { "en_attente":"warning","disponible":"success","reje
 const vehicleStatusLabel = { "en_attente":"En attente","disponible":"Disponible","rejete":"Rejeté","indisponible":"Indisponible","reserve":"Réservé","bloque":"Bloqué","en_maintenance":"Maintenance" };
 const docStatusColor     = { "en_attente":"warning","valide":"success","rejete":"danger","expire":"danger" };
 const docStatusLabel     = { "en_attente":"En attente","valide":"Validé","rejete":"Rejeté","expire":"Expiré" };
-const docTypeLabel       = { "carte_grise":"Carte grise","assurance":"Assurance","permis":"Permis","contrat":"Contrat","facture":"Facture","etat_des_lieux":"État des lieux","photo_checklist":"Photo checklist" };
+const docTypeLabel       = { "carte_grise":"Carte grise","assurance":"Assurance","permis":"Permis","permis_conduire_recto":"Permis de conduire (Recto)","permis_conduire_verso":"Permis de conduire (Verso)","contrat":"Contrat","facture":"Facture","etat_des_lieux":"État des lieux","photo_checklist":"Photo checklist" };
 
 /* ─── Modale de rejet (raison) ─── */
 function RejectModal({ isOpen, title, onClose, onConfirm, isDark }) {
@@ -365,6 +365,107 @@ function CreateAlpForm({ isDark, onCreated }) {
 }
 
 /* ─── Page principale ─── */
+function ResPendingCard({ r, actionKey, fmtDate, nights, hasLicense, cardBg, divider, textPrimary, textMuted, isDark, onApprove, onReject }) {
+    const [showLicense, setShowLicense] = React.useState(true);
+    const [lightbox, setLightbox] = React.useState(null);
+    return (
+        <div className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+            <div className="p-4">
+                <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-black text-sm shrink-0">
+                        {(r.customerName || "?").split(" ").map(p => p[0]).join("").toUpperCase().slice(0,2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className={`font-bold text-sm truncate ${textPrimary}`}>{r.customerName || "Client"}</p>
+                        <p className={`text-xs truncate ${textMuted}`}>{r.customerEmail}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        {hasLicense && (
+                            <button onClick={() => setShowLicense(v => !v)}
+                                className={`text-[11px] font-bold px-2 py-1 rounded-lg border transition-all ${
+                                    showLicense
+                                        ? isDark ? "bg-blue-500/20 text-blue-300 border-blue-500/30" : "bg-blue-100 text-blue-700 border-blue-200"
+                                        : isDark ? "bg-white/5 text-slate-400 border-white/10 hover:bg-blue-500/10 hover:text-blue-400" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-600"
+                                }`}>
+                                Permis {showLicense ? "▲" : "▼"}
+                            </button>
+                        )}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-600 border border-orange-200"}`}>
+                            En attente
+                        </span>
+                    </div>
+                </div>
+
+                {showLicense && hasLicense && (
+                    <div className={`rounded-xl px-3 py-2.5 mb-3 border ${isDark ? "bg-blue-500/8 border-blue-500/15" : "bg-blue-50 border-blue-100"}`}>
+                        {r.customerLicenseNumber && (
+                            <p className={`text-xs mb-2 font-medium ${textPrimary}`}>N° <span className="font-mono">{r.customerLicenseNumber}</span></p>
+                        )}
+                        <div className="grid grid-cols-2 gap-2">
+                            {r.customerLicensePhotoFront && (
+                                <div>
+                                    <img src={r.customerLicensePhotoFront} alt="Recto"
+                                        onClick={() => setLightbox(r.customerLicensePhotoFront)}
+                                        className="w-full h-24 object-cover rounded-lg cursor-zoom-in border border-white/10" />
+                                    <p className={`text-[10px] text-center mt-0.5 ${textMuted}`}>Recto</p>
+                                </div>
+                            )}
+                            {r.customerLicensePhotoBack && (
+                                <div>
+                                    <img src={r.customerLicensePhotoBack} alt="Verso"
+                                        onClick={() => setLightbox(r.customerLicensePhotoBack)}
+                                        className="w-full h-24 object-cover rounded-lg cursor-zoom-in border border-white/10" />
+                                    <p className={`text-[10px] text-center mt-0.5 ${textMuted}`}>Verso</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <div className={`rounded-xl px-3 py-2.5 mb-3 ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
+                    <p className={`text-xs font-bold ${textPrimary}`}>{r.vehicleBrand} {r.vehicleModel}</p>
+                    <p className={`text-xs mt-0.5 ${textMuted}`}>
+                        {fmtDate(r.startDate)} → {fmtDate(r.endDate)}
+                        {nights && <span className="ml-1.5 opacity-60">({nights} nuit{nights > 1 ? "s" : ""})</span>}
+                    </p>
+                </div>
+                {r.totalAmount && (
+                    <p className={`text-base font-black mb-3 ${textPrimary}`}>
+                        {Number(r.totalAmount).toLocaleString("fr-FR")} €
+                        <span className={`text-xs font-normal ml-1 ${textMuted}`}>total</span>
+                    </p>
+                )}
+            </div>
+            <div className={`flex gap-2 px-4 pb-4 border-t ${divider} pt-3`}>
+                <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
+                    isLoading={actionKey === "approve"} isDisabled={!!actionKey}
+                    startContent={!actionKey && <CheckCircle size={13}/>}
+                    onPress={() => onApprove(r.id)}>Confirmer</Button>
+                <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
+                    isLoading={actionKey === "reject"} isDisabled={!!actionKey}
+                    startContent={!actionKey && <XCircle size={13}/>}
+                    onPress={() => onReject(r.id)}>Refuser</Button>
+            </div>
+
+            {lightbox && (
+                <div onClick={() => setLightbox(null)}
+                    style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(0,0,0,0.85)",
+                             backdropFilter:"blur(6px)", display:"flex", alignItems:"center",
+                             justifyContent:"center", cursor:"zoom-out" }}>
+                    <img src={lightbox} alt="permis" onClick={e => e.stopPropagation()}
+                         style={{ maxWidth:"90vw", maxHeight:"85vh", borderRadius:16,
+                                  boxShadow:"0 25px 60px rgba(0,0,0,0.6)", objectFit:"contain" }} />
+                    <button onClick={() => setLightbox(null)}
+                        style={{ position:"absolute", top:16, right:20, background:"rgba(255,255,255,0.15)",
+                                 border:"none", color:"#fff", borderRadius:"50%", width:36, height:36,
+                                 fontSize:20, cursor:"pointer", display:"flex", alignItems:"center",
+                                 justifyContent:"center" }}>×</button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function AdminVehiclesPage() {
     const { isDark } = useTheme();
     const { decrementPending, fetchUnreadSupport, unreadSupport } = useNotifications();
@@ -1133,56 +1234,23 @@ export default function AdminVehiclesPage() {
                                         const nights = r.startDate && r.endDate
                                             ? Math.max(1, Math.round((new Date(r.endDate) - new Date(r.startDate)) / 86400000))
                                             : null;
+                                        const hasLicense = r.customerLicenseNumber || r.customerLicensePhotoFront;
                                         return (
-                                            <div key={r.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
-                                                <div className="p-4">
-                                                    {/* Client */}
-                                                    <div className="flex items-start gap-3 mb-3">
-                                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-black text-sm shrink-0">
-                                                            {(r.customerName || "?").split(" ").map(p => p[0]).join("").toUpperCase().slice(0,2)}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={`font-bold text-sm truncate ${textPrimary}`}>{r.customerName || "Client"}</p>
-                                                            <p className={`text-xs truncate ${textMuted}`}>{r.customerEmail}</p>
-                                                        </div>
-                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-600 border border-orange-200"}`}>
-                                                            En attente
-                                                        </span>
-                                                    </div>
-                                                    {/* Véhicule */}
-                                                    <div className={`rounded-xl px-3 py-2.5 mb-3 ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
-                                                        <p className={`text-xs font-bold ${textPrimary}`}>{r.vehicleBrand} {r.vehicleModel}</p>
-                                                        <p className={`text-xs mt-0.5 ${textMuted}`}>
-                                                            {fmtDate(r.startDate)} → {fmtDate(r.endDate)}
-                                                            {nights && <span className="ml-1.5 opacity-60">({nights} nuit{nights > 1 ? "s" : ""})</span>}
-                                                        </p>
-                                                    </div>
-                                                    {/* Montant */}
-                                                    {r.totalAmount && (
-                                                        <p className={`text-base font-black mb-3 ${textPrimary}`}>
-                                                            {Number(r.totalAmount).toLocaleString("fr-FR")} €
-                                                            <span className={`text-xs font-normal ml-1 ${textMuted}`}>total</span>
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                {/* Actions */}
-                                                <div className={`flex gap-2 px-4 pb-4 border-t ${divider} pt-3`}>
-                                                    <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
-                                                        isLoading={actionKey === "approve"}
-                                                        isDisabled={!!actionKey}
-                                                        startContent={!actionKey && <CheckCircle size={13}/>}
-                                                        onPress={() => handleResApprove(r.id)}>
-                                                        Confirmer
-                                                    </Button>
-                                                    <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
-                                                        isLoading={actionKey === "reject"}
-                                                        isDisabled={!!actionKey}
-                                                        startContent={!actionKey && <XCircle size={13}/>}
-                                                        onPress={() => setRejectTarget({ type: "reservation", id: r.id, title: `Refuser la réservation · ${r.vehicleBrand} ${r.vehicleModel}` })}>
-                                                        Refuser
-                                                    </Button>
-                                                </div>
-                                            </div>
+                                            <ResPendingCard
+                                                key={r.id}
+                                                r={r}
+                                                actionKey={actionKey}
+                                                fmtDate={fmtDate}
+                                                nights={nights}
+                                                hasLicense={hasLicense}
+                                                cardBg={cardBg}
+                                                divider={divider}
+                                                textPrimary={textPrimary}
+                                                textMuted={textMuted}
+                                                isDark={isDark}
+                                                onApprove={handleResApprove}
+                                                onReject={(id) => setRejectTarget({ type: "reservation", id, title: `Refuser la réservation · ${r.vehicleBrand} ${r.vehicleModel}` })}
+                                            />
                                         );
                                     })}
                                 </div>
@@ -1206,8 +1274,11 @@ export default function AdminVehiclesPage() {
                                         <div key={d.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
                                             <a href={resolveUrl(d.fileUrl)} target="_blank" rel="noopener noreferrer"
                                                 className="flex items-start gap-3 p-4 hover:opacity-90 transition group">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? "bg-blue-500/10 border border-blue-500/20" : "bg-blue-50 border border-blue-100"}`}>
-                                                    <FileText size={20} className={isDark ? "text-blue-400" : "text-blue-500"} />
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${isDark ? "bg-blue-500/10 border border-blue-500/20" : "bg-blue-50 border border-blue-100"}`}>
+                                                    {d.type?.startsWith("permis_conduire") && d.fileUrl
+                                                        ? <img src={resolveUrl(d.fileUrl)} alt="" className="w-full h-full object-cover" />
+                                                        : <FileText size={20} className={isDark ? "text-blue-400" : "text-blue-500"} />
+                                                    }
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className={`font-bold text-sm mb-1 ${textPrimary}`}>{docTypeLabel[d.type] || d.type}</p>
@@ -1240,9 +1311,108 @@ export default function AdminVehiclesPage() {
                     </div>
                 );
             })() : (
-                // ── Vue "Tout voir" : accordion par utilisateur ──────────────────────
-                filteredUsers.length === 0 ? (
-                    <div className={`flex flex-col items-center justify-center min-h-[300px] gap-2 ${textMuted}`}>
+                // ── Vue "Tout voir" : en attente + accordion par utilisateur ─────────
+                (() => {
+                const allPendingVehicles = users.flatMap(u =>
+                    (u.vehicles||[]).filter(v => v.status === "en_attente").map(v => ({ ...v, _owner: u }))
+                );
+                const allPendingDocs = users.flatMap(u =>
+                    (u.documents||[]).filter(d => d.status === "en_attente").map(d => ({ ...d, _owner: u }))
+                );
+                const OwnerBadge2 = ({ owner }) => (
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-orange-500 to-yellow-400 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                            {((owner.firstname?.[0]||"")+(owner.lastname?.[0]||"")).toUpperCase()||"?"}
+                        </div>
+                        <span className={`text-xs font-semibold ${textMuted}`}>{owner.firstname} {owner.lastname}</span>
+                    </div>
+                );
+                return (
+                <div className="space-y-6">
+
+                {allPendingVehicles.length > 0 && (
+                    <div>
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl mb-4 w-fit ${isDark?"bg-orange-500/10":"bg-orange-50"}`}>
+                            <Car size={14} className="text-orange-500" />
+                            <span className={`text-sm font-bold ${isDark?"text-orange-400":"text-orange-600"}`}>Véhicules à valider</span>
+                            <span className="bg-orange-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5">{allPendingVehicles.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {allPendingVehicles.map(v => {
+                                const firstImg = v.images?.[0] ? resolveUrl(v.images[0]) : null;
+                                return (
+                                    <div key={v.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                                        <button type="button" onClick={() => setSelectedVehicle(v)}
+                                            className="w-full flex gap-3 items-start p-4 text-left hover:opacity-90 transition group">
+                                            <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0">
+                                                {firstImg ? <img src={firstImg} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                    : <div className={`w-full h-full flex items-center justify-center ${isDark?"bg-slate-800":"bg-slate-100"}`}><Car size={18} className={textMuted}/></div>}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className={`font-bold text-sm ${textPrimary}`}>{v.brand} {v.model}</span>
+                                                <code className={`ml-2 text-[11px] px-1.5 py-0.5 rounded ${isDark?"bg-orange-500/10 text-orange-400":"bg-orange-50 text-orange-600"}`}>{v.plateNumber}</code>
+                                                <p className={`text-xs mt-1 ${textMuted}`}>{v.baseDailyPrice}€/j</p>
+                                                <div className="mt-1"><OwnerBadge2 owner={v._owner} /></div>
+                                            </div>
+                                        </button>
+                                        <div className={`flex gap-2 px-4 pb-4 border-t ${divider} pt-3`}>
+                                            <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
+                                                startContent={<CheckCircle size={13}/>} onPress={() => handleVehicleApprove(v.id)}>Approuver</Button>
+                                            <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
+                                                startContent={<XCircle size={13}/>}
+                                                onPress={() => setRejectTarget({ type:"vehicle", id:v.id, title:`Rejeter ${v.brand} ${v.model}` })}>Rejeter</Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {allPendingDocs.length > 0 && (
+                    <div>
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl mb-4 w-fit ${isDark?"bg-blue-500/10":"bg-blue-50"}`}>
+                            <FileText size={14} className="text-blue-500" />
+                            <span className={`text-sm font-bold ${isDark?"text-blue-400":"text-blue-600"}`}>Documents à valider</span>
+                            <span className="bg-blue-500 text-white text-[10px] font-black rounded-full px-1.5 py-0.5">{allPendingDocs.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {allPendingDocs.map(d => (
+                                <div key={d.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                                    <a href={resolveUrl(d.fileUrl)} target="_blank" rel="noopener noreferrer"
+                                        className="flex items-start gap-3 p-4 hover:opacity-90 transition group">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${isDark?"bg-blue-500/10 border border-blue-500/20":"bg-blue-50 border border-blue-100"}`}>
+                                            {d.type?.startsWith("permis_conduire") && d.fileUrl
+                                                ? <img src={resolveUrl(d.fileUrl)} alt="" className="w-full h-full object-cover" />
+                                                : <FileText size={20} className={isDark?"text-blue-400":"text-blue-500"} />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`font-bold text-sm mb-1 ${textPrimary}`}>{docTypeLabel[d.type]||d.type}</p>
+                                            <OwnerBadge2 owner={d._owner} />
+                                        </div>
+                                        <span className={`text-xs shrink-0 mt-1 ${isDark?"text-blue-400":"text-blue-500"}`}>Ouvrir →</span>
+                                    </a>
+                                    <div className={`flex gap-2 px-4 pb-4 border-t ${divider} pt-3`}>
+                                        <Button size="sm" className="flex-1 bg-emerald-500 text-white font-bold"
+                                            startContent={<CheckCircle size={13}/>} onPress={() => handleDocApprove(d.id)}>Valider</Button>
+                                        <Button size="sm" color="danger" variant="flat" className="flex-1 font-bold"
+                                            startContent={<XCircle size={13}/>}
+                                            onPress={() => setRejectTarget({ type:"document", id:d.id, title:`Rejeter « ${docTypeLabel[d.type]||d.type} »` })}>Rejeter</Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {(allPendingVehicles.length > 0 || allPendingDocs.length > 0) && (
+                    <div className={`border-t pt-4 ${divider}`}>
+                        <p className={`text-xs font-bold uppercase tracking-wider mb-4 ${textMuted}`}>Vue complète par utilisateur</p>
+                    </div>
+                )}
+
+                {filteredUsers.length === 0 ? (
+                    <div className={`flex flex-col items-center justify-center min-h-[200px] gap-2 ${textMuted}`}>
                         <CheckCircle size={48} />
                         <p className="text-lg font-medium">Aucun élément</p>
                     </div>
@@ -1362,7 +1532,10 @@ export default function AdminVehiclesPage() {
                         );
                     })}
                 </div>
-                )
+                )}
+                </div>
+                );
+                })()
             )}
 
             {/* Modale galerie véhicule */}

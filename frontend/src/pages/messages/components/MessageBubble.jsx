@@ -30,8 +30,41 @@ export function DateSeparator({ label, isDark }) {
     );
 }
 
+// Parse [IMAGE](url) comme image inline, [texte](url) comme lien, le reste comme texte
+function renderContent(text, isLeft, onImageClick) {
+    if (!text) return null;
+    const linkColor = isLeft ? "#f97316" : "rgba(255,255,255,0.85)";
+    const TOKEN_RE = /(\[[^\]]*\]\(https?:\/\/[^)]+\))/g;
+    const parts = text.split(TOKEN_RE);
+    const nodes = parts.map((part, i) => {
+        const m = part.match(/^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/);
+        if (m) {
+            const [, label, url] = m;
+            if (label === "IMAGE") {
+                return (
+                    <img key={i} src={url} alt="permis"
+                         onClick={() => onImageClick?.(url)}
+                         style={{ maxWidth: "180px", width: "100%", borderRadius: "10px", display: "block",
+                                  marginTop: "6px", marginBottom: "2px", cursor: "zoom-in",
+                                  border: "1px solid rgba(255,255,255,0.15)" }} />
+                );
+            }
+            return (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                   style={{ color: linkColor, textDecoration: "underline", fontWeight: 600 }}>
+                    {label}
+                </a>
+            );
+        }
+        return part.split("\n").map((line, j, arr) => (
+            <React.Fragment key={`${i}-${j}`}>{line}{j < arr.length - 1 && <br />}</React.Fragment>
+        ));
+    });
+    return <span>{nodes}</span>;
+}
+
 const MessageBubble = React.forwardRef(function MessageBubble(
-    { content, sentAt, left, isConsecutive, isTemp, reactions, pinned, starred, replyTo, deleted, edited, onContextMenu, onReplyClick, isDark },
+    { content, sentAt, left, isConsecutive, isTemp, reactions, pinned, starred, replyTo, deleted, edited, onContextMenu, onReplyClick, onImageClick, isDark },
     ref
 ) {
     const time = sentAt ? new Date(sentAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "";
@@ -91,7 +124,7 @@ const MessageBubble = React.forwardRef(function MessageBubble(
                                     {starred && <span style={{ fontSize: "10px" }}>⭐</span>}
                                 </div>
                             )}
-                            {content}
+                            {renderContent(content, left, onImageClick)}
                         </>
                     )}
                 </div>
